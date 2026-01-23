@@ -43,6 +43,21 @@ export const resetPasswordSchema = z.object({
 });
 
 
+// This is the enforcer for the "New Idea" form
+export const ideaBankSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(1, "Description is required"),
+  source: z.string().min(1, "Source is required"),
+  tags: z.string().min(1, "At least one tag is required"), // I will handle turning this into an array later
+  isPublic: z.boolean().default(false),
+  image: z.object({
+    url: z.string().min(1, "Image URL is required"),
+    id: z.string().min(1, "Image ID is required"),
+  }, { message: "Please select an image" }),
+});
+
+
+export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
 export type SignUpData = z.infer<typeof signUpSchema>;
 export type VerifyData = z.infer<typeof verifySchema>;
 export type LoginData = z.infer<typeof loginSchema>;
