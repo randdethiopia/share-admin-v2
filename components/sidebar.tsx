@@ -6,7 +6,7 @@ import useAuthStore from '@/store/useAuthStore'; // 1. Use the NEW store
 import { 
   LayoutDashboard, Users, Mail, Briefcase, BookOpen, 
   Lightbulb, TrendingUp, GraduationCap, FolderOpen, 
-  UserCog, UserCheck, Building2, UsersRound, Key 
+  UserCog, UserCheck, Building2, UsersRound, Key
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,17 @@ import { cn } from '@/lib/utils';
 
 export const dashboardMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['admin', 'advisor', 'sme', 'investor'] },
-  { icon: Users, label: 'Projects', href: '/dashboard/projects', roles: ['admin', 'advisor'] },
+  { icon: Users, label: 'Projects', href: '/projects', roles: ['admin', 'advisor'] },
   { icon: Mail, label: 'Invitations', href: '/dashboard/invitations', roles: ['admin', 'advisor', 'sme'] },
   { icon: UserCog, label: 'Admin Management', href: '/dashboard/admin-management', roles: ['admin'] },
-  { icon: UserCheck, label: 'Advisor Profile', href: '/dashboard/advisor-profile', roles: ['admin', 'advisor'] },
-  { icon: Building2, label: 'SME Profile', href: '/dashboard/sme-profile', roles: ['admin', 'sme'] },
-  { icon: UsersRound, label: 'Investors Profile', href: '/dashboard/investor-profile', roles: ['admin', 'investor'] },
-  { icon: Key, label: 'Change My Password', href: '/dashboard/change-password', roles: ['admin', 'advisor', 'sme', 'investor'] },
+  { icon: UserCheck, label: 'Expert', href: '/dashboard/advisor-profile', roles: ['admin', 'advisor'] },
+  // SME: /business (my profile). Admin: /dashboard/business (review/approve SMEs)
+  { icon: Building2, label: 'Business', href: '/business', roles: ['admin', 'sme'] },
+  { icon: UsersRound, label: 'Mentor', href: '/dashboard/investor-profile', roles: ['admin', 'investor'] },
+  { icon: Key, label: 'Change My Password', href: '/change-password', roles: ['admin', 'advisor', 'sme', 'investor'] },
   { icon: Briefcase, label: 'Jobs', href: '/dashboard/jobs', roles: ['admin', 'advisor', 'sme'] },
   { icon: Lightbulb, label: 'Idea Bank', href: '/idea-bank', roles: ['admin', 'advisor', 'sme'] },
-  { icon: TrendingUp, label: 'Opportunity', href: '/dashboard/opportunity', roles: ['admin', 'advisor', 'sme'] },
+  { icon: TrendingUp, label: 'Opportunity', href: '/opportunity', roles: ['admin', 'advisor', 'sme'] },
   { icon: BookOpen, label: 'Blogs', href: '/dashboard/blogs', roles: ['admin', 'advisor', 'sme'] },
   { icon: GraduationCap, label: 'Trainee', href: '/dashboard/trainee', roles: ['admin', 'advisor'] },
   { icon: FolderOpen, label: 'Resource', href: '/dashboard/resource', roles: ['admin', 'advisor', 'sme'] }
@@ -33,7 +34,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
   const pathname = usePathname();
   
   // 2. Get state from the NEW store
-  const { role, hasHydrated } = useAuthStore();
+  const { role, hasHydrated, } = useAuthStore();
 
   // 3. SAFETY CHECK: If Zustand hasn't finished reading from localStorage, return null
   // This prevents the "Hydration Mismatch" error in Next.js
@@ -43,11 +44,13 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
  const filteredItems = dashboardMenuItems.filter(item => {
   if (!role) return false;
   // Convert the user's role to lowercase before checking the list
-  return item.roles.includes(role.toLowerCase() as any);
+  return item.roles.includes(role.toLowerCase());
 })
 
+  
+
   return (
-    <div className={cn("flex h-full w-full flex-col bg-white md:h-screen md:w-[280px] md:border-r", className)}>
+    <div className={cn("flex h-full w-full flex-col bg-white md:h-screen md:w-70 md:border-r", className)}>
       <div className="flex flex-col items-center gap-3 border-b px-6 py-6">
         <Avatar className="h-16 w-16">
           <AvatarFallback className="bg-gray-200 text-gray-600">
@@ -56,7 +59,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
         </Avatar>
         <div className="text-center">
           <h2 className="text-lg font-semibold capitalize">{role || "Guest"}</h2>
-          <p className="text-xs text-gray-400">Portal Access</p>
+          <p className="text-xs">Portal Access</p>
         </div>
         <Button className="bg-green-500 hover:bg-green-600 text-white">
           View Profile
@@ -66,13 +69,18 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
-            const isActive = pathname === item.href;
+            const resolvedHref =
+              item.label === "Business" && role?.toLowerCase() === "admin"
+                ? "/dashboard/business"
+                : item.href;
+
+            const isActive = pathname === resolvedHref;
             const Icon = item.icon;
 
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={resolvedHref}
                 onClick={onNavigate}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
@@ -86,6 +94,8 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
           })}
         </div>
       </nav>
+
+      
     </div>
   );
 }

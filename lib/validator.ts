@@ -55,9 +55,43 @@ export const ideaBankSchema = z.object({
     id: z.string().min(1, "Image ID is required"),
   }, { message: "Please select an image" }),
 });
+export const opportunitySchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  organizationName: z.string().min(1, "Organization is required"),
+  description: z.string().min(1, "Description is required"),
+  externalLink: z.string().url("Invalid URL").or(z.string().length(0)), // URL or empty
+  isPublic: z.boolean(),
+  tags: z.string().min(1, "Tags are required"),
+  deadlineDate: z.string().optional(),
+  image: z.object({
+    url: z.string(),
+    id: z.string(),
+  }),
+});
 
+export const reinvestSchema = z.object({
+  projectId: z.string(),
+  investments: z.array(
+    z.object({
+      investorId: z.string(),
+      amount: z.number().min(0, "Amount must be positive"),
+    })
+  ),
+});
 
+export const changePasswordSchema = z.object({
+  oldPassword: z.string().min(1, "Old password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "New passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
+export type OpportunityFormData = z.infer<typeof opportunitySchema>;
+export type ReinvestData = z.infer<typeof reinvestSchema>;
 export type SignUpData = z.infer<typeof signUpSchema>;
 export type VerifyData = z.infer<typeof verifySchema>;
 export type LoginData = z.infer<typeof loginSchema>;
