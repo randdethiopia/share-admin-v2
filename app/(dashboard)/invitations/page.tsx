@@ -7,6 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+	Pagination,
+	PaginationContent,
+	PaginationEllipsis,
+	PaginationItem,
+	PaginationLink,
+	PaginationNext,
+	PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -31,10 +40,35 @@ function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toLowerCase();
 }
 
+type PageItem = number | "ellipsis";
+
+function buildPageItems(currentPage: number, totalPages: number): PageItem[] {
+	if (totalPages <= 7) {
+		return Array.from({ length: totalPages }, (_, i) => i + 1);
+	}
+
+	const items: PageItem[] = [];
+	const push = (value: PageItem) => items.push(value);
+
+	push(1);
+
+	const left = Math.max(2, currentPage - 1);
+	const right = Math.min(totalPages - 1, currentPage + 1);
+
+	if (left > 2) push("ellipsis");
+	for (let p = left; p <= right; p += 1) push(p);
+	if (right < totalPages - 1) push("ellipsis");
+
+	push(totalPages);
+	return items;
+}
+
 export default function InvitationsPage() {
 	const router = useRouter();
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState<SortMode>("newest");
+	const [page, setPage] = useState(1);
+	const pageSize = 10;
 
 	const {
 		data: invitations = [],
@@ -64,13 +98,34 @@ export default function InvitationsPage() {
 		return sorted;
 	}, [invitations, search, sort]);
 
+	const totalItems = filteredData.length;
+	const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+	const safePage = Math.min(Math.max(1, page), totalPages);
+
+	const pageData = useMemo(() => {
+		const startIndex = (safePage - 1) * pageSize;
+		const endIndex = startIndex + pageSize;
+		return filteredData.slice(startIndex, endIndex);
+	}, [filteredData, safePage, pageSize]);
+
 	const handleSortChange = (value: string) => {
-		if (value === "newest" || value === "oldest") setSort(value);
+		if (value === "newest" || value === "oldest") {
+			setSort(value);
+			setPage(1);
+		}
 	};
 
 	const openDetails = (id: string) => {
 		router.push(`/invitations/${id}`);
 	};
+
+	const pageItems = useMemo(
+		() => buildPageItems(safePage, totalPages),
+		[safePage, totalPages]
+	);
+
+	const showingFrom = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
+	const showingTo = Math.min(safePage * pageSize, totalItems);
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
@@ -89,7 +144,10 @@ export default function InvitationsPage() {
 							placeholder="Search"
 							className="pl-11 bg-[#F3F8FF] border-none h-12 rounded-xl text-sm"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => {
+								setSearch(e.target.value);
+								setPage(1);
+							}}
 						/>
 					</div>
 
@@ -123,7 +181,7 @@ export default function InvitationsPage() {
 							No invitations found.
 						</div>
 					) : (
-						filteredData.map((item) => {
+						pageData.map((item) => {
 							const status = normalizeStatus(item.status);
 							const statusClass = status.includes("accept")
 								? "bg-[#34A853] text-white"
@@ -239,7 +297,7 @@ export default function InvitationsPage() {
 									</TableCell>
 								</TableRow>
 							) : (
-								filteredData.map((item) => {
+								pageData.map((item) => {
 									const status = normalizeStatus(item.status);
 									const statusClass = status.includes("accept")
 										? "bg-[#34A853] text-white"
@@ -293,6 +351,62 @@ export default function InvitationsPage() {
 						</Table>
 					</div>
 				</div>
+
+				{/* Pagination */}
+				{!isLoading && !isError && totalItems > 0 && (
+					<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-xs text-gray-500">
+							Showing <span className="font-semibold">{showingFrom}</span>-<span className="font-semibold">{showingTo}</span> of <span className="font-semibold">{totalItems}</span>
+						</p>
+
+						<Pagination className="justify-start sm:justify-center">
+							<PaginationContent>
+								<PaginationItem>
+									<PaginationPrevious
+										href="#"
+										onClick={(e) => {
+											e.preventDefault();
+											setPage((p) => Math.max(1, p - 1));
+										}}
+										className={safePage === 1 ? "pointer-events-none opacity-50" : undefined}
+									/>
+								</PaginationItem>
+
+								{pageItems.map((item, idx) =>
+									item === "ellipsis" ? (
+										<PaginationItem key={`ellipsis-${idx}`}>
+											<PaginationEllipsis />
+										</PaginationItem>
+									) : (
+										<PaginationItem key={item}>
+											<PaginationLink
+												href="#"
+												isActive={safePage === item}
+												onClick={(e) => {
+												e.preventDefault();
+												setPage(item);
+											}}
+											>
+												{item}
+											</PaginationLink>
+										</PaginationItem>
+									)
+								)}
+
+								<PaginationItem>
+									<PaginationNext
+										href="#"
+										onClick={(e) => {
+											e.preventDefault();
+											setPage((p) => Math.min(totalPages, p + 1));
+										}}
+										className={safePage === totalPages ? "pointer-events-none opacity-50" : undefined}
+									/>
+								</PaginationItem>
+							</PaginationContent>
+						</Pagination>
+					</div>
+				)}
 			</div>
 		</div>
 	);
