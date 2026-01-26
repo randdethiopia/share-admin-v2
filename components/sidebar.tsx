@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 export const dashboardMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['admin', 'advisor', 'sme', 'investor'] },
   { icon: Users, label: 'Projects', href: '/projects', roles: ['admin', 'advisor'] },
-  { icon: Mail, label: 'Invitations', href: '/dashboard/invitations', roles: ['admin', 'advisor', 'sme'] },
+  { icon: Mail, label: 'Invitations', href: '/invitations', roles: ['admin', 'advisor', 'sme'] },
   { icon: UserCog, label: 'Admin Management', href: '/dashboard/admin-management', roles: ['admin'] },
   { icon: UserCheck, label: 'Expert', href: '/dashboard/advisor-profile', roles: ['admin', 'advisor'] },
   // SME: /business (my profile). Admin: /dashboard/business (review/approve SMEs)
