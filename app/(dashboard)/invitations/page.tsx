@@ -6,15 +6,7 @@ import InvitationApi, { type InvitationType } from "@/api/invitation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-	PaginationNext,
-	PaginationPrevious,
-} from "@/components/ui/pagination";
+import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	Select,
 	SelectContent,
@@ -31,6 +23,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { Eye, Loader2, Search } from "lucide-react";
 
 type SortMode = "newest" | "oldest";
@@ -40,35 +33,12 @@ function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toLowerCase();
 }
 
-type PageItem = number | "ellipsis";
-
-function buildPageItems(currentPage: number, totalPages: number): PageItem[] {
-	if (totalPages <= 7) {
-		return Array.from({ length: totalPages }, (_, i) => i + 1);
-	}
-
-	const items: PageItem[] = [];
-	const push = (value: PageItem) => items.push(value);
-
-	push(1);
-
-	const left = Math.max(2, currentPage - 1);
-	const right = Math.min(totalPages - 1, currentPage + 1);
-
-	if (left > 2) push("ellipsis");
-	for (let p = left; p <= right; p += 1) push(p);
-	if (right < totalPages - 1) push("ellipsis");
-
-	push(totalPages);
-	return items;
-}
-
 export default function InvitationsPage() {
 	const router = useRouter();
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState<SortMode>("newest");
 	const [page, setPage] = useState(1);
-	const pageSize = 10;
+	const pageSize = DEFAULT_PAGE_SIZE;
 
 	const {
 		data: invitations = [],
@@ -99,14 +69,14 @@ export default function InvitationsPage() {
 	}, [invitations, search, sort]);
 
 	const totalItems = filteredData.length;
-	const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-	const safePage = Math.min(Math.max(1, page), totalPages);
+	const pagination = useMemo(
+		() => getPaginationMeta(totalItems, page, pageSize),
+		[totalItems, page, pageSize]
+	);
 
 	const pageData = useMemo(() => {
-		const startIndex = (safePage - 1) * pageSize;
-		const endIndex = startIndex + pageSize;
-		return filteredData.slice(startIndex, endIndex);
-	}, [filteredData, safePage, pageSize]);
+		return filteredData.slice(pagination.startIndex, pagination.endIndexExclusive);
+	}, [filteredData, pagination.startIndex, pagination.endIndexExclusive]);
 
 	const handleSortChange = (value: string) => {
 		if (value === "newest" || value === "oldest") {
@@ -118,14 +88,6 @@ export default function InvitationsPage() {
 	const openDetails = (id: string) => {
 		router.push(`/invitations/${id}`);
 	};
-
-	const pageItems = useMemo(
-		() => buildPageItems(safePage, totalPages),
-		[safePage, totalPages]
-	);
-
-	const showingFrom = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
-	const showingTo = Math.min(safePage * pageSize, totalItems);
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
@@ -353,60 +315,13 @@ export default function InvitationsPage() {
 				</div>
 
 				{/* Pagination */}
-				{!isLoading && !isError && totalItems > 0 && (
-					<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<p className="text-xs text-gray-500">
-							Showing <span className="font-semibold">{showingFrom}</span>-<span className="font-semibold">{showingTo}</span> of <span className="font-semibold">{totalItems}</span>
-						</p>
-
-						<Pagination className="justify-start sm:justify-center">
-							<PaginationContent>
-								<PaginationItem>
-									<PaginationPrevious
-										href="#"
-										onClick={(e) => {
-											e.preventDefault();
-											setPage((p) => Math.max(1, p - 1));
-										}}
-										className={safePage === 1 ? "pointer-events-none opacity-50" : undefined}
-									/>
-								</PaginationItem>
-
-								{pageItems.map((item, idx) =>
-									item === "ellipsis" ? (
-										<PaginationItem key={`ellipsis-${idx}`}>
-											<PaginationEllipsis />
-										</PaginationItem>
-									) : (
-										<PaginationItem key={item}>
-											<PaginationLink
-												href="#"
-												isActive={safePage === item}
-												onClick={(e) => {
-												e.preventDefault();
-												setPage(item);
-											}}
-											>
-												{item}
-											</PaginationLink>
-										</PaginationItem>
-									)
-								)}
-
-								<PaginationItem>
-									<PaginationNext
-										href="#"
-										onClick={(e) => {
-											e.preventDefault();
-											setPage((p) => Math.min(totalPages, p + 1));
-										}}
-										className={safePage === totalPages ? "pointer-events-none opacity-50" : undefined}
-									/>
-								</PaginationItem>
-							</PaginationContent>
-						</Pagination>
-					</div>
-				)}
+				<PaginationControls
+					page={page}
+					onPageChange={setPage}
+					totalItems={totalItems}
+					pageSize={pageSize}
+					disabled={isLoading || isError}
+				/>
 			</div>
 		</div>
 	);
