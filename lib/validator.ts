@@ -74,10 +74,16 @@ export const reinvestSchema = z.object({
   investments: z.array(
     z.object({
       investorId: z.string(),
-      amount: z.number().min(0, "Amount must be positive"),
+      amount: z.number().min(0, "Amount must be 0 or more"),
     })
   ),
-});
+}).refine(
+  (data) => data.investments.some((i) => (i?.amount ?? 0) > 0),
+  {
+    message: "Add at least one reinvest amount",
+    path: ["investments"],
+  }
+);
 
 export const changePasswordSchema = z.object({
   oldPassword: z.string().min(1, "Old password is required"),

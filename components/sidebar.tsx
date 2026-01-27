@@ -16,16 +16,15 @@ export const dashboardMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['admin', 'advisor', 'sme', 'investor'] },
   { icon: Users, label: 'Projects', href: '/projects', roles: ['admin', 'advisor'] },
   { icon: Mail, label: 'Invitations', href: '/invitations', roles: ['admin', 'advisor', 'sme'] },
+  { icon: BookOpen, label: 'Blogs', href: '/blogs', roles: ['admin', 'advisor', 'sme'] },
   { icon: UserCog, label: 'Admin Management', href: '/dashboard/admin-management', roles: ['admin'] },
   { icon: UserCheck, label: 'Expert', href: '/dashboard/advisor-profile', roles: ['admin', 'advisor'] },
-  // SME: /business (my profile). Admin: /dashboard/business (review/approve SMEs)
   { icon: Building2, label: 'Business', href: '/business', roles: ['admin', 'sme'] },
   { icon: UsersRound, label: 'Mentor', href: '/dashboard/investor-profile', roles: ['admin', 'investor'] },
   { icon: Key, label: 'Change My Password', href: '/change-password', roles: ['admin', 'advisor', 'sme', 'investor'] },
   { icon: Briefcase, label: 'Jobs', href: '/dashboard/jobs', roles: ['admin', 'advisor', 'sme'] },
   { icon: Lightbulb, label: 'Idea Bank', href: '/idea-bank', roles: ['admin', 'advisor', 'sme'] },
   { icon: TrendingUp, label: 'Opportunity', href: '/opportunity', roles: ['admin', 'advisor', 'sme'] },
-  { icon: BookOpen, label: 'Blogs', href: '/dashboard/blogs', roles: ['admin', 'advisor', 'sme'] },
   { icon: GraduationCap, label: 'Trainee', href: '/dashboard/trainee', roles: ['admin', 'advisor'] },
   { icon: FolderOpen, label: 'Resource', href: '/dashboard/resource', roles: ['admin', 'advisor', 'sme'] }
 ];

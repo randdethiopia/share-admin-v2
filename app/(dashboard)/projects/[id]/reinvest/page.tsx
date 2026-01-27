@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
@@ -19,9 +19,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Search } from "lucide-react";
+import { toast } from "sonner";
 
 function toId(value: string | string[] | undefined) {
 	if (!value) return "";
@@ -34,6 +36,9 @@ export default function ReinvestPage() {
 	const id = toId((params as Record<string, string | string[] | undefined>)?.id);
 
 	const [search, setSearch] = useState("");
+	const [selectedInvestorIds, setSelectedInvestorIds] = useState<Set<string>>(
+		() => new Set()
+	);
 	const { data: project, isLoading: isProjectLoading } =
 		ProjectApi.GetById.useQuery(id);
 	const { data: bank, isLoading: isBankLoading } =
@@ -66,6 +71,19 @@ export default function ReinvestPage() {
 		mode: "onChange",
 	});
 
+	const investments = useWatch({
+		control: form.control,
+		name: "investments",
+	});
+
+	const selectedPositiveCount = useMemo(() => {
+		const list = investments ?? [];
+		return list.filter(
+			(i) =>
+				selectedInvestorIds.has(i.investorId) && (i?.amount ?? 0) > 0
+		).length;
+	}, [investments, selectedInvestorIds]);
+
 	useEffect(() => {
 		if (!id) return;
 		const existing = form.getValues("investments");
@@ -83,9 +101,35 @@ export default function ReinvestPage() {
 	const onSubmit = (data: ReinvestData) => {
 		const payload: ReinvestData = {
 			projectId: id,
-			investments: data.investments.filter((i) => (i?.amount ?? 0) > 0),
+			investments: data.investments.filter(
+				(i) =>
+					selectedInvestorIds.has(i.investorId) && (i?.amount ?? 0) > 0
+			),
 		};
+		if (payload.investments.length === 0) {
+			toast.error("Select at least one investor and enter an amount");
+			return;
+		}
 		performReinvest(payload);
+	};
+
+	const toggleInvestor = (investorId: string, checked: boolean) => {
+		setSelectedInvestorIds((prev) => {
+			const next = new Set(prev);
+			if (checked) next.add(investorId);
+			else next.delete(investorId);
+			return next;
+		});
+
+		if (!checked) {
+			const index = investors.findIndex((i) => i._id === investorId);
+			if (index >= 0) {
+				form.setValue(`investments.${index}.amount`, 0, {
+					shouldValidate: true,
+					shouldDirty: true,
+				});
+			}
+		}
 	};
 
 	if (!id) {
@@ -119,7 +163,7 @@ export default function ReinvestPage() {
 					<Button
 						type="submit"
 						className="bg-blue-600 hover:bg-blue-700 h-12 px-10 rounded-xl font-bold shadow-lg"
-						disabled={isPending}
+						disabled={isPending || selectedPositiveCount === 0}
 					>
 						{isPending ? "Processing..." : "Confirm Allocation"}
 					</Button>
@@ -148,6 +192,9 @@ export default function ReinvestPage() {
 					<Table>
 						<TableHeader className="bg-[#D6E6F2]">
 							<TableRow className="border-none">
+								<TableHead className="font-bold text-slate-700 h-14 px-4 sm:px-8 w-16">
+									Select
+								</TableHead>
 								<TableHead className="font-bold text-slate-700 h-14 px-4 sm:px-8">
 									Investor Name
 								</TableHead>
@@ -165,6 +212,16 @@ export default function ReinvestPage() {
 									key={inv._id}
 									className="hover:bg-slate-50/50 border-gray-50"
 								>
+									<TableCell className="px-4 sm:px-8 py-5">
+										<Checkbox
+											className="size-5 border-2 border-slate-400 bg-white data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 data-[state=checked]:text-white"
+											checked={selectedInvestorIds.has(inv._id)}
+											onCheckedChange={(v) =>
+												toggleInvestor(inv._id, Boolean(v))
+											}
+											aria-label={`Select ${inv.fullName}`}
+										/>
+									</TableCell>
 									<TableCell className="px-4 sm:px-8 py-5 font-bold text-slate-900">
 										{inv.fullName}
 									</TableCell>
@@ -180,10 +237,15 @@ export default function ReinvestPage() {
 											placeholder="0.00"
 											className="bg-[#F3F8FF] border-none h-11 rounded-lg focus-visible:ring-blue-500"
 											{...form.register(`investments.${index}.amount`, {
-												valueAsNumber: true,
+												setValueAs: (v) => {
+													if (v === "" || v === null || v === undefined) return 0;
+													const n = Number(v);
+													return Number.isFinite(n) ? n : 0;
+												},
 											})}
 											max={inv.balance}
 											min={0}
+											disabled={!selectedInvestorIds.has(inv._id)}
 										/>
 										
 										<input
