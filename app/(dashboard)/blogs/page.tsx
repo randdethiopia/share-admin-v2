@@ -206,47 +206,47 @@ export default function BlogsPage() {
 										</div>
 
 										<div className="flex items-center gap-2">
-										<Badge
-											className={cn(
-												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-												statusBadgeClass(status)
-											)}
-										>
-											{status}
-										</Badge>
-										<Button
-											variant="ghost"
-											size="icon"
-											title="View details"
-											onClick={() => openDetails(blog._id)}
-											className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100 disabled:opacity-60"
-										>
-											<Eye size={16} />
-										</Button>
+											<Badge
+												className={cn(
+													"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
+													statusBadgeClass(status)
+												)}
+											>
+												{status}
+											</Badge>
+											<Button
+												variant="ghost"
+												size="icon"
+												title="View details"
+												onClick={() => openDetails(blog._id)}
+												className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100 disabled:opacity-60"
+											>
+												<Eye size={16} />
+											</Button>
+										</div>
 									</div>
-								</div>
 
-								{status === "PENDING" && (
-									<div className="mt-3 flex gap-2">
-										<Button
-											variant="outline"
-											disabled={isWorking}
-											onClick={() => openConfirm("reject", blog._id)}
-											className="w-1/2 rounded-xl"
-										>
-											<X size={16} /> Reject
-										</Button>
-										<Button
-											disabled={isWorking}
-											onClick={() => openConfirm("approve", blog._id)}
-											className="w-1/2 rounded-xl bg-blue-600 hover:bg-blue-700"
-										>
-											<Check size={16} /> Approve
-										</Button>
-									</div>
-								)}
-							</div>
-						);
+									{status === "PENDING" && (
+										<div className="mt-3 flex gap-2">
+											<Button
+												variant="outline"
+												disabled={isWorking}
+												onClick={() => openConfirm("reject", blog._id)}
+												className="w-1/2 rounded-xl"
+											>
+												<X size={16} /> Reject
+											</Button>
+											<Button
+												disabled={isWorking}
+												onClick={() => openConfirm("approve", blog._id)}
+												className="w-1/2 rounded-xl bg-blue-600 hover:bg-blue-700"
+											>
+												<Check size={16} /> Approve
+											</Button>
+										</div>
+									)}
+								</div>
+							);
 						})
 					)}
 				</div>
@@ -396,7 +396,7 @@ export default function BlogsPage() {
 						</AlertDialogCancel>
 						<AlertDialogAction
 							disabled={isWorking || !selectedBlogId}
-							onClick={(e) => {
+							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.preventDefault();
 								submitConfirm();
 							}}
