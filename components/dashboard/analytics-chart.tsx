@@ -12,19 +12,21 @@ import {
 } from "recharts";
 
 import { AnalyticsPoint } from "@/lib/transform";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 
 type OverviewChartProps = {
 	title: string;
 	data: readonly AnalyticsPoint[];
 	colorVar?: string;
+	className?: string;
 };
 
 function sanitizeId(value: string) {
 	return value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
 }
 
-export function OverviewChart({ title, data, colorVar }: OverviewChartProps) {
+export function OverviewChart({ title, data, colorVar, className }: OverviewChartProps) {
 	// Default brand green (fallback)
 	const fallbackGreen = "#34A853";
 	const strokeColor = colorVar ? `hsl(var(--${colorVar}))` : fallbackGreen;
@@ -39,7 +41,13 @@ export function OverviewChart({ title, data, colorVar }: OverviewChartProps) {
 
 	return (
 		<Card className="border border-gray-50 shadow-sm rounded-[2.5rem] bg-white">
-			<CardContent className="p-8 h-96 flex flex-col">
+			<CardContent
+				className={cn(
+					"p-6 sm:p-8 flex flex-col",
+					"h-65 sm:h-80 xl:h-90 2xl:h-105",
+					className
+				)}
+			>
 				<h3 className="text-lg font-bold text-gray-700 mb-8 px-2">{title}</h3>
 				<div className="flex-1 w-full">
 					{data.length === 0 ? (
