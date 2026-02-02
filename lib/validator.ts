@@ -93,7 +93,14 @@ export const changePasswordSchema = z.object({
   message: "New passwords do not match",
   path: ["confirmPassword"],
 });
+export const traineeSchema = z.object({
+  firstName: z.string().min(1, "Firts name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
+})
 
+export type TraineeFormData = z.infer<typeof traineeSchema>;
 export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
 export type OpportunityFormData = z.infer<typeof opportunitySchema>;
