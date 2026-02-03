@@ -38,7 +38,7 @@ export const dashboardMenuItems = [
   { id: "projects", icon: Users, label: "Projects", href: "/projects", roles: ["admin", "advisor"] },
   { id: "investigations", icon: Mail, label: "Invitations", href: "/invitations", roles: ["admin", "advisor", "sme"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", roles: ["admin", "advisor", "sme"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/dashboard/admin-management", roles: ["admin"] },
+  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", roles: ["admin"] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/advisor-profile", roles: ["admin", "advisor"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/investor-profile", roles: ["admin", "investor"] },

@@ -260,7 +260,12 @@ const TraineeAuth = {
 				onSuccess: (res, variables, context) => {
 					useAuthStore
 						.getState()
-						.setAccessToken(res.user._id, res.accessToken, res.user.role as Roles);
+						.setAccessToken(
+							res.user._id,
+							res.accessToken,
+							res.user.role as Roles,
+							res.user.email
+						);
 
 					// Needed for `middleware.ts` route protection (same pattern as admin login).
 					Cookies.set("session_token", res.accessToken, { expires: 7 });

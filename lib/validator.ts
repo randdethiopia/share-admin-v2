@@ -84,15 +84,6 @@ export const reinvestSchema = z.object({
     path: ["investments"],
   }
 );
-
-export const changePasswordSchema = z.object({
-  oldPassword: z.string().min(1, "Old password is required"),
-  newPassword: z.string().min(6, "New password must be at least 6 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your new password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "New passwords do not match",
-  path: ["confirmPassword"],
-});
 export const traineeSchema = z.object({
   firstName: z.string().min(1, "Firts name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -100,8 +91,30 @@ export const traineeSchema = z.object({
   phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
 })
 
+export const changePasswordSchema= z.object({
+  oldPassword: z.string().min(1, "Old password is required"),
+  newPassword:z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      "Password must contain uppercase, lowercase, number and special character"
+    ),
+      confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"], // This puts the error on the 'Confirm' box
+});
+export const adminSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  email: z.string().email("Invalid email address"),
+});
+
+export type adminSchemaType = z.infer<typeof adminSchema>;
+export type AdminFormData = z.infer<typeof adminSchema>;
+export type changePasswordData = z.infer<typeof changePasswordSchema>;
 export type TraineeFormData = z.infer<typeof traineeSchema>;
-export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
 export type OpportunityFormData = z.infer<typeof opportunitySchema>;
 export type ReinvestData = z.infer<typeof reinvestSchema>;

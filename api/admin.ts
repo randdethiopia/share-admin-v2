@@ -95,7 +95,7 @@ export async function changePasswordFn(
   changePassword: ChangePasswordType,
 ) {
   return (
-    await axios.patch("/api/auth-admin/change", changePassword,)
+    await axios.patch(`${API_URL}/api/auth-admin/change`, changePassword)
   ).data;
 }
 export async function forgotPasswordFn(forgotPassword: ForgotPasswordType) {
