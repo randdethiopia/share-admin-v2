@@ -18,9 +18,6 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
-/**
- * Resolves the page title based on the current pathname.
- */
 function resolveDashboardTitle(pathname: string): string {
   const exactMatch = dashboardMenuItems.find(
     (item) => item.href === pathname
@@ -45,7 +42,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <div className="flex min-h-screen bg-[#E2EDF8]">
-      {/* Desktop sidebar */}
+      
       <aside
         className="fixed hidden h-full w-64 border-r bg-white md:block"
         aria-label="Main navigation"
@@ -53,9 +50,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <Sidebar />
       </aside>
 
-      {/* Main content */}
+      
       <div className="flex flex-1 flex-col md:ml-64">
-        {/* Mobile header */}
+        
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <Sheet
             open={isMobileNavOpen}
@@ -88,8 +85,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </span>
         </header>
 
-        {/* Page content */}
-        <main className="min-w-0 flex-1 p-6 md:p-10">
+        <main className="min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

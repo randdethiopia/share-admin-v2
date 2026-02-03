@@ -55,9 +55,69 @@ export const ideaBankSchema = z.object({
     id: z.string().min(1, "Image ID is required"),
   }, { message: "Please select an image" }),
 });
+export const opportunitySchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  organizationName: z.string().min(1, "Organization is required"),
+  description: z.string().min(1, "Description is required"),
+  externalLink: z.string().url("Invalid URL").or(z.string().length(0)), // URL or empty
+  isPublic: z.boolean(),
+  tags: z.string().min(1, "Tags are required"),
+  deadlineDate: z.string().optional(),
+  image: z.object({
+    url: z.string(),
+    id: z.string(),
+  }),
+});
 
+export const reinvestSchema = z.object({
+  projectId: z.string(),
+  investments: z.array(
+    z.object({
+      investorId: z.string(),
+      amount: z.number().min(0, "Amount must be 0 or more"),
+    })
+  ),
+}).refine(
+  (data) => data.investments.some((i) => (i?.amount ?? 0) > 0),
+  {
+    message: "Add at least one reinvest amount",
+    path: ["investments"],
+  }
+);
+export const traineeSchema = z.object({
+  firstName: z.string().min(1, "Firts name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
+})
 
+export const changePasswordSchema= z.object({
+  oldPassword: z.string().min(1, "Old password is required"),
+  newPassword:z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      "Password must contain uppercase, lowercase, number and special character"
+    ),
+      confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"], // This puts the error on the 'Confirm' box
+});
+export const adminSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  email: z.string().email("Invalid email address"),
+});
+
+export type adminSchemaType = z.infer<typeof adminSchema>;
+export type AdminFormData = z.infer<typeof adminSchema>;
+export type changePasswordData = z.infer<typeof changePasswordSchema>;
+export type TraineeFormData = z.infer<typeof traineeSchema>;
 export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
+export type OpportunityFormData = z.infer<typeof opportunitySchema>;
+export type ReinvestData = z.infer<typeof reinvestSchema>;
 export type SignUpData = z.infer<typeof signUpSchema>;
 export type VerifyData = z.infer<typeof verifySchema>;
 export type LoginData = z.infer<typeof loginSchema>;

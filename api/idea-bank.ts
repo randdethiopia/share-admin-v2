@@ -38,6 +38,10 @@ export async function getIdeaBankFn() {
   return (await axios.get(`${API_URL}/api/idea-bank/get/`)).data;
 }
 
+export async function getIdeaBankByIdFn(id: string) {
+   return (await axios.get(`${API_URL}/api/idea-bank/show/${id}`)).data;
+}
+
 
 export async function createIdeaFn(data: IdeaBankFormType) {
   return (await axios.post(`${API_URL}/api/idea-bank/create`, data)).data;
@@ -48,17 +52,53 @@ export async function deleteIdeaFn(id: string) {
 }
 
 export async function updateIdeaFn(id: string, data: IdeaBankUpdateType) {
-  return (await axios.patch(`${API_URL}/api/idea-bank/update/${id}`, data)).data;
+  try {
+    return (await axios.put(`${API_URL}/api/idea-bank/update/${id}`, data)).data;
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 404) {
+      return (
+        await axios.patch(`${API_URL}/api/idea-bank/update`, {
+          ...data,
+          id,
+          _id: id,
+        })
+      ).data;
+    }
+    throw error;
+  }
 }
 
 // --- 3. THE COMMAND CENTER (Hooks) ---
 const IdeaBankApi = {
   // READ: Get All
   GetList: {
-    useQuery: (options?: UseQueryOptions<IdeaBankType[], AxiosError<ErrorRes>>) =>
+    useQuery: (
+      options?: Omit<
+        UseQueryOptions<IdeaBankType[], AxiosError<ErrorRes>>,
+        "queryKey" | "queryFn"
+      >
+    ) =>
       useQuery({
         queryKey: ["IdeaBank"],
         queryFn: getIdeaBankFn,
+        ...options,
+      }),
+  },
+
+  // READ: Get By Id
+  GetById: {
+    useQuery: (
+      id: string,
+      options?: Omit<
+        UseQueryOptions<IdeaBankType, AxiosError<ErrorRes>>,
+        "queryKey" | "queryFn"
+      >
+    ) =>
+      useQuery({
+        queryKey: ["IdeaBank", id],
+        queryFn: () => getIdeaBankByIdFn(id),
+        enabled: Boolean(id) && (options?.enabled ?? true),
         ...options,
       }),
   },
@@ -75,7 +115,7 @@ const IdeaBankApi = {
         onSuccess: (res, variables, context) => {
           toast.success(res.message || "Idea created!");
           queryClient.invalidateQueries({ queryKey: ["IdeaBank"] }); // Refresh the list
-          router.push("/dashboard/idea-bank"); // Go back to list
+          router.push("/idea-bank"); // Go back to list
           options?.onSuccess?.(res, variables, context, undefined as unknown as never);
         },
         onError: (err, variables, context) => {
@@ -87,29 +127,30 @@ const IdeaBankApi = {
   },
 
   // UPDATE
-  Update: {
+ Update: {
     useMutation: (
       id: string,
       options?: UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, IdeaBankUpdateType>
     ) => {
       const queryClient = useQueryClient();
 
-      return useMutation<SuccessRes, AxiosError<ErrorRes>, IdeaBankUpdateType>({
-        mutationFn: (data) => updateIdeaFn(id, data),
-        ...options,
-        onSuccess: (res, variables, context) => {
-          toast.success(res.message || "Idea updated!");
+      const userOnSuccess = options?.onSuccess;
+      const userOnError = options?.onError;
+
+      return useMutation({
+        mutationFn: (data: IdeaBankUpdateType) => updateIdeaFn(id, data),
+        onSuccess: (res, vars, ctx) => {
           queryClient.invalidateQueries({ queryKey: ["IdeaBank"] });
-          options?.onSuccess?.(res, variables, context, undefined as unknown as never);
+          queryClient.invalidateQueries({ queryKey: ["IdeaBank", id] });
+          userOnSuccess?.(res, vars, ctx, undefined as unknown as never);
         },
-        onError: (err, variables, context) => {
-          toast.error(err.response?.data?.message || "Failed to update");
-          options?.onError?.(err, variables, context, undefined as unknown as never);
+        onError: (err, vars, ctx) => {
+          userOnError?.(err, vars, ctx, undefined as unknown as never);
         },
+        ...options,
       });
     },
   },
-
   // DELETE
   Delete: {
     useMutation: (options?: UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, string>) => {
