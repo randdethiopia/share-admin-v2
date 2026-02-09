@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import AdvisorProfileApi from "@/api/advisor-profile";
-import SmeProfileApi from "@/api/Buisness";
+import BusinessProfileApi from "@/api/Buisness";
 import InvestorProfileApi from "@/api/mentor";
 import { transformAnalyticsData } from "@/lib/transform";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ export default function DashboardPage() {
 	const { data: experts = [], isLoading: isExpertsLoading } =
 		AdvisorProfileApi.GetList.useQuery();
 	const { data: businesses = [], isLoading: isBusinessesLoading } =
-		SmeProfileApi.GetList.useQuery();
+		BusinessProfileApi.GetList.useQuery();
 	const { data: investors = [], isLoading: isInvestorsLoading } =
 		InvestorProfileApi.GetList.useQuery();
 

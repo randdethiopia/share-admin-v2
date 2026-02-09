@@ -9,7 +9,7 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
-import { type SMEProfileType } from "@/api/Buisness";
+import { type BusinessProfileType } from "@/api/Buisness";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -107,7 +107,7 @@ export interface InvitationType extends InvitationFormType {
 		avatar: FileType;
 		advisorId: string;
 	};
-	company: SMEProfileType;
+	company: BusinessProfileType;
 }
 
 export interface PaymentForm {

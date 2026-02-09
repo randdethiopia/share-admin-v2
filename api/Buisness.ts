@@ -17,7 +17,7 @@ export interface SocialType {
 	link: string;
 }
 
-export interface SMEProfileFormType {
+export interface BusinessProfileFormType {
 	businessName: string;
 	dateOfRegistration: string;
 	industry: string;
@@ -33,76 +33,83 @@ export interface SMEProfileFormType {
 	socialNetwork: SocialType[];
 	companyProfile: FileType;
 	businessLicense: FileType;
-	
-	bussinessLicense?: FileType;
 	attachment: FileType[];
 	gallery: FileType[];
 	avatar: FileType;
+	// Backward-compatibility for earlier payloads
+	bussinessLicense?: FileType;
 }
 
-export interface SMEProfileType extends SMEProfileFormType {
+export interface BusinessProfileType extends BusinessProfileFormType {
 	_id: string;
 	smeId: {
 		_id: string;
-		firstName?: string;
-		lastName?: string;
+		firstName: string;
+		lastName: string;
 	};
 	name: string;
 	status: string;
-	updateStatus?: "PENDING" | "NONE" | "" | " ";
-	approvedAt?: string;
+	updateStatus: "PENDING" | "" | "";
+	approvedAt: string;
 }
 
-export async function createSmeProfileFn(data: SMEProfileFormType) {
+// --- Worker functions ---
+export async function createBusinessProfileFn(data: BusinessProfileFormType) {
 	return (await axios.post(`${API_URL}/api/sme-profile/create`, data)).data;
 }
 
-export async function getMySmeProfileFn() {
+export async function getMyBusinessProfileFn() {
 	return (await axios.get(`${API_URL}/api/sme-profile/my-profile`)).data;
 }
 
-export async function getSmeProfilesFn() {
+export async function getBusinessProfilesFn() {
 	return (await axios.get(`${API_URL}/api/sme-profile/get`)).data;
 }
 
-export async function getSmeProfileByIdFn(id: string) {
+export async function getBusinessProfileByIdFn(id: string) {
 	return (await axios.get(`${API_URL}/api/sme-profile/show/${id}`)).data;
 }
 
-export async function approveSmeProfileFn(id: string) {
+export async function approveBusinessProfileFn(id: string) {
 	return (await axios.patch(`${API_URL}/api/sme-profile/approve/${id}`)).data;
 }
 
-export async function rejectSmeProfileFn(id: string) {
+export async function rejectBusinessProfileFn(id: string) {
 	return (await axios.patch(`${API_URL}/api/sme-profile/reject/${id}`)).data;
 }
 
-export async function approveSmeProfileUpdateFn(id: string) {
-	return (await axios.post(`${API_URL}/api/sme-profile/approve-update/${id}`)).data;
+export async function updateApproveBusinessProfileFn(id: string) {
+	return (await axios.post(`${API_URL}/api/sme-profile/approve-update/${id}`))
+		.data;
 }
 
-export async function rejectSmeProfileUpdateFn(id: string) {
-	return (await axios.post(`${API_URL}/api/sme-profile/reject-update/${id}`)).data;
+export async function updateRejectBusinessProfileFn(id: string) {
+	return (await axios.post(`${API_URL}/api/sme-profile/reject-update/${id}`))
+		.data;
 }
 
-const SmeProfileApi = {
+const BusinessProfileApi = {
 	Create: {
 		useMutation: (
-			options?: UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, SMEProfileFormType>
+			options?: UseMutationOptions<
+				SuccessRes,
+				AxiosError<ErrorRes>,
+				BusinessProfileFormType
+			>
 		) => {
 			const queryClient = useQueryClient();
 
 			return useMutation({
-				mutationFn: createSmeProfileFn,
+				mutationFn: createBusinessProfileFn,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Created successfully");
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles"] });
-					queryClient.invalidateQueries({ queryKey: ["sme-profile", "my"] });
-					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", "my"] });
+					options?.onSuccess?.(res, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, variables, context, undefined as unknown as never);
+					options?.onError?.(err, variables, context, undefined as never);
 				},
 				...options,
 			});
@@ -110,19 +117,21 @@ const SmeProfileApi = {
 	},
 
 	GetMyProfile: {
-		useQuery: (options?: UseQueryOptions<SMEProfileType, AxiosError<ErrorRes>>) =>
+		useQuery: (options?: UseQueryOptions<BusinessProfileType, AxiosError<ErrorRes>>) =>
 			useQuery({
-				queryKey: ["sme-profile", "my"],
-				queryFn: getMySmeProfileFn,
+				queryKey: ["BusinessProfile", "my"],
+				queryFn: getMyBusinessProfileFn,
 				...options,
 			}),
 	},
 
 	GetList: {
-		useQuery: (options?: UseQueryOptions<SMEProfileType[], AxiosError<ErrorRes>>) =>
+		useQuery: (
+			options?: UseQueryOptions<BusinessProfileType[], AxiosError<ErrorRes>>
+		) =>
 			useQuery({
-				queryKey: ["sme-profiles"],
-				queryFn: getSmeProfilesFn,
+				queryKey: ["BusinessProfile"],
+				queryFn: getBusinessProfilesFn,
 				...options,
 			}),
 	},
@@ -130,11 +139,11 @@ const SmeProfileApi = {
 	GetById: {
 		useQuery: (
 			id: string,
-			options?: UseQueryOptions<SMEProfileType, AxiosError<ErrorRes>>
+			options?: UseQueryOptions<BusinessProfileType, AxiosError<ErrorRes>>
 		) =>
 			useQuery({
-				queryKey: ["sme-profiles", id],
-				queryFn: () => getSmeProfileByIdFn(id),
+				queryKey: ["BusinessProfile", id],
+				queryFn: () => getBusinessProfileByIdFn(id),
 				enabled: Boolean(id) && (options?.enabled ?? true),
 				...options,
 			}),
@@ -147,16 +156,16 @@ const SmeProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
-				mutationFn: approveSmeProfileFn,
+				mutationFn: approveBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles"] });
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles", id] });
-					options?.onSuccess?.(res, id, context, undefined as unknown as never);
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					options?.onSuccess?.(res, id, context, undefined as never);
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as unknown as never);
+					options?.onError?.(err, id, context, undefined as never);
 				},
 				...options,
 			});
@@ -170,16 +179,16 @@ const SmeProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
-				mutationFn: rejectSmeProfileFn,
+				mutationFn: rejectBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles"] });
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles", id] });
-					options?.onSuccess?.(res, id, context, undefined as unknown as never);
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					options?.onSuccess?.(res, id, context, undefined as never);
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as unknown as never);
+					options?.onError?.(err, id, context, undefined as never);
 				},
 				...options,
 			});
@@ -193,16 +202,16 @@ const SmeProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
-				mutationFn: approveSmeProfileUpdateFn,
+				mutationFn: updateApproveBusinessProfileFn,
 				onSuccess: (res, id, context) => {
-					toast.success(res.message || "Update approved");
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles"] });
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles", id] });
-					options?.onSuccess?.(res, id, context, undefined as unknown as never);
+					toast.success(res.message || "Approved");
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					options?.onSuccess?.(res, id, context, undefined as never);
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as unknown as never);
+					options?.onError?.(err, id, context, undefined as never);
 				},
 				...options,
 			});
@@ -216,16 +225,16 @@ const SmeProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
-				mutationFn: rejectSmeProfileUpdateFn,
+				mutationFn: updateRejectBusinessProfileFn,
 				onSuccess: (res, id, context) => {
-					toast.success(res.message || "Update rejected");
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles"] });
-					queryClient.invalidateQueries({ queryKey: ["sme-profiles", id] });
-					options?.onSuccess?.(res, id, context, undefined as unknown as never);
+					toast.success(res.message || "Rejected");
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
+					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					options?.onSuccess?.(res, id, context, undefined as never);
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as unknown as never);
+					options?.onError?.(err, id, context, undefined as never);
 				},
 				...options,
 			});
@@ -233,5 +242,4 @@ const SmeProfileApi = {
 	},
 };
 
-export default SmeProfileApi;
-
+export default BusinessProfileApi;

@@ -41,7 +41,7 @@ export const dashboardMenuItems = [
   { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", roles: ["admin"] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", roles: ["admin", "advisor"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/investor-profile", roles: ["admin", "investor"] },
+  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", roles: ["admin", "investor"] },
   { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor"] },
   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", roles: ["admin", "advisor", "sme"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", roles: ["admin", "advisor", "sme"] },
@@ -105,10 +105,7 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
-            const resolvedHref =
-              item.label === "Business" && role?.toLowerCase() === "admin"
-                ? "/dashboard/business"
-                : item.href;
+            const resolvedHref = item.href;
 
             const isActive = pathname === resolvedHref;
             const Icon = item.icon;

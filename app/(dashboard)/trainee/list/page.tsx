@@ -74,7 +74,8 @@ export default function TraineePage() {
 	}, [type]);
 
 	const statusParam = useMemo(() => {
-		return status === "all" ? undefined : status;
+		if (status === "inactive") return "0";
+		return undefined;
 	}, [status]);
 
 	const {
