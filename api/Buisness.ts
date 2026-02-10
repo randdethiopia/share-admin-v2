@@ -2,6 +2,7 @@ import { ErrorRes, FileType, SuccessRes } from "@/types/core";
 import {
 	UseMutationOptions,
 	UseQueryOptions,
+	QueryClient,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -49,8 +50,41 @@ export interface BusinessProfileType extends BusinessProfileFormType {
 	};
 	name: string;
 	status: string;
-	updateStatus: "PENDING" | "" | "";
+	updateStatus:
+		| "PENDING"
+		| "REQUEST_UPDATE"
+		| "APPROVED"
+		| "REJECTED"
+		| "";
 	approvedAt: string;
+}
+
+function getApprovedAt(res: unknown) {
+	if (!res || typeof res !== "object") return undefined;
+	const record = res as { approvedAt?: string | null; data?: { approvedAt?: string | null } };
+	return record.data?.approvedAt ?? record.approvedAt ?? undefined;
+}
+
+function updateBusinessProfileCache(
+	queryClient: QueryClient,
+	id: string,
+	updates: Partial<BusinessProfileType>
+) {
+	queryClient.setQueryData(
+		["BusinessProfile"],
+		(current?: BusinessProfileType[]) =>
+			Array.isArray(current)
+				? current.map((item) =>
+						item._id === id ? { ...item, ...updates } : item
+					)
+				: current
+	);
+
+	queryClient.setQueryData(
+		["BusinessProfile", id],
+		(current?: BusinessProfileType) =>
+			current ? { ...current, ...updates } : current
+	);
 }
 
 // --- Worker functions ---
@@ -159,6 +193,10 @@ const BusinessProfileApi = {
 				mutationFn: approveBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
+					updateBusinessProfileCache(queryClient, id, {
+						status: "APPROVED",
+						approvedAt: getApprovedAt(res) ?? new Date().toISOString(),
+					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as never);
@@ -182,6 +220,10 @@ const BusinessProfileApi = {
 				mutationFn: rejectBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
+					updateBusinessProfileCache(queryClient, id, {
+						status: "REJECTED",
+						approvedAt: getApprovedAt(res),
+					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as never);
@@ -205,6 +247,9 @@ const BusinessProfileApi = {
 				mutationFn: updateApproveBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
+					updateBusinessProfileCache(queryClient, id, {
+						updateStatus: "APPROVED",
+					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as never);
@@ -228,6 +273,9 @@ const BusinessProfileApi = {
 				mutationFn: updateRejectBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
+					updateBusinessProfileCache(queryClient, id, {
+						updateStatus: "REJECTED",
+					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as never);

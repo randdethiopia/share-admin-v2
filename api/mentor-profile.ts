@@ -2,6 +2,7 @@ import { ErrorRes, FileType, SuccessRes } from "@/types/core";
 import {
 	UseMutationOptions,
 	UseQueryOptions,
+	QueryClient,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -31,6 +32,40 @@ export interface MentorProfileType extends MentorProfileFormType {
 	approvedBy: string;
 	approvedAt?: string | null;
 	createdAt?: string;
+}
+
+function getApprovedAt(res: unknown) {
+	if (!res || typeof res !== "object") return undefined;
+	const record = res as { approvedAt?: string | null; data?: { approvedAt?: string | null } };
+	return record.data?.approvedAt ?? record.approvedAt;
+}
+
+function updateMentorProfileCache(
+	queryClient: QueryClient,
+	id: string,
+	status: MentorProfileType["status"],
+	approvedAt?: MentorProfileType["approvedAt"]
+) {
+	const applyUpdate = (item: MentorProfileType) => ({
+		...item,
+		status,
+		approvedAt: approvedAt ?? item.approvedAt,
+	});
+
+	queryClient.setQueryData(
+		["mentor-profiles"],
+		(current?: MentorProfileType[]) =>
+			Array.isArray(current)
+				? current.map((item) =>
+						item._id === id ? applyUpdate(item) : item
+					)
+				: current
+	);
+
+	queryClient.setQueryData(
+		["mentor-profiles", id],
+		(current?: MentorProfileType) => (current ? applyUpdate(current) : current)
+	);
 }
 
 // --- Worker functions ---
@@ -183,6 +218,8 @@ const MentorProfileApi = {
 				mutationFn: approveMentorProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
+					const approvedAt = getApprovedAt(res) ?? new Date().toISOString();
+					updateMentorProfileCache(queryClient, id, "APPROVED", approvedAt);
 					queryClient.invalidateQueries({ queryKey: ["mentor-profiles"] });
 					queryClient.invalidateQueries({ queryKey: ["mentor-profiles", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -206,6 +243,12 @@ const MentorProfileApi = {
 				mutationFn: rejectMentorProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
+					updateMentorProfileCache(
+						queryClient,
+						id,
+						"REJECTED",
+						getApprovedAt(res)
+					);
 					queryClient.invalidateQueries({ queryKey: ["mentor-profiles"] });
 					queryClient.invalidateQueries({ queryKey: ["mentor-profiles", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);

@@ -2,6 +2,7 @@ import { ErrorRes, FileType, SuccessRes } from "@/types/core";
 import {
 	UseMutationOptions,
 	UseQueryOptions,
+	QueryClient,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -66,6 +67,40 @@ export interface ProfileType extends ProfileFormType {
 	status: string;
 	createdAt: string;
 	approvedAt: string;
+}
+
+function getApprovedAt(res: unknown) {
+	if (!res || typeof res !== "object") return undefined;
+	const record = res as { approvedAt?: string | null; data?: { approvedAt?: string | null } };
+	return record.data?.approvedAt ?? record.approvedAt ?? undefined;
+}
+
+function updateAdvisorProfileCache(
+	queryClient: QueryClient,
+	id: string,
+	status: ProfileType["status"],
+	approvedAt?: ProfileType["approvedAt"]
+) {
+	const applyUpdate = (item: ProfileType) => ({
+		...item,
+		status,
+		approvedAt: approvedAt ?? item.approvedAt,
+	});
+
+	queryClient.setQueryData(
+		["AdvisorProfile"],
+		(current?: ProfileType[]) =>
+			Array.isArray(current)
+				? current.map((item) =>
+						item._id === id ? applyUpdate(item) : item
+					)
+				: current
+	);
+
+	queryClient.setQueryData(
+		["AdvisorProfile", id],
+		(current?: ProfileType) => (current ? applyUpdate(current) : current)
+	);
 }
 
 // --- Worker functions ---
@@ -158,6 +193,8 @@ const AdvisorProfileApi = {
 				mutationFn: approveAdvisorProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
+					const approvedAt = getApprovedAt(res) ?? new Date().toISOString();
+					updateAdvisorProfileCache(queryClient, id, "APPROVED", approvedAt);
 					queryClient.invalidateQueries({ queryKey: ["AdvisorProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdvisorProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -181,6 +218,12 @@ const AdvisorProfileApi = {
 				mutationFn: rejectAdvisorProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
+					updateAdvisorProfileCache(
+						queryClient,
+						id,
+						"REJECTED",
+						getApprovedAt(res)
+					);
 					queryClient.invalidateQueries({ queryKey: ["AdvisorProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdvisorProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);

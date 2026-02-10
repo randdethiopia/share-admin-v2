@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
+import useAuthStore from "@/store/useAuthStore"; 
 import {
   LayoutDashboard,
   Users,
