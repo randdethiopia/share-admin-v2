@@ -42,7 +42,7 @@ export const dashboardMenuItems = [
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", roles: ["admin", "advisor"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", roles: ["admin", "investor"] },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor"] },
+  
   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", roles: ["admin", "advisor", "sme"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", roles: ["admin", "advisor", "sme"] },
   { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", roles: ["admin", "advisor", "sme"] },
@@ -52,6 +52,7 @@ export const dashboardMenuItems = [
     { icon: List, label: "list", href: "/trainee/list", roles: ["admin", "advisor"] },
   ] },
   { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", roles: ["admin", "advisor", "sme"] },
+  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor"] },
 ]
 
 export function Sidebar({
