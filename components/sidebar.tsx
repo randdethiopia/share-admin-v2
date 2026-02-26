@@ -38,7 +38,10 @@ export const dashboardMenuItems = [
   { id: "projects", icon: Users, label: "Projects", href: "/projects", roles: ["admin", "advisor"] },
   { id: "investigations", icon: Mail, label: "Invitations", href: "/invitations", roles: ["admin", "advisor", "sme"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", roles: ["admin", "advisor", "sme"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", roles: ["admin"] },
+  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin-dashboard", roles: ["admin"], isCollapsable: true, items:[
+    {icon: LayoutDashboard, label: "Dashboard", href: "/admin-dashboard/admin", roles: ["admin"]},
+    {icon: Users, label: "Access Management", href: "/admin-dashboard/access", roles: ["admin"]},
+  ] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", roles: ["admin", "advisor"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", roles: ["admin", "investor"] },

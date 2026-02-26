@@ -126,7 +126,7 @@ export default function AdminManagementPage() {
 					asChild
 					className="h-11 rounded-xl bg-[#3B82F6] px-6 font-bold text-white shadow-md hover:bg-blue-600"
 				>
-					<Link href="/admin/new">
+					<Link href="/admin-dashboard/admin/new">
 						<Plus className="mr-1 h-5 w-5" /> New Admin
 					</Link>
 				</Button>
