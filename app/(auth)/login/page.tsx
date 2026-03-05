@@ -28,7 +28,11 @@ export default function LoginPage() {
   })
 
   const onSubmit = (data: LoginData) => {
-      login(data)
+      login(data,{
+        onSuccess: () => {
+          router.push("/dashboard")
+        }
+      })
   }
 
   return (

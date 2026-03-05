@@ -18,9 +18,11 @@ export interface AdminLoginSuccessResType extends SuccessRes {
     isActive: boolean;
     email: string,
     role: Roles,
+    permissions?: string[],
     __v: number;
   };
   accessToken: string,
+  permissions?: string[],
 }
 export interface AdminAuthType {
   _id: string;
@@ -190,7 +192,9 @@ const AdminAuth = {
           useAuthStore.getState().setAccessToken(
             data.user._id,
             data.accessToken,
-            data.user.role
+            data.user.role,
+            data.user.email,
+            data.permissions ?? data.permissions ?? null
           );
 
           // Needed for `middleware.ts` route protection.

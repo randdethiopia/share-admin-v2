@@ -30,6 +30,7 @@ export interface TraineeType {
 	isActive: boolean;
 	email: string;
 	role: Roles;
+	permissions?: string[];
 	__v: number;
 	age?: string;
 	region?: string;
@@ -40,6 +41,7 @@ export interface TraineeType {
 export interface TraineeLoginSuccessResType extends SuccessRes {
 	user: TraineeType;
 	accessToken: string;
+	permissions?: string[];
 }
 
 export interface TraineeResType {
@@ -264,7 +266,8 @@ const TraineeAuth = {
 							res.user._id,
 							res.accessToken,
 							res.user.role as Roles,
-							res.user.email
+							res.user.email,
+							res.user.permissions ?? res.permissions ?? null
 						);
 
 					// Needed for `middleware.ts` route protection (same pattern as admin login).

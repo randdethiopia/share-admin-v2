@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
 import {
   LayoutDashboard,
@@ -21,7 +21,9 @@ import {
   ChevronRight,
   ChevronDown,
   ListPlus,
-  List
+  List,
+  LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,26 +35,43 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
-export const dashboardMenuItems = [
-  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", roles: ["admin", "advisor", "sme", "investor"] },
-  { id: "projects", icon: Users, label: "Projects", href: "/projects", roles: ["admin", "advisor"] },
-  { id: "investigations", icon: Mail, label: "Invitations", href: "/invitations", roles: ["admin", "advisor", "sme"] },
-  { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", roles: ["admin", "advisor", "sme"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", roles: ["admin"] },
-  { id: "expert", icon: UserCheck, label: "Expert", href: "/advisor-profile", roles: ["admin", "advisor"] },
-  { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/investor-profile", roles: ["admin", "investor"] },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor"] },
-  { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", roles: ["admin", "advisor", "sme"] },
-  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", roles: ["admin", "advisor", "sme"] },
-  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", roles: ["admin", "advisor", "sme"] },
-  { id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", roles: ["admin", "advisor"], isCollapsable: true, items: [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", roles: ["admin", "advisor"] },
-    { icon: ListPlus, label: "wait-list", href: "/trainee/wait-list", roles: ["admin", "advisor"] },
-    { icon: List, label: "list", href: "/trainee/list", roles: ["admin", "advisor"] },
+type MenuItem = {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  permissions: string[];
+  isCollapsable?: boolean;
+  items?: MenuItem[];
+};
+
+export const dashboardMenuItems: MenuItem[] = [
+  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard:read", "dashboard:write", "dashboard:delete"] },
+  { id: "projects", icon: Users, label: "Projects", href: "/projects", permissions: ["project:read", "project:write", "project:delete"] },
+  { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation:read", "invitation:write", "invitation:delete"] },
+  { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog:read", "blog:write", "blog:delete"] },
+  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin:read", "admin:write", "admin:delete"], isCollapsable: true, items: [
+    { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin:read", "admin:write", "admin:delete"] },
+    { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin:read", "admin:write", "admin:delete"] },
   ] },
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", roles: ["admin", "advisor", "sme"] },
-]
+  { id: "expert", icon: UserCheck, label: "Expert", href: "/advisor-profile", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
+  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
+  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/investor-profile", permissions: ["investor:read", "investor:write", "investor:delete"] },
+  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
+  { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job:read", "job:write", "job:delete"] },
+  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea:read", "idea:write", "idea:delete"] },
+  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity:read", "opportunity:write", "opportunity:delete"] },
+  {
+    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee:read", "trainee:write", "trainee:delete"], isCollapsable: true, items: [
+      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
+      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
+      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] }
+    ]
+  },
+
+  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] }
+];
+
 
 export function Sidebar({
   className,
@@ -64,19 +83,49 @@ export function Sidebar({
   const [activeId, setActiveId] = useState<string>();
 
   const pathname = usePathname();
+  const router = useRouter();
 
-  // 2. Get state from the NEW store
-  const { role, hasHydrated } = useAuthStore();
+  const { role, permissions, hasHydrated, logOut } = useAuthStore();
 
-  // 3. SAFETY CHECK: If Zustand hasn't finished reading from localStorage, return null
-  // This prevents the "Hydration Mismatch" error in Next.js
   if (!hasHydrated) return null;
 
-  // 4. Filter logic using the new 'role' directly
-  const filteredItems = dashboardMenuItems.filter((item) => {
-    if (!role) return false;
-    return item.roles.includes(role.toLowerCase());
-  });
+  const normalizedPermissions = permissions?.map((permission) =>
+    permission.toLowerCase()
+  ) ?? [];
+  const hasAllAccess = normalizedPermissions.includes("all_access");
+
+  const canViewItem = (item: MenuItem) => {
+    if (hasAllAccess) return true;
+    if (normalizedPermissions.length === 0) return false;
+
+    return item.permissions.some((permission) =>
+      normalizedPermissions.includes(permission.toLowerCase())
+    );
+  };
+
+  const filteredItems = dashboardMenuItems.reduce<MenuItem[]>((items, item) => {
+    if (!canViewItem(item)) return items;
+
+    if (!item.items?.length) {
+      items.push(item);
+      return items;
+    }
+
+    const visibleSubItems = item.items.filter(canViewItem);
+    if (!visibleSubItems.length) return items;
+
+    items.push({
+      ...item,
+      items: visibleSubItems,
+    });
+
+    return items;
+  }, []);
+
+  const handleLogout = () => {
+    logOut();
+    router.push("/login");
+  };
 
   return (
     <div
@@ -197,6 +246,18 @@ export function Sidebar({
           })}
         </div>
       </nav>
+
+      <div className="border-t px-3 py-4">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleLogout}
+          className="flex w-full items-center justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Logout</span>
+        </Button>
+      </div>
     </div>
   );
 }

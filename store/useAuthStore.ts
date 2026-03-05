@@ -10,13 +10,20 @@ interface State {
   accessToken: string | null;
   role: Roles | null;
   isSuccess:boolean
-  hasHydrated: boolean, // NEW
+  hasHydrated: boolean,
+  permissions: string[] | null
 }
 
 interface Action {
-  setAccessToken: (_id: string, token: string, role: Roles, email?: string) => void;
+  setAccessToken: (
+    _id: string,
+    token: string,
+    role: Roles,
+    email?: string,
+    permissions?: string[] | null
+  ) => void;
   logOut: () => void;
-  setHasHydrated: () => void; // <- add this
+  setHasHydrated: () => void;
 }
 
 const useAuthStore = create<State & Action>()(
@@ -29,13 +36,32 @@ const useAuthStore = create<State & Action>()(
         role: null,
         isSuccess: true,
         hasHydrated: false,
+        permissions: null,
 
-        setAccessToken(_id: string, accessToken: string, role: Roles, email?: string) {
-          set(() => ({ _id, accessToken, role, email: email ?? null }));
+        setAccessToken(
+          _id: string,
+          accessToken: string,
+          role: Roles,
+          email?: string,
+          permissions?: string[] | null
+        ) {
+          set(() => ({
+            _id,
+            accessToken,
+            role,
+            email: email ?? null,
+            permissions: permissions ?? null,
+          }));
         },
 
         logOut() {
-          set(() => ({ _id: null, email: null, accessToken: null, role: null }));
+          set(() => ({
+            _id: null,
+            email: null,
+            accessToken: null,
+            role: null,
+            permissions: null,
+          }));
         },
 
         setHasHydrated: () => set({ hasHydrated: true }),
