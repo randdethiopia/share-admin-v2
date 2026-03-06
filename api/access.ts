@@ -37,8 +37,21 @@ interface CreateRoleResponse {
   role: Role;
 }
 
+interface AssignRoleInput {
+  userId: string;
+  roleIds: string[];
+}
+
+interface AssignRoleResponse {
+  message: string;
+}
+
 const createRoleFn = async (data: CreateRoleInput) => {
   return (await axios.post("/api/access/roles", data)).data
+}
+
+const assignRoleFn = async (data: AssignRoleInput) => {
+  return (await axios.post("/api/access/assign-role", data)).data
 }
 
 const getRolesFn = async () => {
@@ -58,6 +71,13 @@ const Access = {
       useMutation({
         mutationFn: (data) => createRoleFn(data),
         ...options
+      })
+  },
+  assignRole: {
+    useMutation: (options?: UseMutationOptions<AssignRoleResponse, unknown, AssignRoleInput>) =>
+      useMutation({
+        mutationFn: (data) => assignRoleFn(data),
+        ...options,
       })
   },
   getRoles: {

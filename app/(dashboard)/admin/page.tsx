@@ -29,11 +29,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import AssignRoleModal from "./components/assign-role";
 
 export default function AdminManagementPage() {
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const [assignTarget, setAssignTarget] = useState<{
+		id: string;
+		name: string;
+		phoneNumber: string;
+	} | null>(null);
 	const [pendingAction, setPendingAction] = useState<{
 		type: "activate" | "deactivate";
 		id: string;
@@ -84,6 +90,14 @@ export default function AdminManagementPage() {
 			name: `${admin.firstName} ${admin.lastName}`.trim(),
 		});
 		setDialogOpen(true);
+	};
+
+	const openAssignRole = (admin: ProfileType) => {
+		setAssignTarget({
+			id: admin._id,
+			name: `${admin.firstName} ${admin.lastName}`.trim(),
+			phoneNumber: admin.phoneNumber,
+		});
 	};
 
 	const handleConfirm = () => {
@@ -155,7 +169,7 @@ export default function AdminManagementPage() {
 
 				{/* TABLE */}
 				<div className="overflow-x-auto rounded-2xl border border-gray-100">
-					  <Table className="min-w-180">
+					<Table className="min-w-180">
 						<TableHeader className="bg-[#D6E6F2]">
 							<TableRow className="border-none hover:bg-transparent">
 								<TableHead className="h-12 px-6 text-[11px] font-bold uppercase tracking-wider text-[#4A5568] sm:px-8">
@@ -200,36 +214,43 @@ export default function AdminManagementPage() {
 										<TableCell className="px-6 py-5 text-sm font-medium text-gray-500 sm:px-8">
 											{admin.phoneNumber}
 										</TableCell>
-										
-                                  <TableCell className="px-6 py-5 sm:px-8">
-  
-                                    <div className="flex items-center justify-end gap-2">
- 
-                                         <Link
-                                 href={`/dashboard/admin/${admin._id}`}
-                               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
-                           >
-                                                <Eye size={16} />
-                                                        </Link>
-                                                <div className="flex w-24 justify-start"> 
-			{admin.status === "TERMINATED" ? (
-				<button
-					onClick={() => openConfirm("activate", admin)}
-					className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-emerald-600 hover:underline"
-				>
-					<UserCheck size={14} /> Activate
-				</button>
-			) : (
-				<button
-					onClick={() => openConfirm("deactivate", admin)}
-					className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
-				>
-					<UserX size={14} /> Deactivate
-				</button>
-			)}
-                                          </div>
-                                         </div>
-                                   </TableCell>
+
+										<TableCell className="px-6 py-5 sm:px-8">
+
+											<div className="flex items-center justify-end gap-2">
+
+												<Link
+													href={`/dashboard/admin/${admin._id}`}
+													className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
+												>
+													<Eye size={16} />
+												</Link>
+												<div className="flex w-24 justify-start">
+													{admin.status === "TERMINATED" ? (
+														<button
+															onClick={() => openConfirm("activate", admin)}
+															className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-emerald-600 hover:underline"
+														>
+															<UserCheck size={14} /> Activate
+														</button>
+													) : (
+														<button
+															onClick={() => openConfirm("deactivate", admin)}
+															className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
+														>
+															<UserX size={14} /> Deactivate
+														</button>
+													)}
+												</div>
+
+												<button
+													onClick={() => openAssignRole(admin)}
+													className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-emerald-600 hover:cursor-pointer"
+												>
+													Assign Role
+												</button>
+											</div>
+										</TableCell>
 									</TableRow>
 								))
 							)}
@@ -281,6 +302,15 @@ export default function AdminManagementPage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+
+			<AssignRoleModal
+				open={!!assignTarget}
+				admin={assignTarget}
+				onOpenChange={(open) => {
+					if (!open) setAssignTarget(null);
+				}}
+			/>
 		</div>
 	);
 }
