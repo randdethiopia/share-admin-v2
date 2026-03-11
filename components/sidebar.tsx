@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useAuthStore from "@/store/useAuthStore"; 
+import useAuthStore from "@/store/useAuthStore";
 import {
   LayoutDashboard,
   Users,
@@ -21,7 +21,8 @@ import {
   ChevronRight,
   ChevronDown,
   ListPlus,
-  List
+  List,
+  type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,30 +34,67 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
-export const dashboardMenuItems = [
+type MenuItem = {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  roles: string[];
+  isCollapsable?: boolean;
+  items?: MenuItem[];
+};
+
+export const dashboardMenuItems: MenuItem[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", roles: ["admin", "advisor", "sme", "investor"] },
   { id: "projects", icon: Users, label: "Projects", href: "/projects", roles: ["admin", "advisor"] },
   { id: "investigations", icon: Mail, label: "Invitations", href: "/invitations", roles: ["admin", "advisor", "sme"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", roles: ["admin", "advisor", "sme"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin-dashboard", roles: ["admin"], isCollapsable: true, items:[
-    {icon: LayoutDashboard, label: "Dashboard", href: "/admin-dashboard/admin", roles: ["admin"]},
-    {icon: Users, label: "Access Management", href: "/admin-dashboard/access", roles: ["admin"]},
-  ] },
+  {
+    id: "admin-management",
+    icon: UserCog,
+    label: "Admin Management",
+    href: "/admin-dashboard",
+    roles: ["admin"],
+    isCollapsable: true,
+    items: [
+      { id: "admin-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/admin-dashboard/admin", roles: ["admin"] },
+      { id: "admin-access", icon: Users, label: "Access Management", href: "/admin-dashboard/access", roles: ["admin"] },
+    ],
+  },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", roles: ["admin", "advisor"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", roles: ["admin", "sme"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", roles: ["admin", "investor"] },
-  
   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", roles: ["admin", "advisor", "sme"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", roles: ["admin", "advisor", "sme"] },
   { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", roles: ["admin", "advisor", "sme"] },
-  { id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", roles: ["admin", "advisor"], isCollapsable: true, items: [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", roles: ["admin", "advisor"] },
-    { icon: ListPlus, label: "wait-list", href: "/trainee/wait-list", roles: ["admin", "advisor"] },
-    { icon: List, label: "list", href: "/trainee/list", roles: ["admin", "advisor"] },
-  ] },
+  {
+    id: "trainee",
+    icon: GraduationCap,
+    label: "Trainee",
+    href: "/trainee",
+    roles: ["admin", "advisor"],
+    isCollapsable: true,
+    items: [
+      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", roles: ["admin", "advisor"] },
+      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", roles: ["admin", "advisor"] },
+      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", roles: ["admin", "advisor"] },
+    ],
+  },
+  {
+    id: "coordinator",
+    icon: Users,
+    label: "Coordinator",
+    href: "/coordinator",
+    roles: ["coordinator"],
+    isCollapsable: true,
+    items: [
+      { id: "coordinator-my-trainees", icon: ListPlus, label: "My Trainees", href: "/coordinator/my-trainees", roles: ["coordinator"] },
+      { id: "coordinator-attendance", icon: List, label: "Attendance", href: "/coordinator/attendance", roles: ["coordinator"] },
+    ],
+  },
   { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", roles: ["admin", "advisor", "sme"] },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor"] },
-]
+  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", roles: ["admin", "advisor", "sme", "investor", "coordinator"] },
+];
 
 export function Sidebar({
   className,
@@ -68,15 +106,10 @@ export function Sidebar({
   const [activeId, setActiveId] = useState<string>();
 
   const pathname = usePathname();
-
-  // 2. Get state from the NEW store
   const { role, hasHydrated } = useAuthStore();
 
-  // 3. SAFETY CHECK: If Zustand hasn't finished reading from localStorage, return null
-  // This prevents the "Hydration Mismatch" error in Next.js
   if (!hasHydrated) return null;
 
-  // 4. Filter logic using the new 'role' directly
   const filteredItems = dashboardMenuItems.filter((item) => {
     if (!role) return false;
     return item.roles.includes(role.toLowerCase());
@@ -96,12 +129,10 @@ export function Sidebar({
           </AvatarFallback>
         </Avatar>
         <div className="text-center">
-          <h2 className="text-lg font-semibold capitalize">
-            {role || "Guest"}
-          </h2>
+          <h2 className="text-lg font-semibold capitalize">{role || "Guest"}</h2>
           <p className="text-xs">Portal Access</p>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600 text-white">
+        <Button className="bg-green-500 text-white hover:bg-green-600">
           View Profile
         </Button>
       </div>
@@ -110,7 +141,6 @@ export function Sidebar({
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref = item.href;
-
             const isActive = pathname === resolvedHref;
             const Icon = item.icon;
 
