@@ -139,7 +139,7 @@ export function Sidebar({
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
-          {filteredItems.map((item) => {
+          {dashboardMenuItems.map((item) => {
             const resolvedHref = item.href;
             const isActive = pathname === resolvedHref;
             const Icon = item.icon;

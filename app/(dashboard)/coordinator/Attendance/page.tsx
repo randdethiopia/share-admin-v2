@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, Loader2, Plus, Send, Trash2 } from "lucide-react";
+import { CalendarDays, Loader2, Plus, Send } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,13 +35,6 @@ type AttendancePayload = {
   attended: boolean;
 };
 
-type TraineeDraft = {
-  id: string;
-  name: string;
-  phoneNumber: string;
-  email: string;
-};
-
 const MOCK_TRAINEES: AttendanceRow[] = [
   {
     id: "trainee-001",
@@ -68,13 +62,6 @@ const MOCK_TRAINEES: AttendanceRow[] = [
   },
 ];
 
-const createEmptyTrainee = (id: number): TraineeDraft => ({
-  id: `row-${id}`,
-  name: "",
-  phoneNumber: "",
-  email: "",
-});
-
 const getInitialAttendance = (trainees: AttendanceRow[]) =>
   trainees.reduce<Record<string, boolean>>((acc, trainee) => {
     acc[trainee.phoneNumber] = false;
@@ -82,7 +69,7 @@ const getInitialAttendance = (trainees: AttendanceRow[]) =>
   }, {});
 
 export default function CoordinatorAttendancePage() {
-  const [trainees, setTrainees] = useState<AttendanceRow[]>(MOCK_TRAINEES);
+  const [trainees] = useState<AttendanceRow[]>(MOCK_TRAINEES);
   const [attendanceByPhone, setAttendanceByPhone] = useState<Record<string, boolean>>(
     () => getInitialAttendance(MOCK_TRAINEES)
   );
@@ -90,10 +77,7 @@ export default function CoordinatorAttendancePage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createDate, setCreateDate] = useState("");
-  const [draftRows, setDraftRows] = useState<TraineeDraft[]>([
-    createEmptyTrainee(1),
-    createEmptyTrainee(2),
-  ]);
+  const [attendanceDate, setAttendanceDate] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const payload = useMemo<AttendancePayload[]>(
@@ -110,14 +94,23 @@ export default function CoordinatorAttendancePage() {
     [payload]
   );
 
-  const canCreate = useMemo(
-    () =>
-      createDate.trim().length > 0 &&
-      draftRows.some(
-        (row) => row.name.trim() && row.phoneNumber.trim() && row.email.trim()
-      ),
-    [createDate, draftRows]
-  );
+  const formattedAttendanceDate = useMemo(() => {
+    if (!attendanceDate) return "Not set";
+    const parsedDate = new Date(`${attendanceDate}T00:00:00`);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return attendanceDate;
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(parsedDate);
+  }, [attendanceDate]);
+
+  const canCreate = createDate.trim().length > 0;
 
   const setCreateDateToToday = () => {
     const today = new Date();
@@ -135,18 +128,26 @@ export default function CoordinatorAttendancePage() {
   };
 
   const handleSubmitAttendance = async () => {
+    if (!attendanceDate.trim()) {
+      toast.error("Please set the attendance date before submitting.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      await fetch("/api/coordinator/attendance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      // Mock submit delay to simulate request lifecycle in UI.
+      await new Promise((resolve) => setTimeout(resolve, 700));
 
-      console.log("Attendance payload sent:", payload);
+      console.log("Attendance payload sent:", {
+        date: attendanceDate,
+        attendance: payload,
+      });
+      toast.success(
+        `Attendance submitted: ${attendedCount}/${trainees.length} marked attended.`
+      );
+    } catch {
+      toast.error("Unable to submit attendance. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -154,85 +155,40 @@ export default function CoordinatorAttendancePage() {
 
   const resetCreateForm = () => {
     setCreateDate("");
-    setDraftRows([createEmptyTrainee(1), createEmptyTrainee(2)]);
-  };
-
-  const updateDraftRow = (
-    id: string,
-    field: keyof Omit<TraineeDraft, "id">,
-    value: string
-  ) => {
-    setDraftRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
-    );
-  };
-
-  const addDraftRow = () => {
-    setDraftRows((prev) => [...prev, createEmptyTrainee(prev.length + 1)]);
-  };
-
-  const removeDraftRow = (id: string) => {
-    setDraftRows((prev) => {
-      if (prev.length === 1) return prev;
-      return prev.filter((row) => row.id !== id);
-    });
   };
 
   const handleCreateTrainees = async () => {
     if (!createDate.trim()) {
-      window.alert("Please select a date before creating trainees.");
+      toast.error("Please select a date before continuing.");
       return;
     }
-
-    if (!canCreate) {
-      window.alert("Please fill at least one complete trainee row.");
-      return;
-    }
-
-    const cleanedRows = draftRows
-      .map((row) => ({
-        name: row.name.trim(),
-        phoneNumber: row.phoneNumber.trim(),
-        email: row.email.trim(),
-      }))
-      .filter((row) => row.name && row.phoneNumber && row.email);
 
     const createPayload = {
       date: createDate,
-      trainees: cleanedRows,
     };
 
     try {
       setIsCreating(true);
 
-      await fetch("/api/coordinator/attendance/new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createPayload),
-      });
+      // Mock save delay to keep UX consistent with async operations.
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const newRows: AttendanceRow[] = cleanedRows.map((row, index) => ({
-        id: `trainee-${Date.now()}-${index}`,
-        name: row.name,
-        phoneNumber: row.phoneNumber,
-        email: row.email,
-      }));
+      if (createDate === attendanceDate) {
+        toast.success("Attendance date is already active.");
+        setCreateOpen(false);
+        resetCreateForm();
+        return;
+      }
 
-      setTrainees((prev) => [...prev, ...newRows]);
-      setAttendanceByPhone((prev) => {
-        const next = { ...prev };
-        newRows.forEach((row) => {
-          if (next[row.phoneNumber] === undefined) {
-            next[row.phoneNumber] = false;
-          }
-        });
-        return next;
-      });
+      setAttendanceDate(createDate);
 
-      console.log("Create trainees payload:", createPayload);
+      console.log("Create attendance session payload:", createPayload);
 
       setCreateOpen(false);
       resetCreateForm();
+      toast.success("Attendance date saved. You can now mark attendees.");
+    } catch {
+      toast.error("Unable to save attendance date. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -258,13 +214,13 @@ export default function CoordinatorAttendancePage() {
               onClick={() => setCreateOpen(true)}
               className="h-11 rounded-xl"
             >
-              <Plus className="mr-2 h-4 w-4" /> Add Trainee
+              <Plus className="mr-2 h-4 w-4" /> Set Attendance Date
             </Button>
 
             <Button
               type="button"
               onClick={handleSubmitAttendance}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !attendanceDate.trim()}
               className="h-11 rounded-xl bg-[#3B82F6] px-6 font-bold text-white shadow-md hover:bg-blue-600"
             >
               {isSubmitting ? (
@@ -286,6 +242,28 @@ export default function CoordinatorAttendancePage() {
           <div className="mb-6 flex flex-col gap-1 text-xs font-bold text-gray-400 sm:flex-row sm:items-center sm:justify-between">
             <span>Total: {trainees.length} Trainees</span>
             <span>Marked Attended: {attendedCount}</span>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-white p-2 text-blue-600 shadow-sm">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
+                    Attendance Session Date
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">
+                    {formattedAttendanceDate}
+                  </p>
+                </div>
+              </div>
+
+              <span className="inline-flex h-7 items-center rounded-full border border-blue-200 bg-white px-3 text-[11px] font-bold uppercase tracking-wide text-blue-700">
+                {attendanceDate ? "Session Active" : "Date Required"}
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-3 md:hidden">
@@ -378,9 +356,9 @@ export default function CoordinatorAttendancePage() {
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Create Trainees</DialogTitle>
+            <DialogTitle>Set Attendance Date</DialogTitle>
             <DialogDescription>
-              Select attendance date, then add trainee details.
+              Choose the attendance date, then mark trainees from the table.
             </DialogDescription>
           </DialogHeader>
 
@@ -412,71 +390,20 @@ export default function CoordinatorAttendancePage() {
             </div>
 
             <div className="space-y-3">
-              {draftRows.map((row, index) => (
-                <div
-                  key={row.id}
-                  className="rounded-2xl border border-gray-100 bg-white p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-sm font-bold text-gray-700">Trainee {index + 1}</p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeDraftRow(row.id)}
-                      disabled={draftRows.length === 1}
-                      className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <Input
-                      placeholder="Full name"
-                      value={row.name}
-                      onChange={(e) => updateDraftRow(row.id, "name", e.target.value)}
-                    />
-                    <Input
-                      placeholder="Phone number"
-                      value={row.phoneNumber}
-                      onChange={(e) =>
-                        updateDraftRow(row.id, "phoneNumber", e.target.value)
-                      }
-                    />
-                    <Input
-                      type="email"
-                      placeholder="Email address"
-                      value={row.email}
-                      onChange={(e) => updateDraftRow(row.id, "email", e.target.value)}
-                    />
-                  </div>
-                </div>
-              ))}
-
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={addDraftRow}
-                  className="h-10 rounded-xl"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Trainee Row
-                </Button>
-
-                <Button
-                  type="button"
                   onClick={handleCreateTrainees}
-                  disabled={isCreating}
+                  disabled={isCreating || !canCreate}
                   className="h-10 rounded-xl bg-[#3B82F6] px-5 font-bold text-white hover:bg-blue-600"
                 >
                   {isCreating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      Saving...
                     </>
                   ) : (
-                    "Create Trainees"
+                    "Save Date"
                   )}
                 </Button>
               </div>
