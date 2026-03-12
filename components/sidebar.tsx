@@ -89,7 +89,7 @@ export const dashboardMenuItems: MenuItem[] = [
     isCollapsable: true,
     items: [
       { id: "coordinator-my-trainees", icon: ListPlus, label: "My Trainees", href: "/coordinator/my-trainees", roles: ["admin"] },
-      { id: "coordinator-attendance", icon: List, label: "Attendance", href: "/coordinator/Attendance", roles: ["admin"] },
+      { id: "coordinator-attendance", icon: List, label: "Session", href: "/coordinator/training-ssesion", roles: ["admin"] },
     ],
   },
   { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", roles: ["admin", "advisor", "sme"] },
