@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Search } from "lucide-react";
-import WaitListApi, { type WaitListType } from "@/api/waitlist";
+import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
+import WaitListApi, { getWaitListServerSideFn, type WaitListType } from "@/api/waitlist";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
@@ -10,8 +10,15 @@ import { MobileApplicantDetail } from "@/components/wait-list/MobileApplicantDet
 import { BulkAction } from "@/components/wait-list/BulkAction";
 import { BulkActionModal } from "@/components/wait-list/BulkActionModel";
 import { FilterBuilder, type FilterCondition, type FilterGroup } from "@/components/wait-list/FilterBuilder";
-import PaginationControls from "@/components/shared/PaginationControls";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -23,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
@@ -110,6 +118,11 @@ export default function WaitListPage() {
 	const [bulkFilters, setBulkFilters] = React.useState<FilterGroup | undefined>(undefined);
 	const [customReportOpen, setCustomReportOpen] = React.useState(false);
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
+	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
+	const [serverAge, setServerAge] = React.useState("");
+	const [serverSex, setServerSex] = React.useState("");
+	const [serverRegion, setServerRegion] = React.useState("");
+	const [isServerFiltering, setIsServerFiltering] = React.useState(false);
 	const [page, setPage] = React.useState(1);
 	const pageSize = 7;
 	const [selectedFields, setSelectedFields] = React.useState<string[]>([
@@ -192,6 +205,39 @@ export default function WaitListPage() {
 		},
 		[startTransition]
 	);
+
+	const handleServerFilter = React.useCallback(async () => {
+		const ageNumber = serverAge.trim() ? Number(serverAge.trim()) : undefined;
+		const payload = {
+			age: Number.isFinite(ageNumber) ? ageNumber : undefined,
+			sex: serverSex.trim() || undefined,
+			region: serverRegion.trim() || undefined,
+		};
+		const toastId = toast.loading("Applying API filters...");
+
+		try {
+			setIsServerFiltering(true);
+			const result = await getWaitListServerSideFn(payload);
+			console.log("Wait-list server filter payload:", payload);
+			console.log("Wait-list server filter result:", result);
+			toast.dismiss(toastId);
+			toast.success(
+				`Filter completed successfully. ${result.data?.length ?? 0} applicant(s) returned.`
+			);
+			setServerFilterModalOpen(false);
+		} catch (err) {
+			console.error("Wait-list server filter failed:", err);
+			toast.dismiss(toastId);
+			const message =
+				typeof err === "object" && err !== null && "response" in err
+					? (err as { response?: { data?: { message?: string } } }).response?.data
+						?.message
+					: undefined;
+			toast.error(message || "Filtering failed. Please try again.");
+		} finally {
+			setIsServerFiltering(false);
+		}
+	}, [serverAge, serverSex, serverRegion]);
 
 	const batches = React.useMemo(() => {
 		return uniqSorted(allApplicants.map((a) => a.batch));
@@ -398,6 +444,16 @@ export default function WaitListPage() {
 											))}
 										</DropdownMenuContent>
 									</DropdownMenu>
+
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setServerFilterModalOpen(true)}
+							className="h-10 rounded-xl border-none bg-white text-xs font-bold shadow-sm"
+						>
+							<SlidersHorizontal className="mr-2 h-4 w-4" />
+							BUlk Filters
+						</Button>
 					</div>
 				</div>
 			</header>
@@ -432,6 +488,62 @@ export default function WaitListPage() {
 					)}
 				</div>
 			</div>
+
+			<Dialog open={serverFilterModalOpen} onOpenChange={setServerFilterModalOpen}>
+				<DialogContent className="sm:max-w-xl">
+					<DialogHeader>
+						<DialogTitle>API Filters</DialogTitle>
+						<DialogDescription>
+							Filter applicants from backend by age, sex, and region.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="grid gap-3 sm:grid-cols-3">
+						<Input
+							type="number"
+							min={0}
+							placeholder="Age"
+							value={serverAge}
+							onChange={(e) => setServerAge(e.target.value)}
+						/>
+						<Input
+							placeholder="Sex (male/female)"
+							value={serverSex}
+							onChange={(e) => setServerSex(e.target.value)}
+						/>
+						<Input
+							placeholder="Region"
+							value={serverRegion}
+							onChange={(e) => setServerRegion(e.target.value)}
+						/>
+					</div>
+
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setServerFilterModalOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							onClick={handleServerFilter}
+							disabled={isServerFiltering}
+							className="bg-blue-600 text-white hover:bg-blue-700"
+						>
+							{isServerFiltering ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Filtering...
+								</>
+							) : (
+								"Filter"
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 		</div>
 	);

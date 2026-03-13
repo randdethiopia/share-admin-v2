@@ -3,9 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import BusinessProfileApi, {
-	type BusinessProfileType,
-} from "@/api/Buisness";
+import AdvisorProfileApi, { type ProfileType } from "@/api/advisor-profile";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -40,11 +38,6 @@ import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Search, X } from "lucide-react";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
-type ConfirmAction =
-	| "approve"
-	| "reject"
-	| "update-approve"
-	| "update-reject";
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -65,59 +58,55 @@ function statusBadgeClass(status: string) {
 }
 
 function formatDate(value?: string) {
-	if (!value) return "-";
+	if (!value) return "—";
 	const d = new Date(value);
-	if (Number.isNaN(d.getTime())) return "-";
+	if (Number.isNaN(d.getTime())) return "—";
 	return d.toLocaleDateString();
 }
 
-export default function BusinessPage() {
+export default function ExpertPage() {
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>("all");
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
-	const [confirmOpen, setConfirmOpen] = React.useState(false);
-	const [confirmAction, setConfirmAction] =
-		React.useState<ConfirmAction>("approve");
+	const [approveOpen, setApproveOpen] = React.useState(false);
+	const [rejectOpen, setRejectOpen] = React.useState(false);
 	const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
 	const {
-		data: businesses = [],
+		data: advisors = [],
 		isLoading,
 		isError,
 		error,
-	} = BusinessProfileApi.GetList.useQuery();
+	} = AdvisorProfileApi.GetList.useQuery();
 
-	const { mutate: approveBusiness, isPending: isApproving } =
-		BusinessProfileApi.Approve.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
-	const { mutate: rejectBusiness, isPending: isRejecting } =
-		BusinessProfileApi.Reject.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
-	const { mutate: approveUpdate, isPending: isApprovingUpdate } =
-		BusinessProfileApi.UpdateApprove.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
-	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
-		BusinessProfileApi.UpdateReject.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
+	const approveMutation = AdvisorProfileApi.Approve.useMutation({
+		onSuccess: () => {
+			setApproveOpen(false);
+			setSelectedId(null);
+		},
+	});
+
+	const rejectMutation = AdvisorProfileApi.Reject.useMutation({
+		onSuccess: () => {
+			setRejectOpen(false);
+			setSelectedId(null);
+		},
+	});
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
-		return (businesses as BusinessProfileType[]).filter((business) => {
+		return (advisors as ProfileType[]).filter((advisor) => {
 			const matchesSearch = query
-				? (business.businessName ?? "").toLowerCase().includes(query) ||
-					(business.email ?? "").toLowerCase().includes(query) ||
-					(business.bphoneNumber ?? "").toLowerCase().includes(query)
+				? (advisor.fullName ?? "").toLowerCase().includes(query) ||
+					(advisor.email ?? "").toLowerCase().includes(query) ||
+					(advisor.phoneNumber ?? "").toLowerCase().includes(query)
 				: true;
-			const normalized = normalizeStatus(business.status);
+			const normalized = normalizeStatus(advisor.status);
 			const matchesStatus = status === "all" || normalized === status;
 			return matchesSearch && matchesStatus;
 		});
-	}, [businesses, search, status]);
+	}, [advisors, search, status]);
 
 	const pagination = React.useMemo(
 		() => getPaginationMeta(filteredData.length, page, pageSize),
@@ -135,69 +124,83 @@ export default function BusinessPage() {
 		);
 	}, [filteredData, pagination.startIndex, pagination.endIndexExclusive]);
 
-	const openConfirm = (action: ConfirmAction, id: string) => {
-		setConfirmAction(action);
+	const isMutating = approveMutation.isPending || rejectMutation.isPending;
+
+	const openApprove = (id: string) => {
 		setSelectedId(id);
-		setConfirmOpen(true);
+		setApproveOpen(true);
 	};
 
-	const submitConfirm = () => {
+	const openReject = (id: string) => {
+		setSelectedId(id);
+		setRejectOpen(true);
+	};
+
+	const confirmApprove = () => {
 		if (!selectedId) return;
-		if (confirmAction === "approve") approveBusiness(selectedId);
-		else if (confirmAction === "reject") rejectBusiness(selectedId);
-		else if (confirmAction === "update-approve") approveUpdate(selectedId);
-		else rejectUpdate(selectedId);
+		approveMutation.mutate(selectedId);
 	};
 
-	const isMutating =
-		isApproving || isRejecting || isApprovingUpdate || isRejectingUpdate;
+	const confirmReject = () => {
+		if (!selectedId) return;
+		rejectMutation.mutate(selectedId);
+	};
 
-	const isUpdateRequestPending = (updateStatus?: string) =>
-		normalizeStatus(updateStatus) === "REQUEST_UPDATE" ||
-		normalizeStatus(updateStatus) === "PENDING";
+	const emptyState = (
+		<div className="h-40 flex items-center justify-center text-sm text-gray-500">
+			No advisors found.
+		</div>
+	);
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
-			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{confirmAction === "approve"
-								? "Approve business?"
-								: confirmAction === "reject"
-									? "Reject business?"
-									: confirmAction === "update-approve"
-										? "Approve profile update?"
-										: "Reject profile update?"}
-						</AlertDialogTitle>
+						<AlertDialogTitle>Approve expert?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This action cannot be undone.
+							This will mark the expert as approved. This action can’t be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isMutating}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={approveMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={(e) => {
 								e.preventDefault();
-								submitConfirm();
+								confirmApprove();
 							}}
-							disabled={isMutating}
-							className={cn(
-								confirmAction === "approve" ||
-									confirmAction === "update-approve"
-									? "bg-emerald-600 hover:bg-emerald-700"
-									: "bg-red-600 hover:bg-red-700"
-							)}
+							disabled={approveMutation.isPending}
+							className="bg-emerald-600 hover:bg-emerald-700"
 						>
-							{isMutating
-								? "Please wait…"
-								: confirmAction === "approve"
-									? "Approve"
-									: confirmAction === "reject"
-										? "Reject"
-										: confirmAction === "update-approve"
-											? "Approve update"
-											: "Reject update"}
+							{approveMutation.isPending ? "Approving…" : "Approve"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Reject expert?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will mark the Expert as rejected. This action can’t be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={rejectMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(e) => {
+								e.preventDefault();
+								confirmReject();
+							}}
+							disabled={rejectMutation.isPending}
+							className="bg-red-600 hover:bg-red-700"
+						>
+							{rejectMutation.isPending ? "Rejecting…" : "Reject"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -205,10 +208,10 @@ export default function BusinessPage() {
 
 			<div className="px-4">
 				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-					Business
+					Expert
 				</h1>
 				<p className="text-zinc-600 text-sm font-medium">
-					See all your businesses
+					See all your experts
 				</p>
 			</div>
 
@@ -258,7 +261,7 @@ export default function BusinessPage() {
 					</div>
 				</div>
 
-				{/* Mobile cards */}
+				{/* Mobile: Card list */}
 				<div className="md:hidden space-y-3">
 					{isLoading ? (
 						<div className="h-40 flex items-center justify-center text-sm text-gray-600">
@@ -266,26 +269,24 @@ export default function BusinessPage() {
 						</div>
 					) : isError ? (
 						<div className="h-40 flex items-center justify-center text-sm text-red-600 text-center px-2">
-							{(error as { response?: { data?: { message?: string } } })
-								?.response?.data?.message || "Failed to load businesses"}
+							{(error as { response?: { data?: { message?: string } } })?.response?.data
+								?.message || "Failed to load advisors"}
 						</div>
 					) : filteredData.length === 0 ? (
-						<div className="h-40 flex items-center justify-center text-sm text-gray-500">
-							No businesses found.
-						</div>
+						emptyState
 					) : (
-						pageData.map((business) => (
+						pageData.map((advisor) => (
 							<div
-								key={business._id}
+								key={advisor._id}
 								className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-											<p className="text-sm font-bold text-gray-900 truncate">
-												{business.businessName || "-"}
+										<p className="text-sm font-bold text-gray-900 truncate">
+											{advisor.fullName || "—"}
 										</p>
 										<p className="text-xs text-gray-600 truncate">
-												{business.email || business.bphoneNumber || "-"}
+											{advisor.email || advisor.phoneNumber || "—"}
 										</p>
 									</div>
 
@@ -293,10 +294,10 @@ export default function BusinessPage() {
 										<Badge
 											className={cn(
 												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-												statusBadgeClass(business.status)
+												statusBadgeClass(advisor.status)
 											)}
 										>
-												{normalizeStatus(business.status) || "PENDING"}
+											{normalizeStatus(advisor.status) || "PENDING"}
 										</Badge>
 									</div>
 								</div>
@@ -306,16 +307,16 @@ export default function BusinessPage() {
 										<p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
 											Approved
 										</p>
-											<p className="text-xs font-semibold text-gray-700">
-												{formatDate(business.approvedAt)}
+										<p className="text-xs font-semibold text-gray-700">
+											{formatDate(advisor.approvedAt)}
 										</p>
 									</div>
 									<div className="rounded-xl bg-[#F3F8FF] px-3 py-2">
 										<p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-											Status
+											Created
 										</p>
-											<p className="text-xs font-semibold text-gray-700">
-												{normalizeStatus(business.status) || "PENDING"}
+										<p className="text-xs font-semibold text-gray-700">
+											{formatDate(advisor.createdAt)}
 										</p>
 									</div>
 								</div>
@@ -328,18 +329,18 @@ export default function BusinessPage() {
 										title="View details"
 										className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
 									>
-										<Link href={`/business/${business._id}`}>
+										<Link href={`/expert/${advisor._id}`}>
 											<Eye size={16} />
 										</Link>
 									</Button>
 
-									{normalizeStatus(business.status) === "PENDING" && (
+									{normalizeStatus(advisor.status) === "PENDING" && (
 										<>
 											<Button
 												variant="ghost"
 												size="icon"
 												title="Reject"
-												onClick={() => openConfirm("reject", business._id)}
+												onClick={() => openReject(advisor._id)}
 												disabled={isMutating}
 												className="h-9 w-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100"
 											>
@@ -349,7 +350,7 @@ export default function BusinessPage() {
 												variant="ghost"
 												size="icon"
 												title="Approve"
-												onClick={() => openConfirm("approve", business._id)}
+												onClick={() => openApprove(advisor._id)}
 												disabled={isMutating}
 												className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
 											>
@@ -358,178 +359,120 @@ export default function BusinessPage() {
 										</>
 									)}
 								</div>
-
-								{isUpdateRequestPending(business.updateStatus) && (
-									<div className="mt-3 flex items-center gap-2">
-										<Button
-											variant="outline"
-											onClick={() => openConfirm("update-approve", business._id)}
-											disabled={isMutating}
-											className="h-9 rounded-xl px-3 text-xs"
-										>
-											Approve Update
-										</Button>
-										<Button
-											variant="outline"
-											onClick={() => openConfirm("update-reject", business._id)}
-											disabled={isMutating}
-											className="h-9 rounded-xl px-3 text-xs text-red-600 border-red-200"
-										>
-											Reject Update
-										</Button>
-									</div>
-								)}
 							</div>
 						))
 					)}
 				</div>
 
-				{/* Desktop table */}
+				{/* Desktop: Table */}
 				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
 					<div className="overflow-x-auto">
 						<Table>
 							<TableHeader className="bg-[#D6E6F2]">
 								<TableRow className="border-none hover:bg-transparent">
 									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Name
+										Expert
 									</TableHead>
 									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Info
+										Approved Date
 									</TableHead>
 									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
 										Status
 									</TableHead>
 									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										View
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Approval
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Profile Update
+										Actions
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{isLoading ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center">
+										<TableCell colSpan={4} className="h-40 text-center">
 											<Loader2 className="animate-spin inline mr-2" /> Loading...
 										</TableCell>
 									</TableRow>
 								) : isError ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center text-sm text-red-600">
-											{(error as { response?: { data?: { message?: string } } })
-												?.response?.data?.message ||
-												"Failed to load businesses"}
+										<TableCell colSpan={4} className="h-40 text-center text-sm text-red-600">
+											{(error as { response?: { data?: { message?: string } } })?.response?.data
+												?.message || "Failed to load advisors"}
 										</TableCell>
 									</TableRow>
 								) : filteredData.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center text-sm text-gray-500">
-											No businesses found.
+										<TableCell colSpan={4} className="h-40 text-center text-sm text-gray-500">
+											No advisors found.
 										</TableCell>
 									</TableRow>
 								) : (
-									pageData.map((business) => (
+									pageData.map((advisor) => (
 										<TableRow
-											key={business._id}
+											key={advisor._id}
 											className="hover:bg-slate-50/50 border-gray-50"
 										>
 											<TableCell className="px-6 py-4 text-xs font-bold text-gray-600">
 												<div className="flex flex-col">
-													
-													<span className="text-[11px] text-black-800 font-medium truncate">
-														{business.name || business.bphoneNumber}
+													<span className="truncate">{advisor.fullName || "—"}</span>
+													<span className="text-[11px] text-gray-400 font-medium truncate">
+														{advisor.email || advisor.phoneNumber || "—"}
 													</span>
-												</div>	
+												</div>
 											</TableCell>
 											<TableCell className="px-6 py-4 text-xs text-gray-500 font-medium">
-                        <span className="truncate">{business.businessName}</span>
-												Approved: {formatDate(business.approvedAt)}
+												{formatDate(advisor.approvedAt)}
 											</TableCell>
 											<TableCell className="px-6 py-4">
 												<Badge
 													className={cn(
 														"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-														statusBadgeClass(business.status)
+														statusBadgeClass(advisor.status)
 													)}
 												>
-													{normalizeStatus(business.status) || "PENDING"}
+													{normalizeStatus(advisor.status) || "PENDING"}
 												</Badge>
 											</TableCell>
 											<TableCell className="px-6 py-4 text-center">
-												<Button
-													asChild
-													variant="ghost"
-													size="icon"
-													title="View details"
-													className="h-8 w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-												>
-													<Link href={`/business/${business._id}`}>
-														<Eye size={16} />
-													</Link>
-												</Button>
-											</TableCell>
-											<TableCell className="px-6 py-4">
-												{normalizeStatus(business.status) === "PENDING" ? (
-													<div className="flex items-center justify-center gap-2">
-														<Button
-															variant="ghost"
-															size="icon"
-															title="Approve"
-															onClick={() => openConfirm("approve", business._id)}
-															disabled={isMutating}
-															className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-														>
-															<Check size={14} />
-														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															title="Reject"
-															onClick={() => openConfirm("reject", business._id)}
-															disabled={isMutating}
-															className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
-														>
-															<X size={14} />
-														</Button>
-													</div>
-												) : (
-													<span className="text-xs text-gray-400">-</span>
-												)}
-											</TableCell>
-											<TableCell className="px-6 py-4 text-center">
-												{isUpdateRequestPending(business.updateStatus) ? (
-													<div className="flex items-center justify-center gap-2">
-														<Button
-															variant="outline"
-															className="h-8 px-3 rounded-lg"
-															onClick={() => openConfirm("update-approve", business._id)}
-															disabled={isMutating}
-														>
-															<Check size={12} className="mr-1" />
-															Approve
-														</Button>
-														<Button
-															variant="outline"
-															className="h-8 px-3 rounded-lg text-red-600 border-red-200"
-															onClick={() => openConfirm("update-reject", business._id)}
-															disabled={isMutating}
-														>
-															<X size={12} className="mr-1" />
-															Reject
-														</Button>
-													</div>
-												) : (
-													<span className="text-xs text-gray-400">—</span>
-												)}
+												<div className="flex items-center justify-center gap-2">
+													<Button
+														asChild
+														variant="ghost"
+														size="icon"
+														title="View details"
+														className="h-8 w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
+													>
+														<Link href={`/expert/${advisor._id}`}>
+															<Eye size={16} />
+														</Link>
+													</Button>
+													{normalizeStatus(advisor.status) === "PENDING" && (
+														<>
+															<Button
+																variant="ghost"
+																size="icon"
+																title="Reject"
+																onClick={() => openReject(advisor._id)}
+																disabled={isMutating}
+																className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+															>
+																<X size={16} />
+															</Button>
+															<Button
+																variant="ghost"
+																size="icon"
+																title="Approve"
+																onClick={() => openApprove(advisor._id)}
+																disabled={isMutating}
+																className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+															>
+																<Check size={16} />
+															</Button>
+														</>
+													)}
+												</div>
 											</TableCell>
 										</TableRow>
 									))
-								)
-								}
+								)}
 							</TableBody>
 						</Table>
 					</div>

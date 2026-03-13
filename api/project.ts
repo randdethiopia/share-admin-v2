@@ -2,6 +2,7 @@ import { ErrorRes, FileType, SuccessRes } from "@/types/core";
 import {
 	UseMutationOptions,
 	UseQueryOptions,
+	QueryClient,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -47,6 +48,36 @@ export interface ProjectType extends ProjectFormType {
 		_id: string;
 		smeId: string;
 		businessName: string;
+	};
+}
+
+function updateProjectCache(
+	queryClient: QueryClient,
+	projectId: string,
+	updater: (project: ProjectType) => ProjectType
+) {
+	const updateList = (current?: ProjectType[]) =>
+		Array.isArray(current)
+			? current.map((item) => (item._id === projectId ? updater(item) : item))
+			: current;
+
+	queryClient.setQueryData(["Projects"], updateList);
+	queryClient.setQueryData(["Projects", "my"], updateList);
+	queryClient.setQueryData(["Projects", projectId], (current?: ProjectType) =>
+		current ? updater(current) : current
+	);
+}
+
+function updateProjectUpdateStatus(
+	project: ProjectType,
+	updateId: string,
+	status: ProjectUpdateStatus
+) {
+	return {
+		...project,
+		projectUpdates: (project.projectUpdates ?? []).map((update) =>
+			update._id === updateId ? { ...update, status } : update
+		),
 	};
 }
 
@@ -218,6 +249,10 @@ const ProjectApi = {
 				mutationFn: approveProjectFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
+					updateProjectCache(queryClient, id, (project) => ({
+						...project,
+						status: "APPROVED",
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Projects"] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", id] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", "my"] });
@@ -240,6 +275,10 @@ const ProjectApi = {
 				mutationFn: rejectProjectFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Rejected");
+					updateProjectCache(queryClient, id, (project) => ({
+						...project,
+						status: "REJECTED",
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Projects"] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", id] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", "my"] });
@@ -264,6 +303,9 @@ const ProjectApi = {
 				mutationFn: ({ pid, id }) => approveProjectUpdateFn(pid, id),
 				onSuccess: (res, vars, context) => {
 					toast.success(res.message || "Update approved");
+					updateProjectCache(queryClient, vars.pid, (project) =>
+						updateProjectUpdateStatus(project, vars.id, "APPROVED")
+					);
 					queryClient.invalidateQueries({ queryKey: ["Projects"] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", vars.pid] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", "my"] });
@@ -288,6 +330,9 @@ const ProjectApi = {
 				mutationFn: ({ pid, id }) => rejectProjectUpdateFn(pid, id),
 				onSuccess: (res, vars, context) => {
 					toast.success(res.message || "Update rejected");
+					updateProjectCache(queryClient, vars.pid, (project) =>
+						updateProjectUpdateStatus(project, vars.id, "REJECTED")
+					);
 					queryClient.invalidateQueries({ queryKey: ["Projects"] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", vars.pid] });
 					queryClient.invalidateQueries({ queryKey: ["Projects", "my"] });

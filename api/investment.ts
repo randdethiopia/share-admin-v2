@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { type InvestorProfileType } from "@/api/mentor";
-import { type SMEProfileType } from "@/api/Buisness";
+import { type BusinessProfileType } from "@/api/Buisness";
 import { type ProjectType } from "@/api/project";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -26,7 +26,7 @@ export interface InvestmentType extends InvestmentFormType {
 	_id: string;
 	investorId: string;
 	investor: InvestorProfileType;
-	sme: SMEProfileType;
+	sme: BusinessProfileType;
 	project: ProjectType;
 	createdAt: string | Date;
 	approvedAt?: string | null;

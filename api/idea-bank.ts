@@ -7,8 +7,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useRouter } from "next/navigation"; // App Router version
-import { toast } from "sonner"; // Using your project's toast system
+import { useRouter } from "next/navigation"; 
+import { toast } from "sonner"; 
 
 // --- 1. INTERFACES (The Blueprints) ---
 export interface IdeaBankType {

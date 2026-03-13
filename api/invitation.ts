@@ -2,6 +2,7 @@ import { ErrorRes, FileType, SuccessRes } from "@/types/core";
 import {
 	UseMutationOptions,
 	UseQueryOptions,
+	QueryClient,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -9,7 +10,7 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
-import { type SMEProfileType } from "@/api/Buisness";
+import { type BusinessProfileType } from "@/api/Buisness";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -107,7 +108,7 @@ export interface InvitationType extends InvitationFormType {
 		avatar: FileType;
 		advisorId: string;
 	};
-	company: SMEProfileType;
+	company: BusinessProfileType;
 }
 
 export interface PaymentForm {
@@ -161,6 +162,43 @@ export async function getMyInvitationsAsAdvisorFn() {
 	return (await axios.get(`${API_URL}/api/invitation/advisor-invitations`)).data;
 }
 
+function getStatusFromResponse(res: unknown) {
+	if (!res || typeof res !== "object") return undefined;
+	const record = res as {
+		status?: string;
+		data?: { status?: string; invitation?: { status?: string } };
+		invitation?: { status?: string };
+	};
+	return (
+		record.data?.invitation?.status ??
+		record.invitation?.status ??
+		record.data?.status ??
+		record.status
+	);
+}
+
+function updateInvitationCaches(
+	queryClient: QueryClient,
+	id: string,
+	updater: (invitation: InvitationType) => InvitationType
+) {
+	const updateList = (current?: InvitationType[]) =>
+		Array.isArray(current)
+			? current.map((item) => (item._id === id ? updater(item) : item))
+			: current;
+
+	queryClient.setQueryData(["Invitations"], updateList);
+	queryClient.setQueryData(["Invitations", "my", "advisor"], updateList);
+	queryClient.setQueryData(["Invitations", "my", "sme"], updateList);
+	queryClient.setQueryData(
+		["Invitations", id],
+		(current?: InvitationResData) =>
+			current
+				? { ...current, invitation: updater(current.invitation as InvitationType) }
+				: current
+	);
+}
+
 type ToastCtx = { toastId?: string | number };
 
 const InvitationApi = {
@@ -210,6 +248,11 @@ const InvitationApi = {
 				onSuccess: (res, id, context) => {
 					if (context?.toastId) toast.dismiss(context.toastId);
 					toast.success(res.message || "Accepted");
+					const nextStatus = getStatusFromResponse(res) ?? "ACCEPTED";
+					updateInvitationCaches(queryClient, id, (inv) => ({
+						...inv,
+						status: nextStatus,
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Invitations"] });
 					queryClient.invalidateQueries({ queryKey: ["Invitations", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -238,6 +281,11 @@ const InvitationApi = {
 				onSuccess: (res, id, context) => {
 					if (context?.toastId) toast.dismiss(context.toastId);
 					toast.success(res.message || "Rejected");
+					const nextStatus = getStatusFromResponse(res) ?? "REJECTED";
+					updateInvitationCaches(queryClient, id, (inv) => ({
+						...inv,
+						status: nextStatus,
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Invitations"] });
 					queryClient.invalidateQueries({ queryKey: ["Invitations", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -272,6 +320,11 @@ const InvitationApi = {
 				onSuccess: (res, variables, context) => {
 					if (context?.toastId) toast.dismiss(context.toastId);
 					toast.success(res.message || "Updated");
+					const nextStatus = getStatusFromResponse(res) ?? variables.status;
+					updateInvitationCaches(queryClient, variables._id, (inv) => ({
+						...inv,
+						status: nextStatus,
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Invitations"] });
 					queryClient.invalidateQueries({ queryKey: ["Invitations", variables._id] });
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -305,6 +358,11 @@ const InvitationApi = {
 				onSuccess: (res, variables, context) => {
 					if (context?.toastId) toast.dismiss(context.toastId);
 					toast.success(res.message || "Paid");
+					const nextStatus = getStatusFromResponse(res) ?? "PAID";
+					updateInvitationCaches(queryClient, variables._id, (inv) => ({
+						...inv,
+						status: nextStatus,
+					}));
 					queryClient.invalidateQueries({ queryKey: ["Invitations"] });
 					queryClient.invalidateQueries({ queryKey: ["Invitations", variables._id] });
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);

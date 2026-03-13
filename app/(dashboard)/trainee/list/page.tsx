@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import CohortApi from "@/api/cohort";
 import TraineeAuth, { type TraineeType } from "@/api/trainee";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
@@ -15,6 +16,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -34,6 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Loader2, Search, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 type TraineeTypeFilter = "all" | "NORMAL" | "EDGE";
 type TraineeStatusFilter = "all" | "active" | "inactive";
@@ -60,6 +70,10 @@ export default function TraineePage() {
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
+	const [openPickDataBulk, setOpenPickDataBulk] = useState(false);
+	const [openPickDataBulkConfirm, setOpenPickDataBulkConfirm] = useState(false);
+	const [pickedData, setPickedData] = useState<number | null>(null);
+	const [pickSearch, setPickSearch] = useState("");
 
 	useEffect(() => {
 		const t = setTimeout(() => {
@@ -74,7 +88,8 @@ export default function TraineePage() {
 	}, [type]);
 
 	const statusParam = useMemo(() => {
-		return status === "all" ? undefined : status;
+		if (status === "inactive") return "0";
+		return undefined;
 	}, [status]);
 
 	const {
@@ -90,6 +105,12 @@ export default function TraineePage() {
 		statusParam
 	);
 
+	const {
+		data: cohortData = [],
+		isLoading: isCohortLoading,
+		isError: isCohortError,
+	} = CohortApi.GetList.useQuery();
+
 	const trainees = useMemo(() => data?.data ?? [], [data]);
 	const totalItems = data?.meta?.totalItems ?? 0;
 
@@ -103,6 +124,30 @@ export default function TraineePage() {
 		return trainees;
 	}, [trainees, status]);
 
+	const cohortOptions = useMemo(
+		() =>
+			cohortData.map(({ id, name, description }) => ({
+				id,
+				name,
+				description,
+			})),
+		[cohortData]
+	);
+
+	const filteredCohorts = useMemo(() => {
+		const q = pickSearch.trim().toLowerCase();
+		if (!q) return cohortOptions;
+		return cohortOptions.filter((item) => {
+			const name = item.name?.toLowerCase() ?? "";
+			const description = item.description?.toLowerCase() ?? "";
+			return name.includes(q) || description.includes(q);
+		});
+	}, [cohortOptions, pickSearch]);
+
+	const pickedCohort = useMemo(() => {
+		return cohortOptions.find((item) => item.id === pickedData) ?? null;
+	}, [cohortOptions, pickedData]);
+
 	const {
 		mutate: deleteTrainee,
 		isPending: isDeleting,
@@ -113,6 +158,9 @@ export default function TraineePage() {
 			setSelectedIds([]);
 		},
 	});
+
+	const { mutate: addBulk, isPending: isAddingBulk } =
+		CohortApi.AddBulk.useMutation();
 
 	const toggleSelect = (id: string) => {
 		setSelectedIds((prev) =>
@@ -141,6 +189,42 @@ export default function TraineePage() {
 	const confirmDelete = () => {
 		if (!confirmId) return;
 		deleteTrainee(confirmId);
+	};
+
+	const openBulkPicker = () => {
+		setIsSelectable(false);
+		setOpenPickDataBulk(true);
+	};
+
+	const openSinglePicker = (id: string) => {
+		setIsSelectable(false);
+		setSelectedIds([id]);
+		setOpenPickDataBulk(true);
+	};
+
+	const openBulkConfirm = () => {
+		if (!pickedData) {
+			toast.error("Select a cohort before continuing");
+			return;
+		}
+		if (selectedIds.length === 0) {
+			toast.error("Select at least one trainee");
+			return;
+		}
+		setOpenPickDataBulk(false);
+		setOpenPickDataBulkConfirm(true);
+	};
+
+	const confirmBulkAssign = () => {
+		if (!pickedData) {
+			toast.error("Select a cohort before confirming");
+			return;
+		}
+		if (selectedIds.length === 0) {
+			toast.error("Select at least one trainee");
+			return;
+		}
+		addBulk({ cohortId: pickedData, trannieIds: selectedIds });
 	};
 
 	return (
@@ -174,10 +258,7 @@ export default function TraineePage() {
 					{isSelectable && (
 						<Button
 							className="bg-blue-600 hover:bg-blue-700 rounded-xl px-6 font-bold"
-							onClick={() => {
-								setIsSelectable(false);
-								setSelectedIds([]);
-							}}
+							onClick={openBulkPicker}
 							disabled={selectedIds.length === 0}
 						>
 							Done
@@ -358,7 +439,7 @@ export default function TraineePage() {
 								<Button
 									variant="link"
 									className="mt-2 h-auto p-0 text-[11px] font-bold text-blue-600"
-									onClick={() => setIsSelectable(true)}
+											onClick={() => openSinglePicker(t._id)}
 							>
 								Add to Cohort
 							</Button>
@@ -514,6 +595,127 @@ export default function TraineePage() {
 					disabled={isLoading || isError}
 				/>
 			</div>
+
+			<Dialog open={openPickDataBulk} onOpenChange={setOpenPickDataBulk}>
+				<DialogContent className="rounded-3xl sm:max-w-2xl p-0 overflow-hidden">
+					<div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-5">
+					<DialogHeader>
+							<DialogTitle className="text-xl font-bold text-slate-900">
+								Assign to cohort
+							</DialogTitle>
+							<DialogDescription className="text-sm text-slate-600">
+								Choose the cohort for {selectedIds.length} trainee
+								{selectedIds.length === 1 ? "" : "s"}.
+							</DialogDescription>
+					</DialogHeader>
+					</div>
+
+					<div className="space-y-4 px-6 py-5">
+						<Input
+							placeholder="Search cohorts..."
+							value={pickSearch}
+							onChange={(e) => setPickSearch(e.target.value)}
+							className="h-11 rounded-xl bg-slate-50 border-slate-200"
+						/>
+
+						<div className="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-3">
+							{isCohortLoading ? (
+								<div className="text-sm text-slate-500">Loading cohorts...</div>
+							) : isCohortError ? (
+								<div className="text-sm text-red-600">
+									Failed to load cohorts.
+								</div>
+							) : filteredCohorts.length === 0 ? (
+								<div className="text-sm text-slate-500">No cohorts found.</div>
+							) : (
+								filteredCohorts.map((item) => (
+									<button
+										key={item.id}
+										type="button"
+										onClick={() => setPickedData(item.id)}
+										className={cn(
+											"w-full rounded-xl border px-4 py-3 text-left transition shadow-sm",
+											pickedData === item.id
+												? "border-blue-500 bg-blue-50"
+												: "border-slate-100 hover:border-blue-200 hover:bg-slate-50"
+										)}
+									>
+										<div className="text-sm font-semibold text-slate-900">
+											{item.name}
+										</div>
+										
+									</button>
+								))
+							)}
+						</div>
+					</div>
+
+					<DialogFooter className="border-t border-slate-100 bg-slate-50 px-6 py-4">
+						<Button
+							variant="outline"
+							onClick={() => setOpenPickDataBulk(false)}
+							className="rounded-xl"
+						>
+							Cancel
+						</Button>
+						<Button
+							className="bg-blue-600 hover:bg-blue-700 rounded-xl px-6"
+							onClick={openBulkConfirm}
+							disabled={isCohortLoading}
+						>
+							Continue
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<AlertDialog
+				open={openPickDataBulkConfirm}
+				onOpenChange={setOpenPickDataBulkConfirm}
+			>
+				<AlertDialogContent className="rounded-3xl sm:max-w-md p-0 overflow-hidden">
+					<div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-5">
+						<AlertDialogHeader>
+							<AlertDialogTitle className="text-xl font-bold text-slate-900">
+								Confirm bulk assign
+							</AlertDialogTitle>
+							<AlertDialogDescription className="text-sm text-slate-600">
+								Assign {selectedIds.length} trainee
+								{selectedIds.length === 1 ? "" : "s"} to
+								 {pickedCohort?.name ?? "this cohort"}.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+					</div>
+					<div className="px-6 py-5">
+						<div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 text-xs text-slate-600">
+							This will add the selected trainees to the cohort. You can review
+							 changes later.
+						</div>
+					</div>
+					<AlertDialogFooter className="border-t border-slate-100 bg-slate-50 px-6 py-4">
+						<AlertDialogCancel className="rounded-xl" disabled={isAddingBulk}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={isAddingBulk}
+							onClick={(e) => {
+								e.preventDefault();
+								confirmBulkAssign();
+							}}
+							className="rounded-xl bg-blue-600 hover:bg-blue-700 px-6"
+						>
+							{isAddingBulk ? (
+								<span className="inline-flex items-center gap-2">
+									<Loader2 className="animate-spin" size={16} />
+									Assigning
+								</span>
+							) : (
+								"Confirm"
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<AlertDialogContent className="rounded-3xl sm:max-w-md">
