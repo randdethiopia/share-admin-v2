@@ -190,13 +190,7 @@ function updateInvitationCaches(
 	queryClient.setQueryData(["Invitations"], updateList);
 	queryClient.setQueryData(["Invitations", "my", "advisor"], updateList);
 	queryClient.setQueryData(["Invitations", "my", "sme"], updateList);
-	queryClient.setQueryData(
-		["Invitations", id],
-		(current?: InvitationResData) =>
-			current
-				? { ...current, invitation: updater(current.invitation as InvitationType) }
-				: current
-	);
+
 }
 
 type ToastCtx = { toastId?: string | number };
