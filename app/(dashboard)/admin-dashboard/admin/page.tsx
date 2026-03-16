@@ -29,7 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
-import AssignRoleModal from "./components/assign-role";
+import AssignRoleModal from "../../admin/components/assign-role";
+
 
 export default function AdminManagementPage() {
 	const [search, setSearch] = useState("");
