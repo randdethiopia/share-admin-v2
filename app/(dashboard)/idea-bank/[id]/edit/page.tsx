@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ideaBankSchema } from "@/lib/validator";
 import IdeaBankApi from "@/api/idea-bank";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -33,6 +35,8 @@ function getUpdateErrorMessage(err: unknown): string {
 export default function EditIdeaPage() {
   const params = useParams();
   const router = useRouter();
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const canWriteIdea = hasHydrated && hasPermission("idea:write");
   const rawId = params?.id as string | string[] | undefined;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
@@ -123,6 +127,8 @@ export default function EditIdeaPage() {
   };
 
   const handleSubmit = (data: IdeaBankFormValues) => {
+    if (!canWriteIdea) return;
+
     if (!id || !idea) {
       toast.error("Idea not loaded");
       return;
@@ -136,6 +142,28 @@ export default function EditIdeaPage() {
       isPublic: data.isPublic ?? false,
     });
   };
+
+  if (!hasHydrated) return <DetailPageSkeleton />;
+
+  if (!canWriteIdea) {
+    return (
+      <div className="min-h-screen bg-[#E2EDF8] p-8">
+        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            You do not have permission to edit ideas.
+          </p>
+          <Button
+            type="button"
+            className="mt-6 bg-[#3B82F6] hover:bg-blue-600 text-white"
+            onClick={() => router.push("/idea-bank")}
+          >
+            Back to ideas
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) return <DetailPageSkeleton />;
 

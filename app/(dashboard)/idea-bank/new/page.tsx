@@ -5,11 +5,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ideaBankSchema, type IdeaBankFormData } from "@/lib/validator";
 import IdeaBankApi from "@/api/idea-bank";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 import Editor from "@/components/shared/Editor"; 
 import { Loader2, X } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +22,8 @@ import { z } from "zod";
 type IdeaBankFormValues = z.input<typeof ideaBankSchema>;
 
 export default function NewIdeaPage() {
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const canWriteIdea = hasHydrated && hasPermission("idea:write");
   const { mutate: createIdea, isPending } = IdeaBankApi.Create.useMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
@@ -47,6 +52,8 @@ export default function NewIdeaPage() {
   }, []);
 
   const onSubmit = (data: IdeaBankFormValues) => {
+    if (!canWriteIdea) return;
+
     createIdea({
       ...(data as IdeaBankFormData),
       isPublic: data.isPublic ?? false,
@@ -68,6 +75,28 @@ export default function NewIdeaPage() {
     lastObjectUrlRef.current = nextUrl;
     form.setValue("image", { url: nextUrl, id: file.name }, { shouldDirty: true, shouldValidate: true });
   };
+
+  if (!hasHydrated) return <DetailPageSkeleton />;
+
+  if (!canWriteIdea) {
+    return (
+      <div className="min-h-screen bg-[#E2EDF8] p-8">
+        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            You do not have permission to create ideas.
+          </p>
+          <Button
+            type="button"
+            className="mt-6 bg-[#3B82F6] hover:bg-blue-600 text-white"
+            asChild
+          >
+            <Link href="/idea-bank">Back to ideas</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#E2EDF8] px-4 py-6 sm:px-6 lg:px-8">

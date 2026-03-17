@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { getInvestmentByProjectIdFn } from "@/api/investment";
 import useAuthStore from "@/store/useAuthStore";
+import { hasPermission } from "@/lib/permission";
 import Cookies from "js-cookie";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -122,10 +123,14 @@ export default function ProjectsPage() {
 	const queryClient = useQueryClient();
 	const role = useAuthStore((s) => s.role);
 	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+	const canWriteProjectPermission = hasHydrated && hasPermission("project:write");
+	const canDeleteProjectPermission = hasHydrated && hasPermission("project:delete");
 	const isAdmin = role === "ADMIN";
 	const hasToken = Boolean(Cookies.get("session_token"));
 	const canFetchProjects = hasHydrated && isAdmin && hasToken;
 	const canMutateProjects = hasHydrated && isAdmin && hasToken;
+	const canMutateProjectsWrite = canMutateProjects && canWriteProjectPermission;
+	const canMutateProjectsDelete = canMutateProjects && canDeleteProjectPermission;
 	const [search, setSearch] = React.useState("");
 	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
 	const [page, setPage] = React.useState(1);
@@ -199,6 +204,7 @@ export default function ProjectsPage() {
 	};
 
 	const onApprove = (id: string) => {
+		if (!canMutateProjectsWrite) return;
 		approveMutation.mutate(id, {
 			onSuccess: () => {
 				queryClient.setQueryData<ProjectType[]>(["Projects"], (old) =>
@@ -211,12 +217,14 @@ export default function ProjectsPage() {
 	};
 
 	const onReject = (id: string) => {
+		if (!canMutateProjectsWrite) return;
 		if (!id) return;
 		setRejectId(id);
 		setRejectOpen(true);
 	};
 
 	const onDelete = (id: string) => {
+		if (!canMutateProjectsDelete) return;
 		if (!id) return;
 		setDeleteId(id);
 		setDeleteOpen(true);
@@ -235,6 +243,7 @@ export default function ProjectsPage() {
 	};
 
 	const confirmDelete = () => {
+		if (!canMutateProjectsDelete) return;
 		if (!deleteId) return;
 		deleteMutation.mutate(deleteId, {
 			onSuccess: () => {
@@ -252,6 +261,7 @@ export default function ProjectsPage() {
 	};
 
 	const confirmReject = () => {
+		if (!canMutateProjectsWrite) return;
 		if (!rejectId) return;
 		rejectMutation.mutate(rejectId, {
 			onSuccess: () => {
@@ -474,41 +484,47 @@ export default function ProjectsPage() {
 												<Eye size={16} />
 											</Button>
 
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
-												onClick={() => onApprove(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Approve project"
-												title={getApproveTitle(status)}
-											>
-												<Check size={18} />
-											</Button>
+											{canWriteProjectPermission && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-9 w-9 rounded-xl bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
+													onClick={() => onApprove(project._id)}
+													disabled={!canMutateProjects || isMutating}
+													aria-label="Approve project"
+													title={getApproveTitle(status)}
+												>
+													<Check size={18} />
+												</Button>
+											)}
 
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
-												onClick={() => onReject(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Reject project"
-												title={getRejectTitle(status)}
-											>
-												<X size={18} />
-											</Button>
+											{canWriteProjectPermission && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
+													onClick={() => onReject(project._id)}
+													disabled={!canMutateProjects || isMutating}
+													aria-label="Reject project"
+													title={getRejectTitle(status)}
+												>
+													<X size={18} />
+												</Button>
+											)}
 
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
-												onClick={() => onDelete(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Delete project"
-												title="Delete"
-											>
+											{canDeleteProjectPermission && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
+													onClick={() => onDelete(project._id)}
+													disabled={!canMutateProjects || isMutating}
+													aria-label="Delete project"
+													title="Delete"
+												>
 													<Trash2 size={18} />
-											</Button>
+												</Button>
+											)}
 										</div>
 									</div>
 								);
@@ -639,6 +655,7 @@ export default function ProjectsPage() {
 													<Eye size={16} />
 												</Button>
 
+														{canWriteProjectPermission && (
 														<Button
 															variant="ghost"
 															size="icon"
@@ -650,6 +667,8 @@ export default function ProjectsPage() {
 														>
 															<Check size={16} />
 														</Button>
+														)}
+														{canWriteProjectPermission && (
 														<Button
 															variant="ghost"
 															size="icon"
@@ -661,7 +680,9 @@ export default function ProjectsPage() {
 														>
 															<X size={16} />
 														</Button>
+														)}
 
+												{canDeleteProjectPermission && (
 												<Button
 													variant="ghost"
 													size="icon"
@@ -672,6 +693,7 @@ export default function ProjectsPage() {
 												>
 															<Trash2 size={16} />
 												</Button>
+												)}
 											</div>
 										</TableCell>
 									</TableRow>

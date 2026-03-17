@@ -36,6 +36,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Search, X } from "lucide-react";
 
@@ -72,6 +74,9 @@ function formatDate(value?: string) {
 }
 
 export default function BusinessPage() {
+	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+	const canReadBusiness = hasHydrated && hasPermission("business:read");
+	const canWriteBusiness = hasHydrated && hasPermission("business:write");
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>("all");
 	const [page, setPage] = React.useState(1);
@@ -142,6 +147,7 @@ export default function BusinessPage() {
 	};
 
 	const submitConfirm = () => {
+		if (!canWriteBusiness) return;
 		if (!selectedId) return;
 		if (confirmAction === "approve") approveBusiness(selectedId);
 		else if (confirmAction === "reject") rejectBusiness(selectedId);
@@ -155,6 +161,21 @@ export default function BusinessPage() {
 	const isUpdateRequestPending = (updateStatus?: string) =>
 		normalizeStatus(updateStatus) === "REQUEST_UPDATE" ||
 		normalizeStatus(updateStatus) === "PENDING";
+
+	if (!hasHydrated) {
+		return <div className="min-h-[40vh]" />;
+	}
+
+	if (!canReadBusiness) {
+		return (
+			<div className="min-h-screen bg-[#E2EDF8] p-8">
+				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
+					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
+					<p className="mt-2 text-sm text-gray-600">You do not have permission to view businesses.</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
