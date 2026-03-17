@@ -4,11 +4,15 @@ import IdeaBankApi from "@/api/idea-bank";
 import { IdeaCard } from "@/components/idea-bank/idea-card";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import { Button } from "@/components/ui/button";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function IdeaBankPage() {
   const { data: ideas, isLoading } = IdeaBankApi.GetList.useQuery();
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const canWriteIdea = hasHydrated && hasPermission("idea:write");
 
   return (
     <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
@@ -16,11 +20,13 @@ export default function IdeaBankPage() {
         <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
           All idea-bank posts
         </h1>
-        <Button asChild className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-6 h-10 shadow-sm">
-          <Link href="/idea-bank/new">
-             <Plus className="w-4 h-4 mr-1" /> New idea
-          </Link>
-        </Button>
+        {canWriteIdea && (
+          <Button asChild className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-6 h-10 shadow-sm">
+            <Link href="/idea-bank/new">
+              <Plus className="w-4 h-4 mr-1" /> New idea
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="bg-white rounded-[3rem] p-10 shadow-sm min-h-[80vh]">

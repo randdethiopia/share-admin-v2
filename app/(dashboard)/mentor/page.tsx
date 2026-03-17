@@ -34,6 +34,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED";
@@ -69,6 +71,9 @@ function formatCompactNumber(value?: string) {
 }
 
 export default function MentorProfilePage() {
+	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+	const canReadInvestor = hasHydrated && hasPermission("investor:read");
+	const canWriteInvestor = hasHydrated && hasPermission("investor:write");
 	const [search, setSearch] = React.useState("");
 	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -116,10 +121,26 @@ export default function MentorProfilePage() {
 	};
 
 	const handleAction = () => {
+		if (!canWriteInvestor) return;
 		if (!selectedId) return;
 		if (actionType === "approve") approve(selectedId);
 		else reject(selectedId);
 	};
+
+	if (!hasHydrated) {
+		return <div className="min-h-[40vh]" />;
+	}
+
+	if (!canReadInvestor) {
+		return (
+			<div className="min-h-screen bg-[#E2EDF8] p-8">
+				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
+					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
+					<p className="mt-2 text-sm text-gray-600">You do not have permission to view mentors.</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
@@ -267,7 +288,7 @@ export default function MentorProfilePage() {
 										Approved: {formatDate(mentor.approvedAt)}
 									</p>
 									<div className="flex items-center gap-2">
-										{normalizeStatus(mentor.status) === "PENDING" && (
+										{canWriteInvestor && normalizeStatus(mentor.status) === "PENDING" && (
 											<>
 												<Button
 													className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 h-9 w-9 p-0 rounded-lg"
@@ -382,7 +403,7 @@ export default function MentorProfilePage() {
 											</TableCell>
 											<TableCell className="px-6">
 												<div className="flex justify-center gap-2">
-													{normalizeStatus(mentor.status) === "PENDING" && (
+													{canWriteInvestor && normalizeStatus(mentor.status) === "PENDING" && (
 														<>
 															<Button
 																onClick={() =>

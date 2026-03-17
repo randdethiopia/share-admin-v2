@@ -1,6 +1,8 @@
 "use client";
 
 import IdeaBankApi, { IdeaBankType } from "@/api/idea-bank";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -18,6 +20,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function IdeaCard({ idea }: { idea: IdeaBankType }) {
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const canReadIdea = hasHydrated && hasPermission("idea:read");
+  const canWriteIdea = hasHydrated && hasPermission("idea:write");
+  const canDeleteIdea = hasHydrated && hasPermission("idea:delete");
+
   const { mutate: deleteIdea, isPending } = IdeaBankApi.Delete.useMutation();
 
   const [isPublicLocal, setIsPublicLocal] = useState<boolean>(idea.isPublic);
@@ -98,64 +105,72 @@ export function IdeaCard({ idea }: { idea: IdeaBankType }) {
 
         {/* ACTION FOOTER - Aligned to bottom */}
         <div className="mt-auto flex items-center gap-2">
-          <Link
-            href={viewHref}
-            className={`${actionLinkClassName} text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700`}
-          >
-            View
-          </Link>
+          {canReadIdea && (
+            <Link
+              href={viewHref}
+              className={`${actionLinkClassName} text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700`}
+            >
+              View
+            </Link>
+          )}
 
-          <Link
-            href={`/idea-bank/${idea._id}/edit`}
-            className={`${actionLinkClassName} text-amber-600 hover:bg-amber-50 hover:text-amber-700`}
-          >
-            Edit
-          </Link>
+          {canWriteIdea && (
+            <Link
+              href={`/idea-bank/${idea._id}/edit`}
+              className={`${actionLinkClassName} text-amber-600 hover:bg-amber-50 hover:text-amber-700`}
+            >
+              Edit
+            </Link>
+          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              if (isUpdating) return;
-              const nextIsPublic = !isPublicLocal;
-              optimisticPrevIsPublicRef.current = isPublicLocal;
-              nextIsPublicRef.current = nextIsPublic;
-              setIsPublicLocal(nextIsPublic);
-              updateIdea({ isPublic: nextIsPublic });
-            }}
-            disabled={isUpdating}
-            className={`${actionLinkClassName} text-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:pointer-events-none disabled:opacity-60`}
-          >
-            {isPublicLocal ? "Private" : "Public"}
-          </button>
+          {canWriteIdea && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isUpdating) return;
+                const nextIsPublic = !isPublicLocal;
+                optimisticPrevIsPublicRef.current = isPublicLocal;
+                nextIsPublicRef.current = nextIsPublic;
+                setIsPublicLocal(nextIsPublic);
+                updateIdea({ isPublic: nextIsPublic });
+              }}
+              disabled={isUpdating}
+              className={`${actionLinkClassName} text-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:pointer-events-none disabled:opacity-60`}
+            >
+              {isPublicLocal ? "Private" : "Public"}
+            </button>
+          )}
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                type="button"
-                disabled={isPending}
-                className={`${actionLinkClassName} text-red-600 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-60`}
-              >
-                {isPending ? "Deleting..." : "Delete"}
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete idea?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the idea.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700"
-                  onClick={() => deleteIdea(idea._id)}
+          {canDeleteIdea && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  className={`${actionLinkClassName} text-red-600 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-60`}
                 >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  {isPending ? "Deleting..." : "Delete"}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete idea?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the idea.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={() => deleteIdea(idea._id)}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
     </div>

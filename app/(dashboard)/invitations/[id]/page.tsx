@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import InvitationApi from "@/api/invitation";
+import { hasPermission } from "@/lib/permission";
+import useAuthStore from "@/store/useAuthStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +37,9 @@ function normalizeStatus(status?: string) {
 export default function InvitationDetailPage() {
 	const params = useParams();
 	const router = useRouter();
+	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+	const canReadInvitation = hasHydrated && hasPermission("invitation:read");
+	const canWriteInvitation = hasHydrated && hasPermission("invitation:write");
 
 	const id = useMemo(() => {
 		const raw = (params as { id?: string | string[] })?.id;
@@ -82,6 +87,23 @@ export default function InvitationDetailPage() {
 			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm text-gray-600">Missing invitation id.</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (!hasHydrated) {
+		return <div className="min-h-[40vh]" />;
+	}
+
+	if (!canReadInvitation) {
+		return (
+			<div className="min-h-screen bg-[#E2EDF8] p-8">
+				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
+					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
+					<p className="mt-2 text-sm text-gray-600">
+						You do not have permission to view invitations.
+					</p>
 				</div>
 			</div>
 		);
@@ -140,8 +162,8 @@ export default function InvitationDetailPage() {
 	const isAccepted = status.includes("accept");
 	const isRejected = status.includes("reject");
 	const isHired = status.includes("hire");
-	const canHire = isAccepted && !isHired;
-	const canDecide = !isAccepted && !isRejected && !isHired;
+	const canHire = canWriteInvitation && isAccepted && !isHired;
+	const canDecide = canWriteInvitation && !isAccepted && !isRejected && !isHired;
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
