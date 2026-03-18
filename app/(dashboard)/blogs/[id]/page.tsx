@@ -4,8 +4,6 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import BlogApi from "@/api/blog";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -24,8 +22,6 @@ function statusBadgeClass(status: string) {
 export default function BlogDetailPage() {
 	const params = useParams<{ id?: string | string[] }>();
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canReadBlog = hasHydrated && hasPermission("blog:read");
 
 	const id = useMemo(() => {
 		const raw = params?.id;
@@ -52,21 +48,6 @@ export default function BlogDetailPage() {
 							Back to list
 						</Link>
 					</div>
-				</div>
-			</div>
-		);
-	}
-
-	if (!hasHydrated) {
-		return <div className="min-h-[40vh]" />;
-	}
-
-	if (!canReadBlog) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">You do not have permission to view blogs.</p>
 				</div>
 			</div>
 		);

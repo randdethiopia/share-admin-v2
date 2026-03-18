@@ -3,8 +3,6 @@
 import { OpportunityType } from "@/api/opportunity";
 import Link from "next/link";
 import OpportunityApi from "@/api/opportunity";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -22,10 +20,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function OpportunityCard({ item }: { item: OpportunityType }) {
-  const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const canReadOpportunity = hasHydrated && hasPermission("opportunity:read");
-  const canWriteOpportunity = hasHydrated && hasPermission("opportunity:write");
-  const canDeleteOpportunity = hasHydrated && hasPermission("opportunity:delete");
  
   const { mutate: deleteOp, isPending: isDeleting } = OpportunityApi.Delete.useMutation();
 
@@ -98,72 +92,64 @@ export function OpportunityCard({ item }: { item: OpportunityType }) {
         </Link>
 
         <div className="mt-auto flex items-center gap-2">
-          {canReadOpportunity && (
-            <Link
-              href={viewHref}
-              className={`${actionLinkClassName} text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700`}
-            >
-              View
-            </Link>
-          )}
+          <Link
+            href={viewHref}
+            className={`${actionLinkClassName} text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700`}
+          >
+            View
+          </Link>
 
-          {canWriteOpportunity && (
-            <Link
-              href={`/opportunity/${item._id}/edit`}
-              className={`${actionLinkClassName} text-amber-600 hover:bg-amber-50 hover:text-amber-700`}
-            >
-              Edit
-            </Link>
-          )}
+          <Link
+            href={`/opportunity/${item._id}/edit`}
+            className={`${actionLinkClassName} text-amber-600 hover:bg-amber-50 hover:text-amber-700`}
+          >
+            Edit
+          </Link>
 
-          {canWriteOpportunity && (
-            <button
-              type="button"
-              onClick={() => {
-                if (isUpdating) return;
-                const nextIsPublic = !isPublicLocal;
-                optimisticPrevIsPublicRef.current = isPublicLocal;
-                nextIsPublicRef.current = nextIsPublic;
-                setIsPublicLocal(nextIsPublic);
-                updateOp({ isPublic: nextIsPublic });
-              }}
-              disabled={isUpdating}
-              className={`${actionLinkClassName} text-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:pointer-events-none disabled:opacity-60`}
-            >
-              {isPublicLocal ? "Private" : "Public"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (isUpdating) return;
+              const nextIsPublic = !isPublicLocal;
+              optimisticPrevIsPublicRef.current = isPublicLocal;
+              nextIsPublicRef.current = nextIsPublic;
+              setIsPublicLocal(nextIsPublic);
+              updateOp({ isPublic: nextIsPublic });
+            }}
+            disabled={isUpdating}
+            className={`${actionLinkClassName} text-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:pointer-events-none disabled:opacity-60`}
+          >
+            {isPublicLocal ? "Private" : "Public"}
+          </button>
 
-          {canDeleteOpportunity && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  type="button"
-                  disabled={isDeleting}
-                  className={`${actionLinkClassName} text-red-600 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-60`}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                disabled={isDeleting}
+                className={`${actionLinkClassName} text-red-600 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-60`}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete opportunity?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the opportunity.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={() => deleteOp(item._id)}
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete opportunity?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the opportunity.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={() => deleteOp(item._id)}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>

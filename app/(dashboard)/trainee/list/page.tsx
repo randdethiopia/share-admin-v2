@@ -41,8 +41,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import Link from "next/link";
 import { Loader2, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -61,10 +59,6 @@ function normalizeIsActive(value: unknown) {
 }
 
 export default function TraineePage() {
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canReadTrainee = hasHydrated && hasPermission("trainee:read");
-	const canWriteTrainee = hasHydrated && hasPermission("trainee:write");
-	const canDeleteTrainee = hasHydrated && hasPermission("trainee:delete");
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [searchInput, setSearchInput] = useState("");
@@ -193,26 +187,22 @@ export default function TraineePage() {
 	};
 
 	const confirmDelete = () => {
-		if (!canDeleteTrainee) return;
 		if (!confirmId) return;
 		deleteTrainee(confirmId);
 	};
 
 	const openBulkPicker = () => {
-		if (!canWriteTrainee) return;
 		setIsSelectable(false);
 		setOpenPickDataBulk(true);
 	};
 
 	const openSinglePicker = (id: string) => {
-		if (!canWriteTrainee) return;
 		setIsSelectable(false);
 		setSelectedIds([id]);
 		setOpenPickDataBulk(true);
 	};
 
 	const openBulkConfirm = () => {
-		if (!canWriteTrainee) return;
 		if (!pickedData) {
 			toast.error("Select a cohort before continuing");
 			return;
@@ -226,7 +216,6 @@ export default function TraineePage() {
 	};
 
 	const confirmBulkAssign = () => {
-		if (!canWriteTrainee) return;
 		if (!pickedData) {
 			toast.error("Select a cohort before confirming");
 			return;
@@ -238,21 +227,6 @@ export default function TraineePage() {
 		addBulk({ cohortId: pickedData, trannieIds: selectedIds });
 	};
 
-	if (!hasHydrated) {
-		return <div className="min-h-[40vh]" />;
-	}
-
-	if (!canReadTrainee) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">You do not have permission to view trainees.</p>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
 			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4">
@@ -263,7 +237,6 @@ export default function TraineePage() {
 					<p className="text-zinc-600 text-sm font-medium">See all your trainees</p>
 				</div>
 				<div className="flex flex-wrap gap-3">
-					{canWriteTrainee && (
 					<Button
 						variant="outline"
 						onClick={() =>
@@ -282,8 +255,7 @@ export default function TraineePage() {
 					>
 						{isSelectable ? "Cancel Selection" : "Bulk Assign"}
 					</Button>
-					)}
-					{canWriteTrainee && isSelectable && (
+					{isSelectable && (
 						<Button
 							className="bg-blue-600 hover:bg-blue-700 rounded-xl px-6 font-bold"
 							onClick={openBulkPicker}
@@ -292,20 +264,16 @@ export default function TraineePage() {
 							Done
 						</Button>
 					)}
-					{canWriteTrainee && (
 					<Button
 						asChild
 						className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
 					>
 						<Link href="/trainee/list/create-trainee">Create</Link>
 					</Button>
-					)}
-					{canWriteTrainee && (
 					<Button className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold">
 						<Upload size={16} className="mr-2" />
 						Import
 					</Button>
-					)}
 				</div>
 			</div>
 

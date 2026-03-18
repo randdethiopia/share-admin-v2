@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import IdeaBankApi from "@/api/idea-bank";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -12,8 +10,6 @@ import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
 export default function IdeaDetailPage() {
   const params = useParams();
-  const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const canReadIdea = hasHydrated && hasPermission("idea:read");
   const rawId = params?.id as string | string[] | undefined;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const { data: idea, isLoading, isError } = IdeaBankApi.GetById.useQuery(id ?? "");
@@ -31,26 +27,6 @@ export default function IdeaDetailPage() {
 
   if (isLoading) {
     return <DetailPageSkeleton />;
-  }
-
-  if (!hasHydrated) {
-    return <DetailPageSkeleton />;
-  }
-
-  if (!canReadIdea) {
-    return (
-      <div className="min-h-screen bg-[#E2EDF8] p-8">
-        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            You do not have permission to view ideas.
-          </p>
-          <Link href="/idea-bank" className="mt-6 inline-flex rounded-md bg-[#3B82F6] px-4 py-2 text-white hover:bg-blue-600">
-            Back to ideas
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   if (isError || !idea) {

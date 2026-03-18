@@ -19,8 +19,6 @@ import {
 } from "lucide-react";
 
 import AdvisorProfileApi from "@/api/advisor-profile";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,9 +80,6 @@ function getFileUrl(file: unknown) {
 export default function ExpertDetailPage() {
 	const params = useParams();
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canReadAdvisor = hasHydrated && hasPermission("advisor:read");
-	const canWriteAdvisor = hasHydrated && hasPermission("advisor:write");
 	const id = useMemo(() => {
 		const raw = (params as { id?: string | string[] })?.id;
 		return Array.isArray(raw) ? raw[0] : raw;
@@ -126,21 +121,6 @@ export default function ExpertDetailPage() {
 					>
 						Back to list
 					</Button>
-				</div>
-			</div>
-		);
-	}
-
-	if (!hasHydrated) {
-		return <div className="min-h-[40vh]" />;
-	}
-
-	if (!canReadAdvisor) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">You do not have permission to view experts.</p>
 				</div>
 			</div>
 		);
@@ -195,7 +175,7 @@ export default function ExpertDetailPage() {
 	}
 
 	const status = normalizeStatus(advisor.status);
-	const canDecide = canWriteAdvisor && status === "PENDING";
+	const canDecide = status === "PENDING";
 
 	const skills = Array.isArray(advisor.skills) ? advisor.skills : [];
 	const languages = Array.isArray(advisor.languages) ? advisor.languages : [];
