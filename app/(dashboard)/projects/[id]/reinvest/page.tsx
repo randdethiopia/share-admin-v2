@@ -10,8 +10,6 @@ import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 import ProjectApi from "@/api/project";
 import InvestmentApi from "@/api/investment";
 import { reinvestSchema, type ReinvestData } from "@/lib/validator";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 
 import {
 	Table,
@@ -35,8 +33,6 @@ function toId(value: string | string[] | undefined) {
 export default function ReinvestPage() {
 	const params = useParams();
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canWriteProject = hasHydrated && hasPermission("project:write");
 	const id = toId((params as Record<string, string | string[] | undefined>)?.id);
 
 	const [search, setSearch] = useState("");
@@ -103,7 +99,6 @@ export default function ReinvestPage() {
 	}, [id, investors, form]);
 
 	const onSubmit = (data: ReinvestData) => {
-		if (!canWriteProject) return;
 		const payload: ReinvestData = {
 			projectId: id,
 			investments: data.investments.filter(
@@ -147,17 +142,6 @@ export default function ReinvestPage() {
 
 	if (isBankLoading || isProjectLoading) {
 		return <DetailPageSkeleton />;
-	}
-
-	if (!canWriteProject) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">You do not have permission to reinvest projects.</p>
-				</div>
-			</div>
-		);
 	}
 
 	return (

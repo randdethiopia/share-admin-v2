@@ -3,8 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import BlogApi, { type BlogType } from "@/api/blog";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,9 +59,6 @@ function statusBadgeClass(status: string) {
 
 export default function BlogsPage() {
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canReadBlog = hasHydrated && hasPermission("blog:read");
-	const canWriteBlog = hasHydrated && hasPermission("blog:write");
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [page, setPage] = useState(1);
@@ -115,31 +110,14 @@ export default function BlogsPage() {
 	};
 
 	const openDetails = (id: string) => {
-		if (!canReadBlog) return;
 		router.push(`/blogs/${id}`);
 	};
 
 	const submitConfirm = () => {
-		if (!canWriteBlog) return;
 		if (!selectedBlogId) return;
 		if (confirmAction === "approve") approveBlog(selectedBlogId);
 		else rejectBlog(selectedBlogId);
 	};
-
-	if (!hasHydrated) {
-		return <div className="min-h-[40vh]" />;
-	}
-
-	if (!canReadBlog) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">You do not have permission to view blogs.</p>
-				</div>
-			</div>
-		);
-	}
 
 	const isWorking = isApproving || isRejecting;
 
@@ -248,7 +226,7 @@ export default function BlogsPage() {
 										</div>
 									</div>
 
-									{canWriteBlog && status === "PENDING" && (
+									{status === "PENDING" && (
 										<div className="mt-3 flex gap-2">
 											<Button
 												variant="outline"
@@ -354,7 +332,7 @@ export default function BlogsPage() {
 														>
 															<Eye size={16} />
 														</Button>
-														{canWriteBlog && status === "PENDING" && (
+														{status === "PENDING" && (
 															<>
 																<Button
 																	onClick={() => openConfirm("approve", blog._id)}

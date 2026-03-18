@@ -3,8 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import InvitationApi, { type InvitationType } from "@/api/invitation";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,8 +35,6 @@ function normalizeStatus(status?: string) {
 
 export default function InvitationsPage() {
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canReadInvitation = hasHydrated && hasPermission("invitation:read");
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState<SortMode>("newest");
 	const [page, setPage] = useState(1);
@@ -90,26 +86,8 @@ export default function InvitationsPage() {
 	};
 
 	const openDetails = (id: string) => {
-		if (!canReadInvitation) return;
 		router.push(`/invitations/${id}`);
 	};
-
-	if (!hasHydrated) {
-		return <div className="min-h-[40vh]" />;
-	}
-
-	if (!canReadInvitation) {
-		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-8">
-				<div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-					<h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-					<p className="mt-2 text-sm text-gray-600">
-						You do not have permission to view invitations.
-					</p>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">

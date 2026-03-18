@@ -6,8 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 
 import ProjectApi, { type ProjectGallery, type ProjectUpdate } from "@/api/project";
 import InvestmentApi, { type InvestmentType } from "@/api/investment";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -92,8 +90,6 @@ function timelineDotIcon(status: string) {
 export default function ProjectDetailPage() {
 	const params = useParams();
 	const router = useRouter();
-	const hasHydrated = useAuthStore((s) => s.hasHydrated);
-	const canWriteProject = hasHydrated && hasPermission("project:write");
 	const id = toId((params as Record<string, string | string[] | undefined>)?.id);
 
 	const [approveOpen, setApproveOpen] = React.useState(false);
@@ -140,12 +136,10 @@ export default function ProjectDetailPage() {
 	}
 
 	const onOpenApprove = () => {
-		if (!canWriteProject) return;
 		setApproveOpen(true);
 	};
 
 	const onConfirmApprove = () => {
-		if (!canWriteProject) return;
 		if (!dueDate) return;
 		approveInvestment.mutate({ projectId: id, dueDate });
 	};
@@ -182,7 +176,6 @@ export default function ProjectDetailPage() {
 				</div>
 
 				<div className="flex flex-col sm:flex-row gap-2">
-					{canWriteProject && (
 					<Button
 						variant="outline"
 						className="rounded-xl h-11"
@@ -190,8 +183,6 @@ export default function ProjectDetailPage() {
 					>
 						Reinvest
 					</Button>
-					)}
-					{canWriteProject && (
 					<Button
 						className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11"
 						onClick={onOpenApprove}
@@ -199,7 +190,6 @@ export default function ProjectDetailPage() {
 					>
 						Approve Investments
 					</Button>
-					)}
 				</div>
 			</div>
 
@@ -257,7 +247,7 @@ export default function ProjectDetailPage() {
 												{formatDate(inv.createdAt as string)}
 											</TableCell>
 											<TableCell className="text-right">
-														{canWriteProject && inv.status === "PENDING" ? (
+												{inv.status === "PENDING" ? (
 													<Button
 														size="sm"
 														onClick={onOpenApprove}
@@ -378,7 +368,7 @@ export default function ProjectDetailPage() {
 											className="text-xs text-gray-500 mt-2 line-clamp-3"
 											dangerouslySetInnerHTML={{ __html: update.description ?? "" }}
 										/>
-										{canWriteProject && update.status === "PENDING" && (
+										{update.status === "PENDING" && (
 											<div className="flex gap-4 mt-4">
 												<button
 													type="button"

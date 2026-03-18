@@ -6,8 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
 import OpportunityApi from "@/api/opportunity";
-import { hasPermission } from "@/lib/permission";
-import useAuthStore from "@/store/useAuthStore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +27,6 @@ export default function EditOpportunityPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const canWriteOpportunity = hasHydrated && hasPermission("opportunity:write");
 
   const updateToastIdRef = useRef<string | number | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,31 +94,9 @@ export default function EditOpportunityPage() {
   };
 
   const onSubmit = (data: OpportunityFormData) => {
-    if (!canWriteOpportunity || isUpdating || isRedirecting) return;
+    if (isUpdating || isRedirecting) return;
     updateOp(data);
   };
-
-  if (!hasHydrated) return <DetailPageSkeleton />;
-
-  if (!canWriteOpportunity) {
-    return (
-      <div className="min-h-screen bg-[#E2EDF8] p-8">
-        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">Access denied</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            You do not have permission to edit opportunities.
-          </p>
-          <Button
-            type="button"
-            className="mt-6 bg-[#3B82F6] hover:bg-blue-600 text-white"
-            onClick={() => router.push("/opportunity")}
-          >
-            Back to opportunities
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) return <DetailPageSkeleton />;
 
