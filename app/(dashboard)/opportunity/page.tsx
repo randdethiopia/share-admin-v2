@@ -1,6 +1,5 @@
 "use client";
-
-import OpportunityApi from "@/api/opportunity";
+import api from "@/api";
 import { OpportunityCard } from "@/components/opportunity/opportunity-card";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function OpportunitiesPage() {
-  const { data, isLoading } = OpportunityApi.GetList.useQuery();
+  const { data, isLoading } = api.Opportunity.GetList.useQuery();
 
   return (
     <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">

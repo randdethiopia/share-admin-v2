@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
-import OpportunityApi from "@/api/opportunity";
+import api from "@/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ export default function NewOpportunityPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
 
-  const { mutate: createOp, isPending } = OpportunityApi.Create.useMutation({
+  const { mutate: createOp, isPending } = api.Opportunity.Create.useMutation({
     onSuccess: () => {
       toast.success("Opportunity created!");
       router.push("/opportunity");

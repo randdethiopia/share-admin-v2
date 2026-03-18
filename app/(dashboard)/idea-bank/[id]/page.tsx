@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import IdeaBankApi from "@/api/idea-bank";
+import api from "@/api";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ export default function IdeaDetailPage() {
   const params = useParams();
   const rawId = params?.id as string | string[] | undefined;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
-  const { data: idea, isLoading, isError } = IdeaBankApi.GetById.useQuery(id ?? "");
+  const { data: idea, isLoading, isError } = api.IdeaBank.GetById.useQuery(id ?? "");
 
   useEffect(() => {
     if (!id) {

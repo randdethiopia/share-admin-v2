@@ -4,7 +4,7 @@ import { useEffect, useRef, type ChangeEvent } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ideaBankSchema, type IdeaBankFormData } from "@/lib/validator";
-import IdeaBankApi from "@/api/idea-bank";
+import api from "@/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { z } from "zod";
 type IdeaBankFormValues = z.input<typeof ideaBankSchema>;
 
 export default function NewIdeaPage() {
-  const { mutate: createIdea, isPending } = IdeaBankApi.Create.useMutation();
+  const { mutate: createIdea, isPending } = api.IdeaBank.Create.useMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
 

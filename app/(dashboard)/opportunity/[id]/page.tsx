@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import OpportunityApi from "@/api/opportunity";
+import api from "@/api";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ export default function OpportunityDetailPage() {
   const rawId = params?.id as string | string[] | undefined;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
-  const { data: item, isLoading, isError } = OpportunityApi.GetById.useQuery(id ?? "");
+  const { data: item, isLoading, isError } = api.Opportunity.GetById.useQuery(id ?? "");
 
   useEffect(() => {
     if (!id) {

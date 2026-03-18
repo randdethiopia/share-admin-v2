@@ -2,9 +2,7 @@
 
 import * as React from "react";
 
-import AdvisorProfileApi from "@/api/advisor-profile";
-import BusinessProfileApi from "@/api/Buisness";
-import InvestorProfileApi from "@/api/mentor";
+import api from "@/api";
 import { transformAnalyticsData } from "@/lib/transform";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +23,11 @@ export default function DashboardPage() {
 	const [activeFilter, setActiveFilter] = React.useState<Filter>(FILTERS[0]);
 
 	const { data: experts = [], isLoading: isExpertsLoading } =
-		AdvisorProfileApi.GetList.useQuery();
+		api.AdvisorProfile.GetList.useQuery();
 	const { data: businesses = [], isLoading: isBusinessesLoading } =
-		BusinessProfileApi.GetList.useQuery();
+		api.BusinessProfile.GetList.useQuery();
 	const { data: investors = [], isLoading: isInvestorsLoading } =
-		InvestorProfileApi.GetList.useQuery();
+		api.InvestorProfile.GetList.useQuery();
 
 	const isLoading = isExpertsLoading || isBusinessesLoading || isInvestorsLoading;
 

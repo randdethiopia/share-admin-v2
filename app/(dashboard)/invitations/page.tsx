@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import InvitationApi, { type InvitationType } from "@/api/invitation";
+import api from "@/api";
+import type { InvitationType } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ export default function InvitationsPage() {
 		isLoading,
 		isError,
 		error,
-	} = InvitationApi.GetList.useQuery();
+	} = api.Invitation.GetList.useQuery();
 
 	const filteredData = useMemo(() => {
 		const rows = invitations as InvitationRow[];

@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ideaBankSchema } from "@/lib/validator";
-import IdeaBankApi from "@/api/idea-bank";
+import api from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -38,8 +38,8 @@ export default function EditIdeaPage() {
 
   const updateToastIdRef = useRef<string | number | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { data: idea, isLoading, isError } = IdeaBankApi.GetById.useQuery(id ?? "");
-  const { mutate: updateIdea, isPending } = IdeaBankApi.Update.useMutation(id ?? "", {
+  const { data: idea, isLoading, isError } = api.IdeaBank.GetById.useQuery(id ?? "");
+  const { mutate: updateIdea, isPending } = api.IdeaBank.Update.useMutation(id ?? "", {
     onMutate: () => {
       updateToastIdRef.current = toast.loading("Updating...");
     },

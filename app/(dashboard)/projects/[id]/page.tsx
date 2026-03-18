@@ -4,8 +4,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import ProjectApi, { type ProjectGallery, type ProjectUpdate } from "@/api/project";
-import InvestmentApi, { type InvestmentType } from "@/api/investment";
+import api, { type InvestmentType, type ProjectGallery, type ProjectUpdate } from "@/api";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,19 +95,19 @@ export default function ProjectDetailPage() {
 	const [dueDate, setDueDate] = React.useState("");
 
 	const { data: project, isLoading: isProjLoading } =
-		ProjectApi.GetById.useQuery(id);
+		api.Project.GetById.useQuery(id);
 	const { data: investments, isLoading: isInvLoading } =
-		InvestmentApi.GetByProjectId.useQuery(id);
+		api.Investment.GetByProjectId.useQuery(id);
 
-	const approveInvestment = InvestmentApi.Approve.useMutation({
+	const approveInvestment = api.Investment.Approve.useMutation({
 		onSuccess: () => {
 			setApproveOpen(false);
 			setDueDate("");
 		},
 	});
 
-	const approveUpdate = ProjectApi.ApproveUpdate.useMutation();
-	const rejectUpdate = ProjectApi.RejectUpdate.useMutation();
+	const approveUpdate = api.Project.ApproveUpdate.useMutation();
+	const rejectUpdate = api.Project.RejectUpdate.useMutation();
 
 	const pendingInvestments = React.useMemo(
 		() => (investments ?? []).filter((inv) => inv.status === "PENDING"),

@@ -3,9 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 
-import BusinessProfileApi, {
-	type BusinessProfileType,
-} from "@/api/Buisness";
+import api from "@/api";
+import type { BusinessProfileType } from "@/api";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -86,22 +85,22 @@ export default function BusinessPage() {
 		isLoading,
 		isError,
 		error,
-	} = BusinessProfileApi.GetList.useQuery();
+	} = api.BusinessProfile.GetList.useQuery();
 
 	const { mutate: approveBusiness, isPending: isApproving } =
-		BusinessProfileApi.Approve.useMutation({
+		api.BusinessProfile.Approve.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 	const { mutate: rejectBusiness, isPending: isRejecting } =
-		BusinessProfileApi.Reject.useMutation({
+		api.BusinessProfile.Reject.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 	const { mutate: approveUpdate, isPending: isApprovingUpdate } =
-		BusinessProfileApi.UpdateApprove.useMutation({
+		api.BusinessProfile.UpdateApprove.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
-		BusinessProfileApi.UpdateReject.useMutation({
+		api.BusinessProfile.UpdateReject.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 

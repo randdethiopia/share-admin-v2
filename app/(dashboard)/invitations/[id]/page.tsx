@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import InvitationApi from "@/api/invitation";
+import api from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,12 +51,12 @@ export default function InvitationDetailPage() {
 		isLoading,
 		isError,
 		error,
-	} = InvitationApi.GetById.useQuery(id ?? "", {
+	} = api.Invitation.GetById.useQuery(id ?? "", {
 		enabled: Boolean(id),
 	});
 
 	const { mutate: hireExpert, isPending: isHiring } =
-		InvitationApi.Hire.useMutation({
+		api.Invitation.Hire.useMutation({
 			onSuccess: () => {
 				setIsHireModalOpen(false);
 				router.push("/invitations");
@@ -64,14 +64,14 @@ export default function InvitationDetailPage() {
 		});
 
 	const { mutate: acceptInvitation, isPending: isAccepting } =
-		InvitationApi.Accept.useMutation({
+		api.Invitation.Accept.useMutation({
 			onSuccess: () => {
 				setIsAcceptModalOpen(false);
 			},
 		});
 
 	const { mutate: rejectInvitation, isPending: isRejecting } =
-		InvitationApi.Reject.useMutation({
+		api.Invitation.Reject.useMutation({
 			onSuccess: () => {
 				setIsRejectModalOpen(false);
 			},

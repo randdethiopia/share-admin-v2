@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { traineeSchema, type TraineeFormData } from "@/lib/validator";
-import TraineeAuth from "@/api/trainee";
+import api from "@/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ export default function CreateTraineePage() {
 	const router = useRouter();
 
 	const { mutate: createTrainee, isPending } =
-		TraineeAuth.registerTrainee.useMutation({
+		api.TraineeAuth.registerTrainee.useMutation({
 			onSuccess: () => {
 				router.push("/dashboard/trainee/list");
 			},
