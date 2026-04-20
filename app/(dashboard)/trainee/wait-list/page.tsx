@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
-import WaitListApi, { getWaitListServerSideFn, type WaitListType } from "@/api/waitlist";
+import api, { getWaitListServerSideFn, type WaitListType } from "@/api";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
@@ -139,7 +139,7 @@ export default function WaitListPage() {
 		isLoading,
 		isError,
 		error,
-	} = WaitListApi.Get.useQuery({ page: 1, limit: 6000 });
+	} = api.WaitList.Get.useQuery({ page: 1, limit: 6000 });
 
 	const allApplicants = React.useMemo(() => {
 		return (waitListRes?.data ?? []) as WaitListType[];

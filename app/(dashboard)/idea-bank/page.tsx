@@ -1,6 +1,6 @@
 "use client";
 
-import IdeaBankApi from "@/api/idea-bank";
+import api from "@/api";
 import { IdeaCard } from "@/components/idea-bank/idea-card";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function IdeaBankPage() {
-  const { data: ideas, isLoading } = IdeaBankApi.GetList.useQuery();
+  const { data: ideas, isLoading } = api.IdeaBank.GetList.useQuery();
 
   return (
     <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">

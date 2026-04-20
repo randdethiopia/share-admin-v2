@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 
-import AdvisorProfileApi, { type ProfileType } from "@/api/advisor-profile";
+import api from "@/api";
+import type { AdvisorProfileType } from "@/api";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -78,16 +79,16 @@ export default function ExpertPage() {
 		isLoading,
 		isError,
 		error,
-	} = AdvisorProfileApi.GetList.useQuery();
+	} = api.AdvisorProfile.GetList.useQuery();
 
-	const approveMutation = AdvisorProfileApi.Approve.useMutation({
+	const approveMutation = api.AdvisorProfile.Approve.useMutation({
 		onSuccess: () => {
 			setApproveOpen(false);
 			setSelectedId(null);
 		},
 	});
 
-	const rejectMutation = AdvisorProfileApi.Reject.useMutation({
+	const rejectMutation = api.AdvisorProfile.Reject.useMutation({
 		onSuccess: () => {
 			setRejectOpen(false);
 			setSelectedId(null);
@@ -96,7 +97,7 @@ export default function ExpertPage() {
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
-		return (advisors as ProfileType[]).filter((advisor) => {
+		return (advisors as AdvisorProfileType[]).filter((advisor) => {
 			const matchesSearch = query
 				? (advisor.fullName ?? "").toLowerCase().includes(query) ||
 					(advisor.email ?? "").toLowerCase().includes(query) ||

@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { changePasswordSchema, type changePasswordData } from "@/lib/validator";
-import adminApi from "@/api/admin";
+import api from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +24,7 @@ export default function ChangePasswordPage() {
 		defaultValues: { oldPassword: "", newPassword: "", confirmPassword: "" },
 	});
 
-	const { mutate: changePass, isPending } = adminApi.changePassword.useMutation({
+	const { mutate: changePass, isPending } = api.AdminAuth.changePassword.useMutation({
 		onSuccess: () => {
 			toast.success("Password updated successfully");
 			form.reset();

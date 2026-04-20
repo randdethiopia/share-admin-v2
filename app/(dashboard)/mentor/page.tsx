@@ -3,9 +3,8 @@
 import * as React from "react";
 import { Check, DollarSign, Globe, Loader2, Search, X, Briefcase } from "lucide-react";
 
-import MentorProfileApi, {
-	type MentorProfileType,
-} from "@/api/mentor-profile";
+import api from "@/api";
+import {MentorProfileType} from "@/api/mentor-profile";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -81,14 +80,14 @@ export default function MentorProfilePage() {
 		isLoading,
 		isError,
 		error,
-	} = MentorProfileApi.GetList.useQuery();
+	} = api.MentorProfile.GetList.useQuery();
 
 	const { mutate: approve, isPending: isApproving } =
-		MentorProfileApi.Approve.useMutation({
+		api.MentorProfile.Approve.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 	const { mutate: reject, isPending: isRejecting } =
-		MentorProfileApi.Reject.useMutation({
+		api.MentorProfile.Reject.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
 

@@ -7,8 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
-import ProjectApi from "@/api/project";
-import InvestmentApi from "@/api/investment";
+import api from "@/api";
 import { reinvestSchema, type ReinvestData } from "@/lib/validator";
 
 import {
@@ -40,11 +39,11 @@ export default function ReinvestPage() {
 		() => new Set()
 	);
 	const { data: project, isLoading: isProjectLoading } =
-		ProjectApi.GetById.useQuery(id);
+		api.Project.GetById.useQuery(id);
 	const { data: bank, isLoading: isBankLoading } =
-		InvestmentApi.GetBank.useQuery();
+		api.Investment.GetBank.useQuery();
 	const { mutate: performReinvest, isPending } =
-		InvestmentApi.ReInvest.useMutation({
+		api.Investment.ReInvest.useMutation({
 			onSuccess: () => {
 				router.back();
 			},

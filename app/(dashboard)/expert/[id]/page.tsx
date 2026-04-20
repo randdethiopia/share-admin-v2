@@ -18,7 +18,7 @@ import {
 	X,
 } from "lucide-react";
 
-import AdvisorProfileApi from "@/api/advisor-profile";
+import api from "@/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,17 +93,17 @@ export default function ExpertDetailPage() {
 		isLoading,
 		isError,
 		error,
-	} = AdvisorProfileApi.GetById.useQuery(id ?? "", {
+	} = api.AdvisorProfile.GetById.useQuery(id ?? "", {
 		queryKey: ["AdvisorProfile", id ?? ""],
 		enabled: Boolean(id),
 	});
 
 	const { mutate: approve, isPending: isApproving } =
-		AdvisorProfileApi.Approve.useMutation({
+		api.AdvisorProfile.Approve.useMutation({
 			onSuccess: () => setApproveOpen(false),
 		});
 	const { mutate: reject, isPending: isRejecting } =
-		AdvisorProfileApi.Reject.useMutation({
+		api.AdvisorProfile.Reject.useMutation({
 			onSuccess: () => setRejectOpen(false),
 		});
 

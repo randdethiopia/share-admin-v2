@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import BlogApi, { type BlogType } from "@/api/blog";
+import api from "@/api";
+import type { BlogType } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,13 +72,13 @@ export default function BlogsPage() {
 		isLoading,
 		isError,
 		error,
-	} = BlogApi.GetList.useQuery();
+	} = api.Blog.GetList.useQuery();
 
 	const { mutate: approveBlog, isPending: isApproving } =
-		BlogApi.Approve.useMutation({
+		api.Blog.Approve.useMutation({
 			onSuccess: () => setConfirmOpen(false),
 		});
-	const { mutate: rejectBlog, isPending: isRejecting } = BlogApi.Reject.useMutation({
+	const { mutate: rejectBlog, isPending: isRejecting } = api.Blog.Reject.useMutation({
 		onSuccess: () => setConfirmOpen(false),
 	});
 

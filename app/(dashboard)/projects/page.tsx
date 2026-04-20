@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import ProjectApi, { getProjectByIdFn, type ProjectStatus, type ProjectType } from "@/api/project";
+import api, { getProjectByIdFn, type ProjectStatus, type ProjectType } from "@/api";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { getInvestmentByProjectIdFn } from "@/api/investment";
@@ -142,13 +142,13 @@ export default function ProjectsPage() {
 		error,
 		refetch,
 		isFetching,
-	} = ProjectApi.GetList.useQuery({
+	} = api.Project.GetList.useQuery({
 		enabled: canFetchProjects,
 	});
 
-	const approveMutation = ProjectApi.Approve.useMutation();
-	const rejectMutation = ProjectApi.Reject.useMutation();
-	const deleteMutation = ProjectApi.Delete.useMutation();
+	const approveMutation = api.Project.Approve.useMutation();
+	const rejectMutation = api.Project.Reject.useMutation();
+	const deleteMutation = api.Project.Delete.useMutation();
 
 	const filteredData = React.useMemo(() => {
 		const list = projects ?? [];
