@@ -47,8 +47,8 @@ export interface AdminLogin {
   password: string;
 }
 export interface ChangePasswordType {
-  oldPassword: string;
-  newPassword: string;
+  email: string;
+  password: string;
   confirmPassword: string;
 }
 export interface ForgotPasswordResType {

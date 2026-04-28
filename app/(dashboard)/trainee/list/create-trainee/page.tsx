@@ -25,7 +25,7 @@ export default function CreateTraineePage() {
 	const { mutate: createTrainee, isPending } =
 		api.TraineeAuth.registerTrainee.useMutation({
 			onSuccess: () => {
-				router.push("/dashboard/trainee/list");
+				router.push("/trainee/list");
 			},
 		});
 
@@ -146,7 +146,7 @@ export default function CreateTraineePage() {
 									type="button"
 									variant="outline"
 									className="rounded-xl h-11"
-									onClick={() => router.push("/dashboard/trainee/list")}
+									onClick={() => router.push("/trainee/list")}
 									disabled={isPending}
 								>
 									Cancel

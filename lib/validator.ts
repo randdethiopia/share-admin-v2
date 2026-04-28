@@ -91,19 +91,22 @@ export const traineeSchema = z.object({
   phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
 })
 
-export const changePasswordSchema= z.object({
-  oldPassword: z.string().min(1, "Old password is required"),
-  newPassword:z.string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      "Password must contain uppercase, lowercase, number and special character"
-    ),
-      confirmPassword: z.string().min(1, "Please confirm your password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"], // This puts the error on the 'Confirm' box
-});
+export const changePasswordSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, 
+        "Password must contain uppercase, lowercase, number and special character"
+      ),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 export const adminSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
