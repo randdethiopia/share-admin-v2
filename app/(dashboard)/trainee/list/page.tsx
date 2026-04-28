@@ -124,15 +124,18 @@ export default function TraineePage() {
 		return trainees;
 	}, [trainees, status]);
 
-	const cohortOptions = useMemo(
-		() =>
-			cohortData.map(({ id, name, description }) => ({
-				id,
-				name,
-				description,
-			})),
-		[cohortData]
-	);
+	const cohortOptions = useMemo(() => {
+		const rows = Array.isArray(cohortData)
+			? cohortData
+			: (cohortData as { data?: unknown })?.data ?? [];
+		return (rows as Array<{ id: number; name?: string; description?: string }>).map(
+			({ id, name, description }) => ({
+			id,
+			name,
+			description,
+			})
+		);
+	}, [cohortData]);
 
 	const filteredCohorts = useMemo(() => {
 		const q = pickSearch.trim().toLowerCase();

@@ -54,9 +54,9 @@ export const dashboardMenuItems: MenuItem[] = [
     { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin:read", "admin:write", "admin:delete"] },
     { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin:read", "admin:write", "admin:delete"] },
   ] },
-  { id: "expert", icon: UserCheck, label: "Expert", href: "/advisor-profile", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
+  { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/investor-profile", permissions: ["investor:read", "investor:write", "investor:delete"] },
+  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor:read", "investor:write", "investor:delete"] },
   { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job:read", "job:write", "job:delete"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea:read", "idea:write", "idea:delete"] },
@@ -156,7 +156,7 @@ export function Sidebar({
           {filteredItems.map((item) => {
             const resolvedHref =
               item.label === "Business" && role?.toLowerCase() === "admin"
-                ? "/dashboard/business"
+                ? "/business"
                 : item.href;
 
             const isActive = pathname === resolvedHref;
