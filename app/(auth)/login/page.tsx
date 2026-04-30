@@ -8,9 +8,9 @@ import { Loader2, Lock, Mail } from "lucide-react"
 import { loginSchema, type LoginData } from "@/lib/validator"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import api  from "@/api"
+import api from "@/api"
+import { AuthIntro } from "../components/auth-intro"
 
 export default function LoginPage() {
 
@@ -28,93 +28,81 @@ export default function LoginPage() {
   })
 
   const onSubmit = (data: LoginData) => {
-      login(data,{
-        onSuccess: () => {
-          router.push("/dashboard")
-        }
-      })
+    login(data, {
+      onSuccess: () => {
+        router.push("/dashboard")
+      }
+    })
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription className="text-center">
-            Enter your Phone Number and Password to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Phone Number Field */}
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="0912345678" className="pl-10" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <AuthIntro />
+      <section className="bg-white px-6 py-10 md:w-1/2 md:px-8 md:py-0">
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 md:h-screen md:max-w-2xl md:mx-auto">
+          <div>
+            <p className="text-2xl text-center font-bold text-black sm:text-3xl">
+              Sign in to your account
+            </p>
 
-              {/* Password Field */}
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="password" placeholder="••••••••" className="pl-10" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign in"
-                )}
-              </Button>
-
-              {/* Forgot Password link */}
-              <div className="text-center">
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-            </form>
-          </Form>
-
-          {/* Footer */}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline font-semibold">
-              Sign Up
-            </Link>
+            <p className="text-gray-500 text-center font-medium mt-2">
+              Enter your email and password below to access your account.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div>
+          </div>
+          <div className="w-full flex flex-col items-center justify-center sm:w-4/5 md:w-2/3">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl mt-6">
+              <Form {...form}>
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem className="mb-4">
+                      <FormLabel className="text-gray-600">Phone Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="border-none bg-blue-50 focus:ring-0 focus:outline-none focus:border-blue-500"
+                          placeholder="Enter your phone number"
+                          {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-600">Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="border-none bg-blue-50 focus:ring-0 focus:outline-none focus:border-blue-500"
+                          type="password"
+                          placeholder="Enter you password"
+                          {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* forgot password link */}
+                <div className="flex justify-end">
+                  <Link href="/forgot-password" className="text-sm text-blue-500 hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <Button disabled={isPending} type="submit" className="w-full mt-4 bg-blue-400 hover:bg-blue-500 ">
+                  {isPending ? <Loader2 className="animate-spin" /> : "Login"}
+                </Button>
+              </Form>
+            </form>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   )
 }
