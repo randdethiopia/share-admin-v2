@@ -34,6 +34,11 @@ export interface TraineeType {
 	__v: number;
 	age?: string;
 	region?: string;
+	address?: {
+		name?: string;
+		slug?: string;
+	};
+	location?: string;
 	gender?: string;
 	education?: string;
 }
@@ -52,6 +57,18 @@ export interface TraineeResType {
 		currentPage: number;
 		pageSize: number;
 	};
+}
+
+export interface FilterTraineesToAssignParams {
+	minAge?: string;
+	maxAge?: string;
+	address?: string;
+	gender?: string;
+}
+
+export interface AssignCoordinatorPayload {
+	coordinatorId: string;
+	traineeIds: string[];
 }
 
 export interface TraineeRegistrationType {
@@ -130,6 +147,22 @@ export async function getAllTraineeFn(
 	).data as TraineeResType;
 }
 
+export async function filterTraineesToAssignFn(
+	filters: FilterTraineesToAssignParams
+) {
+	const params = new URLSearchParams();
+	if (filters.minAge) params.set("minAge", filters.minAge);
+	if (filters.maxAge) params.set("maxAge", filters.maxAge);
+	if (filters.address) params.set("address", filters.address);
+	if (filters.gender) params.set("gender", filters.gender);
+
+	return (
+		await axios.get(
+			`${API_URL}/api/trannie/filter-trainees-to-assign?${params.toString()}`
+		)
+	).data as TraineeResType;
+}
+
 export async function showTraineeFn(id: string) {
 	return (await axios.get(`${API_URL}/api/trannie/show/${id}`)).data as TraineeType;
 }
@@ -177,6 +210,12 @@ export async function refreshTraineeTokenFn() {
 
 export async function deleteTraineeFn(id: string) {
 	return (await axios.delete(`${API_URL}/api/trannie/delete/${id}`)).data as SuccessRes;
+}
+
+export async function assignCoordinatorFn(payload: AssignCoordinatorPayload) {
+	return (
+		await axios.post(`${API_URL}/api/trannie/assign-coordinator`, payload)
+	).data as SuccessRes;
 }
 
 const TraineeAuth = {
@@ -363,6 +402,22 @@ const TraineeAuth = {
 			}),
 	},
 
+	FilterTraineesToAssign: {
+		useQuery: (
+			filters: FilterTraineesToAssignParams,
+			options?: Omit<
+				UseQueryOptions<TraineeResType, AxiosError<ErrorRes>>,
+				"queryKey" | "queryFn"
+			>
+		) =>
+			useQuery({
+				queryKey: ["Trainee", "assignable", filters],
+				queryFn: () => filterTraineesToAssignFn(filters),
+				placeholderData: (previous) => previous,
+				...options,
+			}),
+	},
+
 	GetTraineeById: {
 		useQuery: (id: string, options?: UseQueryOptions<TraineeType, AxiosError<ErrorRes>>) =>
 			useQuery({
@@ -390,6 +445,32 @@ const TraineeAuth = {
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, id, context, undefined as unknown as never);
+				},
+				...options,
+			});
+		},
+	},
+
+	AssignCoordinator: {
+		useMutation: (
+			options?: UseMutationOptions<
+				SuccessRes,
+				AxiosError<ErrorRes>,
+				AssignCoordinatorPayload
+			>
+		) => {
+			const queryClient = useQueryClient();
+
+			return useMutation({
+				mutationFn: assignCoordinatorFn,
+				onSuccess: (res, variables, context) => {
+					toast.success(res.message || "Coordinator assigned");
+					queryClient.invalidateQueries({ queryKey: ["Trainee"] });
+					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
+				},
+				onError: (err, variables, context) => {
+					toast.error(err.response?.data?.message || "Error");
+					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
 				...options,
 			});

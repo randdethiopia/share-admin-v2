@@ -41,6 +41,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
 import Link from "next/link";
 import { Loader2, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -267,6 +268,7 @@ export default function TraineePage() {
 							Done
 						</Button>
 					)}
+					<AssignTraineesToCoordinator />
 					<Button
 						asChild
 						className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
