@@ -438,7 +438,10 @@ const TraineeAuth = {
 			type?: string,
 			search?: string,
 			status?: string,
-			options?: UseQueryOptions<CoordinatorTraineesResType, AxiosError<ErrorRes>>
+			options?: Omit<
+				UseQueryOptions<CoordinatorTraineesResType, AxiosError<ErrorRes>>,
+				"queryKey" | "queryFn"
+			>
 		) =>
 			useQuery({
 				queryKey: [
