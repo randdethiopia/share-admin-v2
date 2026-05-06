@@ -59,6 +59,9 @@ export interface TraineeResType {
 	};
 }
 
+/** GET /api/trannie/coordinator-trainees/:coordinatorId */
+export type CoordinatorTraineesResType = TraineeResType & { success?: boolean };
+
 export interface FilterTraineesToAssignParams {
 	minAge?: string;
 	maxAge?: string;
@@ -145,6 +148,31 @@ export async function getAllTraineeFn(
 	return (
 		await axios.get(`${API_URL}/api/trannie/get?${params.toString()}`)
 	).data as TraineeResType;
+}
+
+export async function getCoordinatorTraineesFn(
+	coordinatorId: string,
+	page: number,
+	limit: number,
+	type?: string,
+	search?: string,
+	status?: string
+) {
+	const params = new URLSearchParams({
+		page: String(page),
+		limit: String(limit),
+	});
+
+	if (type) params.set("type", type);
+	if (search) params.set("search", search);
+	if (status) params.set("status", status);
+
+	const path = encodeURIComponent(coordinatorId);
+	return (
+		await axios.get(
+			`${API_URL}/api/trannie/coordinator-trainees/${path}?${params.toString()}`
+		)
+	).data as CoordinatorTraineesResType;
 }
 
 export async function filterTraineesToAssignFn(
@@ -399,6 +427,35 @@ const TraineeAuth = {
 				queryKey: ["Trainee", page, limit, type ?? "", search ?? "", status ?? ""],
 				queryFn: () => getAllTraineeFn(page, limit, type, search, status),
 				...options,
+			}),
+	},
+
+	GetCoordinatorTrainees: {
+		useQuery: (
+			coordinatorId: string,
+			page: number,
+			limit: number,
+			type?: string,
+			search?: string,
+			status?: string,
+			options?: UseQueryOptions<CoordinatorTraineesResType, AxiosError<ErrorRes>>
+		) =>
+			useQuery({
+				queryKey: [
+					"Trainee",
+					"coordinator",
+					coordinatorId,
+					page,
+					limit,
+					type ?? "",
+					search ?? "",
+					status ?? "",
+				],
+				queryFn: () =>
+					getCoordinatorTraineesFn(coordinatorId, page, limit, type, search, status),
+				placeholderData: (previous) => previous,
+				...options,
+				enabled: Boolean(coordinatorId) && (options?.enabled ?? true),
 			}),
 	},
 

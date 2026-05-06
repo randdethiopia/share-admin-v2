@@ -69,7 +69,8 @@ export const dashboardMenuItems: MenuItem[] = [
     ]
   },
 
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] }
+  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] },
+  { id: "coordinator", icon: UserCog, label: "Coordinator", href: "/coordinator/my-trainees", permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"] },
 ];
 
 
