@@ -9,7 +9,7 @@ import { loginSchema, type LoginData } from "@/lib/validator"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import api from "@/api"
+import api from "@/lib/api"
 import { AuthIntro } from "../components/auth-intro"
 
 export default function LoginPage() {

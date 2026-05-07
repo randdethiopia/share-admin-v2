@@ -10,7 +10,7 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
-import { type BusinessProfileType } from "@/api/Buisness";
+import { type BusinessProfileType } from "@/lib/api/Buisness";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 

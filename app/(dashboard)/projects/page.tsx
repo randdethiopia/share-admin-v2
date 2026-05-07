@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import api, { getProjectByIdFn, type ProjectStatus, type ProjectType } from "@/api";
+import api, { getProjectByIdFn, type ProjectStatus, type ProjectType } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { getInvestmentByProjectIdFn } from "@/api/investment";
+import { getInvestmentByProjectIdFn } from "@/lib/api/investment";
 import useAuthStore from "@/store/useAuthStore";
 import Cookies from "js-cookie";
 import { Badge } from "@/components/ui/badge";

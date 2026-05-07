@@ -1,6 +1,6 @@
 "use client";
 
-import IdeaBankApi, { IdeaBankType } from "@/api/idea-bank";
+import IdeaBankApi, { IdeaBankType } from "@/lib/api/idea-bank";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useRef, useState } from "react";

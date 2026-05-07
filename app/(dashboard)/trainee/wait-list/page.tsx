@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
-import api, { getWaitListServerSideFn, type WaitListType } from "@/api";
+import api, { getWaitListServerSideFn, type WaitListType } from "@/lib/api";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";

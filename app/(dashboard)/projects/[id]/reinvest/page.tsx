@@ -7,7 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
-import api from "@/api";
+import api from "@/lib/api";
 import { reinvestSchema, type ReinvestData } from "@/lib/validator";
 
 import {

@@ -9,7 +9,7 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
-import { type ProfileType } from "@/api/advisor-profile";
+import { type ProfileType } from "@/lib/api/advisor-profile";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 

@@ -19,7 +19,7 @@ import {
 	UserPlus,
 } from "lucide-react";
 
-import WaitListApi, { type WaitListType } from "@/api/waitlist";
+import WaitListApi, { type WaitListType } from "@/lib/api/waitlist";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

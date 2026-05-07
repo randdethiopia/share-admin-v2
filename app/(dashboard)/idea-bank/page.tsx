@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/api";
+import api from "@/lib/api";
 import { IdeaCard } from "@/components/idea-bank/idea-card";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import { Button } from "@/components/ui/button";

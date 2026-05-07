@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
-import OpportunityApi from "@/api/opportunity";
+import OpportunityApi from "@/lib/api/opportunity";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

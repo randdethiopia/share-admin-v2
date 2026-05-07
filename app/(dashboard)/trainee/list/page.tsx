@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import CohortApi from "@/api/cohort";
-import TraineeAuth, { type TraineeType } from "@/api/trainee";
+import CohortApi from "@/lib/api/cohort";
+import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,

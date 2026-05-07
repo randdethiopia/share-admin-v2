@@ -3,8 +3,8 @@
 import * as React from "react";
 import { Check, DollarSign, Globe, Loader2, Search, X, Briefcase } from "lucide-react";
 
-import api from "@/api";
-import {MentorProfileType} from "@/api/mentor-profile";
+import api from "@/lib/api";
+import {MentorProfileType} from "@/lib/api/mentor-profile";
 import {
 	AlertDialog,
 	AlertDialogAction,

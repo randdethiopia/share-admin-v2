@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import api from "@/api";
-import type { Role } from "@/api/access";
+import api from "@/lib/api";
+import type { Role } from "@/lib/api/access";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {

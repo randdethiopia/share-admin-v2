@@ -5,7 +5,7 @@ import TrainingSessionApi, {
 	type AttendanceReportRow,
 	type SessionEnrollmentTraineeRef,
 	trainingSessionErrorMessage,
-} from "@/api/training-session";
+} from "@/lib/api/training-session";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

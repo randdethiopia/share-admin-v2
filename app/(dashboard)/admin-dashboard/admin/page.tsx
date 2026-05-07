@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Eye, Loader2, Plus, Search, UserCheck, UserX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import api from "@/api";
-import type { ProfileType } from "@/api/admin-profile";
+import api from "@/lib/api";
+import type { ProfileType } from "@/lib/api/admin-profile";
 import { Input } from "@/components/ui/input";
 import {
 	Table,

@@ -9,7 +9,7 @@ import TrainingSessionApi, {
 	type SessionEnrollmentTraineeRef,
 	trainingSessionErrorMessage,
 	trainingSessionRowFromDetailApi,
-} from "@/api/training-session";
+} from "@/lib/api/training-session";
 import SessionAttendanceReportSheet from "@/components/coordinator/SessionAttendanceReportSheet";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Button } from "@/components/ui/button";

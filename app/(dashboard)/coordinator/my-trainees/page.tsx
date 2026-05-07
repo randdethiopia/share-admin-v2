@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import TraineeAuth, { type TraineeType } from "@/api/trainee";
+import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Input } from "@/components/ui/input";
 import {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 
-import WaitListApi from "@/api/waitlist";
+import WaitListApi from "@/lib/api/waitlist";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,

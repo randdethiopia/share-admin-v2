@@ -10,7 +10,7 @@ import { z } from "zod";
 import TrainingSessionApi, {
   type TrainingSessionStatus,
   trainingSessionErrorMessage,
-} from "@/api/training-session";
+} from "@/lib/api/training-session";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

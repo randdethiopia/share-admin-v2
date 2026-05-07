@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import api, { type InvestmentType, type ProjectGallery, type ProjectUpdate } from "@/api";
+import api, { type InvestmentType, type ProjectGallery, type ProjectUpdate } from "@/lib/api";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { LucideIcon } from "lucide-react";
 import { Briefcase, ChevronLeft, Globe, GraduationCap, Laptop, Mail, MapPin, Phone, User } from "lucide-react";
 
-import type { WaitListType } from "@/api/waitlist";
+import type { WaitListType } from "@/lib/api/waitlist";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

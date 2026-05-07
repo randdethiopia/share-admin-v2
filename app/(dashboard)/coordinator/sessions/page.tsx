@@ -5,7 +5,7 @@ import Link from "next/link";
 import TrainingSessionApi, {
 	type TrainingSessionRow,
 	type TrainingSessionStatus,
-} from "@/api/training-session";
+} from "@/lib/api/training-session";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";

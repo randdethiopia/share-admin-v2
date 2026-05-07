@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import api from "@/api";
+import api from "@/lib/api";
 import { transformAnalyticsData } from "@/lib/transform";
 import { cn } from "@/lib/utils";
 

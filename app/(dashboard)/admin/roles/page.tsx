@@ -26,8 +26,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import api from "@/api";
-import { Permission, Role } from "@/api/access";
+import api from "@/lib/api";
+import { Permission, Role } from "@/lib/api/access";
 
 
 const createRoleSchema = z.object({

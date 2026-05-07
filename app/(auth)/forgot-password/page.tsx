@@ -8,7 +8,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { forgotPasswordSchema, type ForgotPasswordData } from "@/lib/validator";
-import api from "@/api";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

@@ -10,9 +10,9 @@ import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { type InvestorProfileType } from "@/api/mentor";
-import { type BusinessProfileType } from "@/api/Buisness";
-import { type ProjectType } from "@/api/project";
+import { type InvestorProfileType } from "@/lib/api/mentor";
+import { type BusinessProfileType } from "@/lib/api/Buisness";
+import { type ProjectType } from "@/lib/api/project";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 

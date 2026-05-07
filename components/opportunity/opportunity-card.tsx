@@ -1,8 +1,8 @@
 "use client";
 
-import { OpportunityType } from "@/api/opportunity";
+import { OpportunityType } from "@/lib/api/opportunity";
 import Link from "next/link";
-import OpportunityApi from "@/api/opportunity";
+import OpportunityApi from "@/lib/api/opportunity";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";

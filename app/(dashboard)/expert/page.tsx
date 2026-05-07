@@ -3,8 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 
-import api from "@/api";
-import type { AdvisorProfileType } from "@/api";
+import api from "@/lib/api";
+import type { AdvisorProfileType } from "@/lib/api";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,

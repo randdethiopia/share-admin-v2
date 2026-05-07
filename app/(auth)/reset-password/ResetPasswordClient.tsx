@@ -7,7 +7,7 @@ import { Hash, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { resetPasswordSchema, type ResetPasswordData } from "@/lib/validator";
-import api from "@/api";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

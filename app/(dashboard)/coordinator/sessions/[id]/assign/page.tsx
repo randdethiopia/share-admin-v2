@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import TraineeAuth, { type TraineeType } from "@/api/trainee";
+import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import TrainingSessionApi, {
 	enrollTraineesSummaryFromResponse,
 	trainingSessionErrorMessage,
-} from "@/api/training-session";
+} from "@/lib/api/training-session";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

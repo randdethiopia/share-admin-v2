@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import api from "@/api";
+import api from "@/lib/api";
 import { adminSchema, type AdminFormData } from "@/lib/validator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

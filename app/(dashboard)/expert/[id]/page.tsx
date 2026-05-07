@@ -18,7 +18,7 @@ import {
 	X,
 } from "lucide-react";
 
-import api from "@/api";
+import api from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

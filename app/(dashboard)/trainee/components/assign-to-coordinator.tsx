@@ -4,8 +4,8 @@ import React, { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import CoordinatorApi, { type CoordinatorType } from "@/api/coordinator";
-import TraineeAuth, { type TraineeType } from "@/api/trainee";
+import CoordinatorApi, { type CoordinatorType } from "@/lib/api/coordinator";
+import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import useAuthStore from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import {
