@@ -1,13 +1,12 @@
 import { Roles } from "@/types/core";
 import  {create}  from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
-
+import Cookies from "js-cookie";
 
 
 interface State {
   _id: string | null;
   email: string | null;
-  accessToken: string | null;
   role: Roles | null;
   isSuccess:boolean
   hasHydrated: boolean,
@@ -62,6 +61,7 @@ const useAuthStore = create<State & Action>()(
             role: null,
             permissions: null,
           }));
+          Cookies.remove("session_token");  
         },
 
         setHasHydrated: () => set({ hasHydrated: true }),
