@@ -23,6 +23,7 @@ import {
   ListPlus,
   List,
   LogOut,
+  Calendar,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -55,6 +56,30 @@ export const dashboardMenuItems: MenuItem[] = [
     { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin:read", "admin:write", "admin:delete"] },
   ] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
+  {
+    id: "coordinator",
+    icon: UserCog,
+    label: "Coordinator",
+    href: "/coordinator",
+    permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+    isCollapsable: true,
+    items: [
+      {
+        id: "coordinator-my-trainees",
+        icon: Users,
+        label: "My trainees",
+        href: "/coordinator/my-trainees",
+        permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+      },
+      {
+        id: "coordinator-sessions",
+        icon: Calendar,
+        label: "Training sessions",
+        href: "/coordinator/sessions",
+        permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+      },
+    ],
+  },
   { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor:read", "investor:write", "investor:delete"] },
   { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
@@ -69,7 +94,8 @@ export const dashboardMenuItems: MenuItem[] = [
     ]
   },
 
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] }
+  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] },
+ 
 ];
 
 
@@ -163,7 +189,11 @@ export function Sidebar({
             const Icon = item.icon;
 
             if (item.isCollapsable && item.items?.length) {
-              const isOpen = activeId === item.id;
+              const childActive = item.items.some(
+                (s) =>
+                  pathname === s.href || pathname.startsWith(`${s.href}/`)
+              );
+              const isOpen = childActive || activeId === item.id;
 
               return (
                 <Collapsible
@@ -202,7 +232,9 @@ export function Sidebar({
                     <div className="ml-6 flex flex-col gap-1">
                       {item.items.map((subItem) => {
                         const SubIcon = subItem.icon;
-                        const isSubActive = pathname === subItem.href;
+                        const isSubActive =
+                          pathname === subItem.href ||
+                          pathname.startsWith(`${subItem.href}/`);
 
                         return (
                           <Link

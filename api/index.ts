@@ -12,6 +12,7 @@ import InvestorProfileApi from "./mentor"
 import OpportunityApi from "./opportunity";
 import ProjectApi from "./project";
 import TraineeAuth from "./trainee";
+import TrainingSessionApi from "./training-session";
 import WaitListApi from "./waitlist";
 
 export type { BlogType } from "./blog";
@@ -44,6 +45,7 @@ const api = {
     Opportunity: OpportunityApi,
     Project: ProjectApi,
     TraineeAuth,
+    TrainingSession: TrainingSessionApi,
     WaitList: WaitListApi,
 }
 

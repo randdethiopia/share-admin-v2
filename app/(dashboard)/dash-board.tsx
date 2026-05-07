@@ -19,10 +19,15 @@ interface DashboardShellProps {
 }
 
 function resolveDashboardTitle(pathname: string): string {
-  const exactMatch = dashboardMenuItems.find(
-    (item) => item.href === pathname
-  );
-  if (exactMatch) return exactMatch.label;
+  for (const item of dashboardMenuItems) {
+    if (item.href === pathname) return item.label;
+    if (item.items?.length) {
+      const sub = item.items.find(
+        (s) => s.href === pathname || pathname.startsWith(`${s.href}/`)
+      );
+      if (sub) return sub.label;
+    }
+  }
 
   const nestedMatch = dashboardMenuItems
     .filter((item) => item.href !== "/dashboard")

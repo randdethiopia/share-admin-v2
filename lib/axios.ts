@@ -18,7 +18,8 @@ export default function AxiosConfig(signOut: () => void) {
     }
     
     if (role) {
-      // FIX: This sends the 'role' header so the server doesn't crash
+      // Sent as-is from login (e.g. ADMIN, COORDINATOR). Some routes may require a
+      // specific role header — align with the backend for endpoints like POST /api/training-session.
       config.headers['role'] = role; 
     }
 
@@ -32,9 +33,9 @@ export default function AxiosConfig(signOut: () => void) {
   const responseInterceptorId = axios.interceptors.response.use(
     (response) => response,
     (error) => {
-      // If the server says you are no longer welcome (401/403)
-      if (error.response?.status === 403 || error.response?.status === 401) {
-        signOut(); 
+      // 401: invalid/expired session — sign out. 403: forbidden resource — let callers show UI.
+      if (error.response?.status === 401) {
+        signOut();
       }
       return Promise.reject(error);
     }
