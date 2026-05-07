@@ -33,9 +33,9 @@ export default function AxiosConfig(signOut: () => void) {
   const responseInterceptorId = axios.interceptors.response.use(
     (response) => response,
     (error) => {
-      // If the server says you are no longer welcome (401/403)
-      if (error.response?.status === 403 || error.response?.status === 401) {
-        signOut(); 
+      // 401: invalid/expired session — sign out. 403: forbidden resource — let callers show UI.
+      if (error.response?.status === 401) {
+        signOut();
       }
       return Promise.reject(error);
     }

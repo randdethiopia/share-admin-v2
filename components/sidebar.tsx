@@ -56,21 +56,6 @@ export const dashboardMenuItems: MenuItem[] = [
     { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin:read", "admin:write", "admin:delete"] },
   ] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
-  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor:read", "investor:write", "investor:delete"] },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
-  { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job:read", "job:write", "job:delete"] },
-  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea:read", "idea:write", "idea:delete"] },
-  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity:read", "opportunity:write", "opportunity:delete"] },
-  {
-    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee:read", "trainee:write", "trainee:delete"], isCollapsable: true, items: [
-      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
-      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
-      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] }
-    ]
-  },
-
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] },
   {
     id: "coordinator",
     icon: UserCog,
@@ -95,6 +80,22 @@ export const dashboardMenuItems: MenuItem[] = [
       },
     ],
   },
+  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
+  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor:read", "investor:write", "investor:delete"] },
+  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
+  { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job:read", "job:write", "job:delete"] },
+  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea:read", "idea:write", "idea:delete"] },
+  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity:read", "opportunity:write", "opportunity:delete"] },
+  {
+    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee:read", "trainee:write", "trainee:delete"], isCollapsable: true, items: [
+      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
+      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
+      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] }
+    ]
+  },
+
+  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] },
+ 
 ];
 
 
