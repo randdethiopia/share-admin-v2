@@ -37,28 +37,32 @@ export default function ForgotPasswordPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
-          <CardDescription>Enter your phone to receive a reset code</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-white px-6 py-10 md:px-8">
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 md:min-h-screen md:max-w-2xl md:mx-auto">
+        <div>
+          <p className="text-2xl text-center font-bold text-black sm:text-3xl">
+            Forgot Password
+          </p>
+          <p className="text-gray-500 text-center font-medium mt-2">
+            Enter your phone to receive a reset code
+          </p>
+        </div>
+        <div className="w-full flex flex-col items-center justify-center sm:w-4/5 md:w-2/3">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => forgotPassword(data))} className="space-y-6">
+            <form onSubmit={form.handleSubmit((data) => forgotPassword(data))} className="w-full max-w-xl mt-6">
               <FormField name="phoneNumber" control={form.control} render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                <FormItem className="mb-4">
+                  <FormLabel className="text-gray-600">Phone Number</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-10 h-12" placeholder="0912345678" {...field} />
+                      <Input className="pl-10 h-12 border-none bg-blue-50 focus:ring-0 focus:outline-none focus:border-blue-500" placeholder="0912345678" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" className="w-full h-12 font-bold" disabled={isPending}>
+              <Button type="submit" className="w-full mt-4 bg-blue-400 hover:bg-blue-500" disabled={isPending}>
                 {isPending ? <Loader2 className="animate-spin" /> : "Send Code"}
               </Button>
             </form>
@@ -68,8 +72,8 @@ export default function ForgotPasswordPage() {
               <ArrowLeft size={16} /> Back to Login
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
