@@ -5,6 +5,17 @@ import { useMemo } from "react";
 import { Briefcase, CheckCircle, XCircle, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { JobApi } from "@/lib/api/job";
 import { format } from "date-fns";
 
@@ -82,26 +93,67 @@ export default function JobsPage() {
 										</div>
 										{job.status === "PENDING" && (
 											<div className="flex gap-2 shrink-0">
-												<Button
-													variant="outline"
-													size="sm"
-													className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
-													onClick={() => handleApprove(job._id)}
-													disabled={approveMutation.isPending}
-												>
-													<CheckCircle className="h-4 w-4 mr-1" />
-													{approveMutation.isPending ? "Approving..." : "Approve"}
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-													onClick={() => handleReject(job._id)}
-													disabled={rejectMutation.isPending}
-												>
-													<XCircle className="h-4 w-4 mr-1" />
-													{rejectMutation.isPending ? "Rejecting..." : "Reject"}
-												</Button>
+												<AlertDialog>
+													<AlertDialogTrigger asChild>
+														<Button
+															variant="outline"
+															size="sm"
+															className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+															disabled={approveMutation.isPending}
+														>
+															<CheckCircle className="h-4 w-4 mr-1" />
+															{approveMutation.isPending ? "Approving..." : "Approve"}
+														</Button>
+													</AlertDialogTrigger>
+													<AlertDialogContent>
+														<AlertDialogHeader>
+															<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+															<AlertDialogDescription>
+																This will approve the job posting. Approved jobs will be visible to the public. Do you want to continue?
+															</AlertDialogDescription>
+														</AlertDialogHeader>
+														<AlertDialogFooter>
+															<AlertDialogCancel>Cancel</AlertDialogCancel>
+															<AlertDialogAction
+																onClick={() => handleApprove(job._id)}
+																className="bg-green-600 hover:bg-green-700"
+															>
+																Yes, Approve
+															</AlertDialogAction>
+														</AlertDialogFooter>
+													</AlertDialogContent>
+												</AlertDialog>
+
+												<AlertDialog>
+													<AlertDialogTrigger asChild>
+														<Button
+															variant="outline"
+															size="sm"
+															className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+															disabled={rejectMutation.isPending}
+														>
+															<XCircle className="h-4 w-4 mr-1" />
+															{rejectMutation.isPending ? "Rejecting..." : "Reject"}
+														</Button>
+													</AlertDialogTrigger>
+													<AlertDialogContent>
+														<AlertDialogHeader>
+															<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+															<AlertDialogDescription>
+																This will reject the job posting. This action will notify the business and hide the job. Do you want to continue?
+															</AlertDialogDescription>
+														</AlertDialogHeader>
+														<AlertDialogFooter>
+															<AlertDialogCancel>Cancel</AlertDialogCancel>
+															<AlertDialogAction
+																onClick={() => handleReject(job._id)}
+																className="bg-red-600 hover:bg-red-700"
+															>
+																Yes, Reject
+															</AlertDialogAction>
+														</AlertDialogFooter>
+													</AlertDialogContent>
+												</AlertDialog>
 											</div>
 										)}
 									</div>
