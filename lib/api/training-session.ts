@@ -22,6 +22,7 @@ export interface CreateTrainingSessionBody {
 	scheduledAt: string;
 	description?: string;
 	location?: string;
+	coordinatorId?: string;
 	status?: TrainingSessionStatus;
 }
 
@@ -289,10 +290,10 @@ export type EnrollmentAttendanceStatus =
 	| "attended"
 	| "absent"
 	| "excused"
-	| "pending";
+	| "registered";
 
 export const ENROLLMENT_ATTENDANCE_STATUSES: readonly EnrollmentAttendanceStatus[] =
-	["attended", "absent", "excused", "pending"] as const;
+	["attended", "absent", "excused", "registered"] as const;
 
 export interface MarkAttendanceBody {
 	attendanceStatus: EnrollmentAttendanceStatus;

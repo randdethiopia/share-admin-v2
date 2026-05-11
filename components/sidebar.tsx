@@ -1,5 +1,5 @@
 "use client";
-
+import Cookies from "js-cookie";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import {
@@ -47,55 +48,62 @@ type MenuItem = {
 };
 
 export const dashboardMenuItems: MenuItem[] = [
-  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard:read", "dashboard:write", "dashboard:delete"] },
-  { id: "projects", icon: Users, label: "Projects", href: "/projects", permissions: ["project:read", "project:write", "project:delete"] },
-  { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation:read", "invitation:write", "invitation:delete"] },
-  { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog:read", "blog:write", "blog:delete"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin:read", "admin:write", "admin:delete"], isCollapsable: true, items: [
-    { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin:read", "admin:write", "admin:delete"] },
-    { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin:read", "admin:write", "admin:delete"] },
+  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard.read", "dashboard.write", "dashboard.delete"] },
+  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor.read", "investor.write", "investor.delete"] },
+  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business.read", "business.write", "business.delete"] },
+  { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor.read", "advisor.write", "advisor.delete"] },
+   {
+    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee.read", "trainee.write", "trainee.delete"], isCollapsable: true, items: [
+      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
+      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
+      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] }
+    ]
+  },
+  { id: "projects", icon: Users, label: "Projects", href: "/projects", permissions: ["project.read", "project.write", "project.delete"] },
+   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job.read", "job.write", "job.delete"] },
+  { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation.read", "invitation.write", "invitation.delete"] },
+  { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog.read", "blog.write", "blog.delete"] },
+  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource.read", "resource.write", "resource.delete"] },
+  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea.read", "idea.write", "idea.delete"] },
+  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity.read", "opportunity.write", "opportunity.delete"] },
+  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"], isCollapsable: true, items: [
+    { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"] },
+    { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin.read", "admin.write", "admin.delete"] },
   ] },
-  { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor:read", "advisor:write", "advisor:delete"] },
+  
   {
-    id: "coordinator",
+    id: "training-manage",
     icon: UserCog,
-    label: "Coordinator",
+    label: "Training manage",
     href: "/coordinator",
-    permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+    permissions: [...TRAINING_MENU_PERMISSIONS],
     isCollapsable: true,
     items: [
       {
-        id: "coordinator-my-trainees",
+        id: "training-manage-my-trainees",
         icon: Users,
         label: "My trainees",
         href: "/coordinator/my-trainees",
-        permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+        permissions: [...TRAINING_MENU_PERMISSIONS],
       },
       {
-        id: "coordinator-sessions",
+        id: "training-manage-sessions",
         icon: Calendar,
         label: "Training sessions",
         href: "/coordinator/sessions",
-        permissions: ["coordinator:read", "coordinator:write", "coordinator:delete"],
+        permissions: [...TRAINING_MENU_PERMISSIONS],
       },
     ],
   },
-  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business:read", "business:write", "business:delete"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor:read", "investor:write", "investor:delete"] },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user:read", "user:write", "user:delete"] },
-  { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job:read", "job:write", "job:delete"] },
-  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea:read", "idea:write", "idea:delete"] },
-  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity:read", "opportunity:write", "opportunity:delete"] },
-  {
-    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee:read", "trainee:write", "trainee:delete"], isCollapsable: true, items: [
-      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
-      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] },
-      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee:read", "trainee:write", "trainee:delete"] }
-    ]
-  },
-
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource:read", "resource:write", "resource:delete"] },
+  
+  
+  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user.read", "user.write", "user.delete"] },
  
+ 
+  
+ 
+
+  
 ];
 
 
@@ -120,9 +128,36 @@ export function Sidebar({
   ) ?? [];
   const hasAllAccess = normalizedPermissions.includes("all_access");
 
+  const normalizedRole = role?.trim().toUpperCase() ?? "";
+  const isTrainingOnlyAdmin =
+    normalizedRole === "ADMIN" &&
+    !hasAllAccess &&
+    !normalizedPermissions.some((p) => p.startsWith("admin.")) &&
+    !normalizedPermissions.some((p) => p.startsWith("admin:")) &&
+    normalizedPermissions.some(
+      (p) =>
+        p.startsWith("trainee.") ||
+        p.startsWith("trainee:") ||
+        p.startsWith("training.") ||
+        p.startsWith("training:") ||
+        p.startsWith("coordinator.") ||
+        p.startsWith("coordinator:")
+    );
+  const isCoordinatorLike = normalizedRole === "COORDINATOR" || isTrainingOnlyAdmin;
+
   const canViewItem = (item: MenuItem) => {
+   
     if (hasAllAccess) return true;
     if (normalizedPermissions.length === 0) return false;
+
+    // Coordinators (and training-only admins acting as coordinators) only see Training manage (+ change password)
+    if (isCoordinatorLike) {
+      return (
+        item.id === "change-password" ||
+        item.id.startsWith("training-manage") ||
+        item.href.startsWith("/coordinator")
+      );
+    }
 
     return item.permissions.some((permission) =>
       normalizedPermissions.includes(permission.toLowerCase())
@@ -149,6 +184,7 @@ export function Sidebar({
   }, []);
 
   const handleLogout = () => {
+    Cookies.remove("session_token");
     logOut();
     router.push("/login");
   };
