@@ -1,4 +1,4 @@
-export type Roles = "ADMIN" | `TRANNIE`;
+export type Roles = "ADMIN" | "COORDINATOR" | `TRANNIE`;
 
 export type ErrorRes = { 
   message: string 
