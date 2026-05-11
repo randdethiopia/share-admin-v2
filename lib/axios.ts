@@ -10,7 +10,7 @@ export default function AxiosConfig(signOut: () => void) {
   const requestInterceptorId = axios.interceptors.request.use((config) => {
     // 2. GET THE KEYS: Grab token from cookie and role from Zustand
     const token = Cookies.get("session_token");
-    const { role, permissions } = useAuthStore.getState();
+    const role = useAuthStore.getState().role;
 
     // 3. STAMP THE HEADERS: Attach the badge to the request
     if (token) {
@@ -18,42 +18,9 @@ export default function AxiosConfig(signOut: () => void) {
     }
     
     if (role) {
-      const normalizedRole = String(role).trim().toUpperCase();
-      const p = (permissions ?? []).map((x) => String(x).toLowerCase().trim());
-      const isTrainingOnlyAdmin =
-        normalizedRole === "ADMIN" &&
-        !p.includes("all_access") &&
-        !p.some((x) => x.startsWith("admin.")) &&
-        !p.some((x) => x.startsWith("admin:")) &&
-        p.some(
-          (x) =>
-            x.startsWith("trainee.") ||
-            x.startsWith("trainee:") ||
-            x.startsWith("training.") ||
-            x.startsWith("training:") ||
-            x.startsWith("coordinator.") ||
-            x.startsWith("coordinator:")
-        );
-
-      const requestUrl = String(config.url ?? "");
-      const isTrainingCoordinatorApi =
-        requestUrl.includes("/api/training-session") ||
-        requestUrl.includes("/api/trannie/coordinator-trainees");
-
-      const roleHeader =
-        isTrainingOnlyAdmin && isTrainingCoordinatorApi
-          ? "COORDINATOR"
-          : normalizedRole;
-
-      config.headers['role'] = roleHeader;
-    }
-
-    // Avoid browser HTTP caching / 304 + If-None-Match reusing a stale body for API GETs
-    // (e.g. different query string but buggy cache key, or dev tools confusion).
-    const m = (config.method ?? "get").toLowerCase();
-    if (m === "get" || m === "head") {
-      config.headers["Cache-Control"] = "no-cache";
-      config.headers["Pragma"] = "no-cache";
+      // Sent as-is from login (e.g. ADMIN, COORDINATOR). Some routes may require a
+      // specific role header — align with the backend for endpoints like POST /api/training-session.
+      config.headers['role'] = role; 
     }
 
     config.headers['ngrok-skip-browser-warning'] = 'true';

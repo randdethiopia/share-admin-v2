@@ -166,6 +166,27 @@ export default function SessionAttendanceReportSheet({
 		}
 	}, [open, sessionId]);
 
+	useEffect(() => {
+		// #region agent log
+		fetch("http://127.0.0.1:7927/ingest/a23c4bcb-cbdd-4775-a08e-248d4269e29b", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Debug-Session-Id": "646340",
+			},
+			body: JSON.stringify({
+				sessionId: "646340",
+				location: "SessionAttendanceReportSheet.tsx:render-state",
+				message: "Report sheet state",
+				data: { open, sessionIdLen: sessionId.length, tab },
+				timestamp: Date.now(),
+				hypothesisId: "H4",
+				runId: "pre-fix",
+			}),
+		}).catch(() => {});
+		// #endregion
+	}, [open, sessionId, tab]);
+
 	const reportParams = { page: reportPage, limit: reportPageSize };
 	const snapshotParams = { page: snapshotPage, limit: snapshotPageSize };
 

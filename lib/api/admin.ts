@@ -194,7 +194,7 @@ const AdminAuth = {
             data.accessToken,
             data.user.role,
             data.user.email,
-            data.user.permissions ?? data.permissions ?? null
+            data.permissions ?? data.permissions ?? null
           );
 
           // Needed for `middleware.ts` route protection.

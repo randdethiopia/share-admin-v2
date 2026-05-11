@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { AxiosError } from "axios";
 
 import CoordinatorApi, { type CoordinatorType } from "@/lib/api/coordinator";
 import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import useAuthStore from "@/store/useAuthStore";
-import type { ErrorRes } from "@/types/core";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -108,7 +106,6 @@ export function AssignTraineesToCoordinator() {
   const [appliedFilters, setAppliedFilters] =
     useState<AssignFilterForm>(initialFilters);
   const [hasApplied, setHasApplied] = useState(false);
-  const lastTraineeSuccessToastKey = useRef("");
 
   const addressFilter = appliedFilters.address.trim();
 
@@ -126,7 +123,6 @@ export function AssignTraineesToCoordinator() {
     data: traineeData,
     isLoading: isTraineeLoading,
     isError: isTraineeError,
-    error: traineeError,
   } = TraineeAuth.FilterTraineesToAssign.useQuery(queryFilters, {
     enabled: open && hasApplied,
   });
@@ -135,7 +131,6 @@ export function AssignTraineesToCoordinator() {
     data: coordinatorData,
     isLoading: isCoordinatorLoading,
     isError: isCoordinatorError,
-    error: coordinatorError,
   } = CoordinatorApi.GetList.useQuery({
     enabled: open,
   });
@@ -146,7 +141,11 @@ export function AssignTraineesToCoordinator() {
   );
 
   const { mutate: assignCoordinator, isPending: isAssigning } =
-    TraineeAuth.AssignCoordinator.useMutation();
+    TraineeAuth.AssignCoordinator.useMutation({
+      onSuccess: () => {
+        handleOpenChange(false);
+      },
+    });
 
   const trainees = useMemo(() => traineeData?.data ?? [], [traineeData]);
   const traineeIds = useMemo(
@@ -155,58 +154,9 @@ export function AssignTraineesToCoordinator() {
   );
   const totalTrainees = traineeData?.meta?.totalItems ?? trainees.length;
 
-  useEffect(() => {
-    if (!open || !isCoordinatorError || !coordinatorError) return;
-    const ax = coordinatorError as AxiosError<ErrorRes>;
-    const msg =
-      ax.response?.data?.message?.trim() || "Failed to load coordinators.";
-    toast.error(msg, { id: "assign-dialog-coordinators" });
-  }, [open, isCoordinatorError, coordinatorError]);
-
-  useEffect(() => {
-    if (!open || !hasApplied || !isTraineeError || !traineeError) return;
-    const ax = traineeError as AxiosError<ErrorRes>;
-    const msg =
-      ax.response?.data?.message?.trim() || "Failed to load trainees.";
-    toast.error(msg, { id: "assign-dialog-trainees" });
-  }, [open, hasApplied, isTraineeError, traineeError]);
-
-  useEffect(() => {
-    if (
-      !open ||
-      !hasApplied ||
-      isTraineeLoading ||
-      isTraineeError ||
-      !traineeData
-    ) {
-      return;
-    }
-    const total = traineeData.meta?.totalItems ?? traineeData.data?.length ?? 0;
-    const key = `${JSON.stringify(queryFilters)}:${total}`;
-    if (lastTraineeSuccessToastKey.current === key) return;
-    lastTraineeSuccessToastKey.current = key;
-    if (total > 0) {
-      toast.success(`Loaded ${total} trainee(s).`, {
-        id: "assign-dialog-trainees-success",
-      });
-    } else {
-      toast.message("No trainees match these filters.", {
-        id: "assign-dialog-trainees-success",
-      });
-    }
-  }, [
-    open,
-    hasApplied,
-    isTraineeLoading,
-    isTraineeError,
-    traineeData,
-    queryFilters,
-  ]);
-
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (!nextOpen) {
-      lastTraineeSuccessToastKey.current = "";
       setSelectedCoordinatorId("");
       setFilters(initialFilters);
       setAppliedFilters(initialFilters);
@@ -239,15 +189,10 @@ export function AssignTraineesToCoordinator() {
       return;
     }
 
-    assignCoordinator(
-      {
-        coordinatorId: selectedCoordinatorId,
-        traineeIds,
-      },
-      {
-        onSuccess: () => handleOpenChange(false),
-      }
-    );
+    assignCoordinator({
+      coordinatorId: selectedCoordinatorId,
+      traineeIds,
+    });
   };
 
   if (isCoordinatorRole) return null;
