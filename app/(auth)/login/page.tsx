@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import api from "@/lib/api"
 import { AuthIntro } from "../components/auth-intro"
 
+
 export default function LoginPage() {
 
   const router = useRouter()
@@ -74,14 +75,15 @@ export default function LoginPage() {
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="mb-4">
                       <FormLabel className="text-gray-600">Password</FormLabel>
                       <FormControl>
                         <Input
                           className="border-none bg-blue-50 focus:ring-0 focus:outline-none focus:border-blue-500"
                           type="password"
-                          placeholder="Enter you password"
-                          {...field} />
+                          placeholder="Enter your password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
