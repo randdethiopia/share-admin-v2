@@ -61,6 +61,8 @@ export interface TraineeResType {
 
 /** GET /api/trannie/coordinator-trainees/:coordinatorId */
 export type CoordinatorTraineesResType = TraineeResType & { success?: boolean };
+/** GET /api/trannie/coordinator-trainees (self) */
+export type MyCoordinatorTraineesResType = CoordinatorTraineesResType;
 
 export interface FilterTraineesToAssignParams {
 	minAge?: string;
@@ -173,6 +175,29 @@ export async function getCoordinatorTraineesFn(
 			`${API_URL}/api/trannie/coordinator-trainees/${path}?${params.toString()}`
 		)
 	).data as CoordinatorTraineesResType;
+}
+
+export async function getMyCoordinatorTraineesFn(
+	page: number,
+	limit: number,
+	type?: string,
+	search?: string,
+	status?: string
+) {
+	const params = new URLSearchParams({
+		page: String(page),
+		limit: String(limit),
+	});
+
+	if (type) params.set("type", type);
+	if (search) params.set("search", search);
+	if (status) params.set("status", status);
+
+	return (
+		await axios.get(
+			`${API_URL}/api/trannie/coordinator-trainees?${params.toString()}`
+		)
+	).data as MyCoordinatorTraineesResType;
 }
 
 export async function filterTraineesToAssignFn(
@@ -456,9 +481,41 @@ const TraineeAuth = {
 				],
 				queryFn: () =>
 					getCoordinatorTraineesFn(coordinatorId, page, limit, type, search, status),
-				placeholderData: (previous) => previous,
+				staleTime: 0,
+				refetchOnMount: "always",
 				...options,
 				enabled: Boolean(coordinatorId) && (options?.enabled ?? true),
+			}),
+	},
+
+	GetMyCoordinatorTrainees: {
+		useQuery: (
+			page: number,
+			limit: number,
+			type?: string,
+			search?: string,
+			status?: string,
+			options?: Omit<
+				UseQueryOptions<MyCoordinatorTraineesResType, AxiosError<ErrorRes>>,
+				"queryKey" | "queryFn"
+			>
+		) =>
+			useQuery({
+				queryKey: [
+					"Trainee",
+					"coordinator",
+					"self",
+					page,
+					limit,
+					type ?? "",
+					search ?? "",
+					status ?? "",
+				],
+				queryFn: () =>
+					getMyCoordinatorTraineesFn(page, limit, type, search, status),
+				staleTime: 0,
+				refetchOnMount: "always",
+				...options,
 			}),
 	},
 
@@ -526,6 +583,13 @@ const TraineeAuth = {
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Coordinator assigned");
 					queryClient.invalidateQueries({ queryKey: ["Trainee"] });
+					// Refresh coordinator roster views (both picker-mode and self-mode).
+					queryClient.invalidateQueries({
+						queryKey: ["Trainee", "coordinator", variables.coordinatorId],
+					});
+					queryClient.invalidateQueries({
+						queryKey: ["Trainee", "coordinator", "self"],
+					});
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
 				},
 				onError: (err, variables, context) => {

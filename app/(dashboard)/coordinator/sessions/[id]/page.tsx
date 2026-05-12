@@ -12,6 +12,7 @@ import TrainingSessionApi, {
 } from "@/lib/api/training-session";
 import SessionAttendanceReportSheet from "@/components/coordinator/SessionAttendanceReportSheet";
 import PaginationControls from "@/components/shared/PaginationControls";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -149,6 +150,7 @@ export default function TrainingSessionDetailPage() {
 	const [attendanceOverrides, setAttendanceOverrides] = useState<
 		Record<string, boolean>
 	>({});
+	const [isAttendanceEditing, setIsAttendanceEditing] = useState(false);
 	const [reportSheetOpen, setReportSheetOpen] = useState(false);
 
 	const { mutateAsync: markAttendanceAsync, isPending: isSavingAttendance } =
@@ -216,32 +218,12 @@ export default function TrainingSessionDetailPage() {
 		startTransition(() => {
 			setAttendanceOverrides({});
 			setAttendanceUiEpoch(0);
+			setIsAttendanceEditing(false);
 		});
 	}, [sessionId]);
 
-	useEffect(() => {
-		// #region agent log
-		fetch("http://127.0.0.1:7927/ingest/a23c4bcb-cbdd-4775-a08e-248d4269e29b", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-Debug-Session-Id": "646340",
-			},
-			body: JSON.stringify({
-				sessionId: "646340",
-				location: "sessions/[id]/page.tsx:mount",
-				message: "Training session detail mounted",
-				data: { sessionIdLen: sessionId.length },
-				timestamp: Date.now(),
-				hypothesisId: "H3",
-				runId: "pre-fix",
-			}),
-		}).catch(() => {});
-		// #endregion
-	}, [sessionId]);
-
 	async function savePageAttendance() {
-		if (sessionCancelled || !sessionId.trim()) return;
+		if (!isAttendanceEditing || sessionCancelled || !sessionId.trim()) return;
 		const patchable = rows
 			.map((row) => {
 				const tid = resolveTraineeId(row);
@@ -278,6 +260,7 @@ export default function TrainingSessionDetailPage() {
 			startTransition(() => {
 				setAttendanceOverrides({});
 				setAttendanceUiEpoch((e) => e + 1);
+				setIsAttendanceEditing(false);
 			});
 	
 			toast.success("Attendance updated successfully");
@@ -287,6 +270,8 @@ export default function TrainingSessionDetailPage() {
 	}
 
 	const patchableCount = rows.filter((r) => resolveTraineeId(r)).length;
+	const canEditAttendance =
+		!sessionCancelled && !isLoading && !isError && patchableCount > 0;
 
 	const tableCell =
 		"px-3 py-3 align-middle text-sm sm:px-5 sm:py-4 md:px-6 lg:px-8";
@@ -411,23 +396,50 @@ export default function TrainingSessionDetailPage() {
 									</Select>
 								</div>
 								<div className="flex min-w-0 flex-col gap-2 min-[520px]:col-span-2 lg:col-span-7 lg:flex-row lg:flex-wrap lg:items-end">
-									<Button
-										type="button"
-										className="h-11 w-full shrink-0 rounded-xl lg:w-auto"
-										disabled={
-											sessionCancelled ||
-											isLoading ||
-											isError ||
-											patchableCount === 0 ||
-											isSavingAttendance
-										}
-										onClick={() => void savePageAttendance()}
-									>
-										{isSavingAttendance ? (
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										) : null}
-										Save attendance
-									</Button>
+									{canEditAttendance && !isAttendanceEditing ? (
+										<Button
+											type="button"
+											className="h-11 w-full shrink-0 rounded-xl lg:w-auto"
+											disabled={isSavingAttendance}
+											onClick={() => {
+												startTransition(() => {
+													setAttendanceOverrides({});
+													setIsAttendanceEditing(true);
+												});
+											}}
+										>
+											Edit attendance
+										</Button>
+									) : null}
+									{canEditAttendance && isAttendanceEditing ? (
+										<>
+											<Button
+												type="button"
+												className="h-11 w-full shrink-0 rounded-xl lg:w-auto"
+												disabled={isSavingAttendance}
+												onClick={() => void savePageAttendance()}
+											>
+												{isSavingAttendance ? (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												) : null}
+												Save attendance
+											</Button>
+											<Button
+												type="button"
+												variant="outline"
+												className="h-11 w-full shrink-0 rounded-xl lg:w-auto"
+												disabled={isSavingAttendance}
+												onClick={() => {
+													startTransition(() => {
+														setAttendanceOverrides({});
+														setIsAttendanceEditing(false);
+													});
+												}}
+											>
+												Cancel
+											</Button>
+										</>
+									) : null}
 									<Button
 										type="button"
 										variant="outline"
@@ -599,24 +611,39 @@ export default function TrainingSessionDetailPage() {
 														className={`${tableCell} sticky right-0 z-10 border-l border-slate-100 bg-white text-center shadow-[-8px_0_16px_-10px_rgba(15,23,42,0.12)] transition-colors group-hover:bg-slate-50/80 sm:static sm:border-l-0 sm:bg-transparent sm:shadow-none sm:group-hover:bg-slate-50/50`}
 													>
 														<div className="flex justify-center sm:justify-start md:justify-center">
-															<Checkbox
-																key={`${tid ?? row._id}-${attendanceUiEpoch}`}
-																checked={checked}
-																disabled={disabled}
-																title={
-																	!tid
-																		? "Trainee id is missing"
-																		: "Present (attended)"
-																}
-																onCheckedChange={(c) => {
-																	if (!tid) return;
-																	setAttendanceOverrides((prev) => ({
-																		...prev,
-																		[tid]: c === true,
-																	}));
-																}}
-																aria-label={`Present: ${resolveTraineeName(row.traineeId)}`}
-															/>
+															{isAttendanceEditing && tid ? (
+																<Checkbox
+																	key={`${tid}-${attendanceUiEpoch}`}
+																	checked={checked}
+																	disabled={disabled}
+																	title="Present (attended)"
+																	onCheckedChange={(c) => {
+																		if (!tid) return;
+																		setAttendanceOverrides((prev) => ({
+																			...prev,
+																			[tid]: c === true,
+																		}));
+																	}}
+																	aria-label={`Present: ${resolveTraineeName(row.traineeId)}`}
+																/>
+															) : (
+																<span className="inline-flex justify-center">
+																	{!tid ? (
+																		<span className="text-slate-400">—</span>
+																	) : isServerAttended(row) ? (
+																		<Badge className="bg-emerald-100 font-semibold text-emerald-800 hover:bg-emerald-100">
+																			Present
+																		</Badge>
+																	) : (
+																		<Badge
+																			variant="secondary"
+																			className="font-semibold text-slate-600"
+																		>
+																			Absent
+																		</Badge>
+																	)}
+																</span>
+															)}
 														</div>
 													</TableCell>
 												</TableRow>

@@ -74,7 +74,13 @@ const defaultForm: CreateSessionFormValues = {
   status: "draft",
 };
 
-export function CreateSessionModal() {
+export function CreateSessionModal({
+  coordinatorId,
+  disabled,
+}: {
+  coordinatorId?: string;
+  disabled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<CreateSessionFormValues>({
@@ -85,6 +91,7 @@ export function CreateSessionModal() {
   const { mutate, isPending } = TrainingSessionApi.Create.useMutation();
 
   const handleOpenChange = (next: boolean) => {
+    if (disabled) return;
     setOpen(next);
     if (next) {
       form.reset(defaultForm);
@@ -95,6 +102,7 @@ export function CreateSessionModal() {
     const scheduledAt = new Date(values.scheduledAtLocal).toISOString();
     const description = values.description?.trim();
     const location = values.location?.trim();
+    const coordinatorIdTrimmed = coordinatorId?.trim();
 
     mutate(
       {
@@ -102,6 +110,7 @@ export function CreateSessionModal() {
         scheduledAt,
         ...(description ? { description } : {}),
         ...(location ? { location } : {}),
+        ...(coordinatorIdTrimmed ? { coordinatorId: coordinatorIdTrimmed } : {}),
         status: values.status,
       },
       {
@@ -129,6 +138,7 @@ export function CreateSessionModal() {
         onClick={() => handleOpenChange(true)}
         variant="outline"
         className="h-11 rounded-xl border-sky-200 bg-white px-5 font-bold text-sky-700 hover:bg-sky-50"
+        disabled={disabled}
       >
         <PlusCircle className="mr-2 h-4 w-4" />
         Schedule New Training
