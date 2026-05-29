@@ -7,6 +7,7 @@ import {
 	UseQueryOptions,
 } from "@tanstack/react-query";
 
+
 export interface Permission {
   _id: string;
   name: string;
