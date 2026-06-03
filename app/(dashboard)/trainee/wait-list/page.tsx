@@ -83,6 +83,14 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 	const rawValue = condition.value ?? "";
 	const value = rawValue.toString().trim();
 
+	if (condition.field === "city") {
+		if (!value) return true;
+		if (applicant.city?._id !== value) return false;
+		const subId = condition.subValue?.trim();
+		if (!subId) return true;
+		return applicant.subcity?._id === subId;
+	}
+
 	const getFieldValue = (): string | number => {
 		switch (condition.field) {
 			case "fullName":
@@ -163,6 +171,7 @@ function downloadTextFile(filename: string, content: string, mime = "text/plain"
 export default function WaitListPage() {
 	const isMobile = useIsMobile();
 	const [bulkFilters, setBulkFilters] = React.useState<FilterGroup | undefined>(undefined);
+	const [bulkFilterModalOpen, setBulkFilterModalOpen] = React.useState(false);
 	const [customReportOpen, setCustomReportOpen] = React.useState(false);
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
 	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
@@ -449,10 +458,14 @@ export default function WaitListPage() {
 						</div>
 
 						{/* Advanced filters */}
-						<BulkActionModal>
+						<BulkActionModal
+							open={bulkFilterModalOpen}
+							onOpenChange={setBulkFilterModalOpen}
+						>
 							<FilterBuilder
 								onFiltersChange={onBulkFiltersChange}
 								initialFilters={bulkFilters}
+								onApply={() => setBulkFilterModalOpen(false)}
 							/>
 						</BulkActionModal>
 
