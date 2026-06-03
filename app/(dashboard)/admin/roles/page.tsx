@@ -304,20 +304,8 @@ const RolesPage = () => {
 
 	useEffect(() => {
 		if (isRolesSuccess && rolesData) {
-			// #region agent log
 			const coord = rolesData.roles.find((r) => r.name === "coordinator");
-			agentDebugLog({
-				runId: "iterate2",
-				hypothesisId: "H3",
-				location: "admin/roles/page.tsx:useEffect rolesData",
-				message: "rolesData before setRoles (coordinator sample)",
-				data: {
-					total: rolesData.roles.length,
-					coordinatorPermLen: coord?.permissions?.length ?? null,
-					coordinatorKeys: coord ? Object.keys(coord).sort() : null,
-				},
-			});
-			// #endregion
+			
 			setRoles(rolesData.roles);
 		}
 	}, [isRolesSuccess, rolesData]);
@@ -379,20 +367,7 @@ const RolesPage = () => {
 		const rawLen = roleForPermissionsView.permissions?.length ?? 0;
 		const resolved = resolveRolePermissions(roleForPermissionsView, permissions);
 		// #region agent log
-		agentDebugLog({
-			runId: "iterate2",
-			hypothesisId: "fix-verify",
-			location: "admin/roles/page.tsx:viewer resolved permissions",
-			message: "raw vs resolved permission count",
-			data: {
-				roleName: roleForPermissionsView.name,
-				rawLen,
-				resolvedLen: resolved.length,
-				catalogLen: permissions.length,
-				hasPermissionIds: Boolean(roleForPermissionsView.permissionIds?.length),
-				catalogSampleIds: permissions.slice(0, 3).map((p) => p._id),
-			},
-		});
+		
 		// #endregion
 	}, [roleForPermissionsView, permissions]);
 
@@ -478,21 +453,7 @@ const RolesPage = () => {
 			const orphanTrainish = orphans
 				.filter((p) => /train|coordinat/i.test(p.name))
 				.map((p) => p.name);
-			agentDebugLog({
-				runId: "post-menu-merge",
-				hypothesisId: "H1-H5",
-				location: "admin/roles/page.tsx:permissionsByResource",
-				message: "training grid slot resolution",
-				data: {
-					catalogLen: permissions.length,
-					hasTrainingPermissionSlots,
-					allCatalogNames: permissions.map((p) => p.name),
-					trainingMerged,
-					coordinatorSlotsBeforeMerge: coordinatorSlots ?? null,
-					trainishMeta,
-					orphanTrainish,
-				},
-			});
+			
 		}
 		// #endregion
 
@@ -665,20 +626,6 @@ const RolesPage = () => {
 													className="h-8 w-8 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:h-9 sm:w-9"
 													aria-label={`View permissions for ${role.name}`}
 													onClick={() => {
-														// #region agent log
-														agentDebugLog({
-															runId: "iterate2",
-															hypothesisId: "H4-H5",
-															location: "admin/roles/page.tsx:eye onClick",
-															message: "row role at permissions viewer open",
-															data: {
-																name: role.name,
-																permLen: role.permissions?.length ?? null,
-																permIsArray: Array.isArray(role.permissions),
-																rowKeys: Object.keys(role).sort(),
-															},
-														});
-														// #endregion
 														setRoleForPermissionsView(role);
 														const resolved = resolveRolePermissions(
 															role,
