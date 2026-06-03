@@ -8,44 +8,38 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import PaginationControls from "@/components/shared/PaginationControls";
+import type { ApplicantListItem } from "@/lib/api/waitlist";
+import {
+	formatEducationalBackground,
+	formatEmploymentStatus,
+} from "@/lib/api/applicantLabels";
 import { cn } from "@/lib/utils";
 
-export type ApplicantListItem = {
-	_id: string;
-	fullName?: string | null;
-	email?: string | null;
-	currentEmploymentStatus?: string | null;
-	educationLevel?: string | null;
-};
-
-type UnknownError = { message?: string };
-
-export interface ApplicantListProps<TApplicant extends ApplicantListItem = ApplicantListItem> {
-	isLoading: boolean;
-	isError: boolean;
-	error?: unknown;
-	filteredMessages: TApplicant[];
-	selectedMessage: TApplicant | null;
-	handleMessageSelect: (message: TApplicant) => void;
-	page?: number;
-	onPageChange?: (page: number) => void;
-	totalItems?: number;
-	pageSize?: number;
-	getInitials?: (name: string) => string;
-	getStatusColor?: (status: string) => string;
-}
-
 function defaultGetInitials(name: string) {
-	const parts = name
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean);
+	const parts = name.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "?";
 	return parts
 		.slice(0, 2)
 		.map((p) => p[0] ?? "")
 		.join("")
 		.toUpperCase();
+}
+
+type UnknownError = { message?: string };
+
+export interface ApplicantListProps {
+	isLoading: boolean;
+	isError: boolean;
+	error?: unknown;
+	filteredMessages: ApplicantListItem[];
+	selectedMessage: ApplicantListItem | null;
+	handleMessageSelect: (message: ApplicantListItem) => void;
+	page?: number;
+	onPageChange?: (page: number) => void;
+	totalItems?: number;
+	pageSize?: number;
+	getInitials?: (name: string) => string;
+	getStatusColor?: (status: string) => string;
 }
 
 function defaultGetStatusColor(status: string) {
@@ -72,10 +66,12 @@ const ApplicantRow = React.memo(function ApplicantRow({
 	getInitials,
 	getStatusColor,
 }: ApplicantRowProps) {
-	const fullName = (message.fullName ?? "").toString();
+	const fullName = [message.firstName, message.middleName, message.lastName]
+		.filter(Boolean)
+		.join(" ");
 	const email = (message.email ?? "").toString();
-	const employment = (message.currentEmploymentStatus ?? "").toString();
-	const education = (message.educationLevel ?? "").toString();
+	const employmentLabel = formatEmploymentStatus(message.employmentStatus);
+	const educationLabel = formatEducationalBackground(message.educationalBackground);
 
 	return (
 		<div
@@ -109,17 +105,17 @@ const ApplicantRow = React.memo(function ApplicantRow({
 					variant="secondary"
 					className={cn(
 						"font-semibold text-[10px] px-2.5 py-0.5 border-none shadow-none uppercase tracking-tight",
-						getStatusColor(employment)
+						getStatusColor(employmentLabel)
 					)}
 				>
-					{employment || "—"}
+					{employmentLabel || "—"}
 				</Badge>
 
-				{education && (
+				{educationLabel && (
 					<div className="flex items-center gap-1 text-slate-500">
 						<GraduationCap size={12} />
-						<span className="text-[10px] font-semibold uppercase tracking-tight">
-							{education}
+						<span className="text-[10px] font-semibold uppercase tracking-tight truncate max-w-32">
+							{educationLabel}
 						</span>
 					</div>
 				)}
@@ -128,7 +124,7 @@ const ApplicantRow = React.memo(function ApplicantRow({
 	);
 });
 
-export function ApplicantsList<TApplicant extends ApplicantListItem = ApplicantListItem>({
+export function ApplicantsList({
 	isLoading,
 	isError,
 	error,
@@ -141,19 +137,13 @@ export function ApplicantsList<TApplicant extends ApplicantListItem = ApplicantL
 	pageSize,
 	getInitials = defaultGetInitials,
 	getStatusColor = defaultGetStatusColor,
-}: ApplicantListProps<TApplicant>) {
+}: ApplicantListProps) {
 	const errorMessage = React.useMemo(() => {
 		const e = error as UnknownError | undefined;
 		return e?.message ?? "Check connection";
 	}, [error]);
 
 	const selectedId = selectedMessage?._id ?? null;
-	const onSelect = React.useCallback(
-		(message: ApplicantListItem) => {
-			handleMessageSelect(message as TApplicant);
-		},
-		[handleMessageSelect]
-	);
 
 	return (
 		<div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r bg-slate-50 flex flex-col h-full">
@@ -209,7 +199,7 @@ export function ApplicantsList<TApplicant extends ApplicantListItem = ApplicantL
 								key={message._id}
 								message={message}
 								isSelected={selectedId === message._id}
-								onSelect={onSelect}
+								onSelect={handleMessageSelect}
 								getInitials={getInitials}
 								getStatusColor={getStatusColor}
 							/>
@@ -237,4 +227,3 @@ export function ApplicantsList<TApplicant extends ApplicantListItem = ApplicantL
 		</div>
 	);
 }
-

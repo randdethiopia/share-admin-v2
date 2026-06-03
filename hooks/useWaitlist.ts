@@ -2,18 +2,48 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 
-export type WaitlistApplicant = {
-	_id: string;
-	fullName?: string | null;
-	email?: string | null;
-	batch?: string | null;
-	stage?: string | null;
-};
+import type { ApplicantListItem } from "@/lib/api/waitlist";
 
 type FilterValue = string;
 
 type WaitListOptions = {
 	autoSelectFirst?: boolean;
+};
+
+/**
+ * Minimal shape the hook needs. Accepting the full {@link ApplicantListItem}
+ * works because it derives `fullName` from first/middle/last on the fly.
+ */
+export type WaitlistApplicant = Pick<
+	ApplicantListItem,
+	"_id" | "firstName" | "middleName" | "lastName" | "email"
+> & {
+	batch?: string | null;
+	stage?: string | null;
+};
+
+const normalizeStageValue = (value: string) => {
+	const normalized = value.replace(/[^a-z0-9]/gi, " ").trim().toLowerCase();
+	if (!normalized) return "";
+	const aliasMap: Record<string, string> = {
+		"1": "rejected",
+		"2": "registered",
+		"3": "eligible",
+		"4": "approved",
+		"5": "unable_to_reach",
+		"rejected": "rejected",
+		"not interested": "rejected",
+		"not_interested": "rejected",
+		"registered": "registered",
+		"pending review": "registered",
+		"pending_review": "registered",
+		"eligible": "eligible",
+		"approved": "approved",
+		"unable to reach": "unable_to_reach",
+		"unable_to_reach": "unable_to_reach",
+		"unreachable": "unable_to_reach",
+	};
+	return aliasMap[normalized] ?? normalized.replace(/\s+/g, "_");
 };
 
 export function useWaitList<TApplicant extends WaitlistApplicant>(
@@ -26,30 +56,6 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 	const [stageFilter, setStageFilter] = useState<FilterValue>("");
 	const autoSelectFirst = options.autoSelectFirst ?? true;
 
-	const normalizeStageValue = (value: string) => {
-		const normalized = value.replace(/[^a-z0-9]/gi, " ").trim().toLowerCase();
-		if (!normalized) return "";
-		const aliasMap: Record<string, string> = {
-			"1": "rejected",
-			"2": "registered",
-			"3": "eligible",
-			"4": "approved",
-			"5": "unable_to_reach",
-			"rejected": "rejected",
-			"not interested": "rejected",
-			"not_interested": "rejected",
-			"registered": "registered",
-			"pending review": "registered",
-			"pending_review": "registered",
-			"eligible": "eligible",
-			"approved": "approved",
-			"unable to reach": "unable_to_reach",
-			"unable_to_reach": "unable_to_reach",
-			"unreachable": "unable_to_reach",
-		};
-		return aliasMap[normalized] ?? normalized.replace(/\s+/g, "_");
-	};
-
 	const deferredQuery = useDeferredValue(searchQuery);
 	const deferredBatch = useDeferredValue(batchFilter);
 	const deferredStage = useDeferredValue(stageFilter);
@@ -60,7 +66,8 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 			? normalizeStageValue(deferredStage)
 			: "";
 		return (allApplicants ?? []).filter((item) => {
-			const name = (item.fullName ?? "").toString().toLowerCase();
+			const name = `${item.firstName ?? ""} ${item.middleName ?? ""} ${item.lastName ?? ""}`
+				.toLowerCase();
 			const email = (item.email ?? "").toString().toLowerCase();
 			const batch = (item.batch ?? "").toString();
 			const stage = (item.stage ?? "").toString();
@@ -97,4 +104,3 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 		selectedId: selectedApplicant?._id ?? null,
 	};
 }
-
