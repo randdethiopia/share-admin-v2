@@ -76,7 +76,14 @@ export const JobApi = {
         mutationFn: approveJobFn,
         onSuccess: (data, variables, context) => {
           toast.success(data.message || "Job approved successfully!");
-          queryClient.invalidateQueries({ queryKey: ["Jobs"] });
+          queryClient.setQueryData<JobType[]>(["Jobs"], (prev) =>
+            prev?.map((job) =>
+              job._id === variables ? { ...job, status: "APPROVED" } : job
+            )
+          );
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["Jobs"] });
+          }, 1500);
           if (options?.onSuccess) {
             // @ts-ignore
             options.onSuccess(data, variables, context);
@@ -105,7 +112,14 @@ export const JobApi = {
         mutationFn: rejectJobFn,
         onSuccess: (data, variables, context) => {
           toast.success(data.message || "Job rejected successfully!");
-          queryClient.invalidateQueries({ queryKey: ["Jobs"] });
+          queryClient.setQueryData<JobType[]>(["Jobs"], (prev) =>
+            prev?.map((job) =>
+              job._id === variables ? { ...job, status: "REJECTED" } : job
+            )
+          );
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["Jobs"] });
+          }, 1500);
           if (options?.onSuccess) {
             // @ts-ignore
             options.onSuccess(data, variables, context);
