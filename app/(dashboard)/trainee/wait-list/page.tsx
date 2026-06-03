@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
-import api, { getWaitListServerSideFn, type ApplicantListItem } from "@/lib/api";
+import api, { getWaitListServerSideFn } from "@/lib/api";
 import {
 	formatDigitalDevices,
 	formatEducationalBackground,
@@ -37,6 +37,7 @@ import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { ApplicantListItem } from "@/lib/api/waitlist";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
