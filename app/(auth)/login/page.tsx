@@ -4,13 +4,16 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Lock, Mail } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { loginSchema, type LoginData } from "@/lib/validator"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import api from "@/lib/api"
 import { AuthIntro } from "../components/auth-intro"
+import { toast } from "sonner"
+import type { AxiosError } from "axios"
+import type { ErrorRes } from "@/types/core"
 
 export default function LoginPage() {
 
@@ -20,6 +23,9 @@ export default function LoginPage() {
     onSuccess: () => {
       router.push("/dashboard")
     },
+    onError: (error: AxiosError<ErrorRes>) => {
+      toast.error(error.response?.data?.message || "Invalid credentials")
+    },
   })
 
   const form = useForm<LoginData>({
@@ -28,11 +34,7 @@ export default function LoginPage() {
   })
 
   const onSubmit = (data: LoginData) => {
-    login(data, {
-      onSuccess: () => {
-        router.push("/dashboard")
-      }
-    })
+    login(data)
   }
 
   return (
