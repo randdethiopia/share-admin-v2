@@ -208,15 +208,25 @@ export function ApplicantDetail({
 					<div className="flex gap-3">
 						<Button
 							onClick={() => createAccount(selectedMessage._id)}
-							disabled={isCreating}
-							className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-6 font-bold shadow-md"
+							disabled={isCreating || selectedMessage.alreadyOnEdge}
+							title={
+								selectedMessage.alreadyOnEdge
+									? "This applicant already has an account on Edge"
+									: undefined
+							}
+							className={cn(
+								"rounded-xl h-10 px-6 font-bold text-white shadow-md",
+								selectedMessage.alreadyOnEdge
+									? "bg-rose-600 hover:bg-rose-600 disabled:opacity-100 disabled:bg-rose-600"
+									: "bg-blue-600 hover:bg-blue-700"
+							)}
 						>
 							{isCreating ? (
 								<Loader2 className="animate-spin" />
 							) : (
 								<UserPlus size={16} className="mr-2" />
 							)}
-							Create Account
+							{selectedMessage.alreadyOnEdge ? "Already on Edge" : "Create Account"}
 						</Button>
 						<Button
 							onClick={() => onDelete(selectedMessage._id)}

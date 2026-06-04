@@ -132,6 +132,7 @@ export type ApplicantListItem = {
 	participatedMasterCardFundedProgram: ApplicantYesNo;
 	acceptsSafeguardingConducts: ApplicantYesNo;
 	humanitarianStatus: ApplicantHumanitarianStatus;
+	alreadyOnEdge?: boolean;
 	createdAt: string;
 	updatedAt: string;
 };

@@ -67,7 +67,8 @@ export type MyCoordinatorTraineesResType = CoordinatorTraineesResType;
 export interface FilterTraineesToAssignParams {
 	minAge?: string;
 	maxAge?: string;
-	address?: string;
+	city?: string;
+	subcity?: string;
 	gender?: string;
 }
 
@@ -206,7 +207,8 @@ export async function filterTraineesToAssignFn(
 	const params = new URLSearchParams();
 	if (filters.minAge) params.set("minAge", filters.minAge);
 	if (filters.maxAge) params.set("maxAge", filters.maxAge);
-	if (filters.address) params.set("address", filters.address);
+	if (filters.city) params.set("city", filters.city);
+	if (filters.subcity) params.set("subcity", filters.subcity);
 	if (filters.gender) params.set("gender", filters.gender);
 
 	return (
