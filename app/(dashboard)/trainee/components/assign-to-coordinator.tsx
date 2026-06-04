@@ -119,9 +119,7 @@ export function AssignTraineesToCoordinator() {
   const lastTraineeSuccessToastKey = useRef("");
 
   const { data: cities = [], isLoading: isCitiesLoading } =
-    Adress.GetCities.useQuery({
-      enabled: open,
-    });
+    Adress.GetCities.useQuery(open);
 
   const selectedFormCity = useMemo(
     () => cities.find((c) => c._id === filters.cityId),

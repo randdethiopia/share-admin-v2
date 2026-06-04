@@ -33,10 +33,14 @@ async function getSubCitiesFn(cityId: string) {
 
 const Adress = {
 	GetCities: {
-		useQuery: (options?: UseQueryOptions<City[], AxiosError<ErrorRes>>) =>
+		useQuery: (
+			enabled = true,
+			options?: UseQueryOptions<City[], AxiosError<ErrorRes>>
+		) =>
 			useQuery({
 				queryKey: ["adress", "cities"],
 				queryFn: () => getCitiesFn(),
+				enabled: enabled,
 				...options,
 			}),
 	},
