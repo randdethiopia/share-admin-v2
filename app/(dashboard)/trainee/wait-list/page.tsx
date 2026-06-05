@@ -451,7 +451,7 @@ export default function WaitListPage() {
 						<div className="relative w-full md:w-64">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 							<Input
-								placeholder="Search name, email…"
+								placeholder="Search name, email, phone…"
 								className="pl-9 bg-white border-none rounded-xl h-10 text-sm shadow-sm"
 								value={searchQuery}
 								onChange={(e) => onSearchChange(e.target.value)}

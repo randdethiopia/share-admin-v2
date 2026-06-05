@@ -20,6 +20,7 @@ export type WaitlistApplicant = Pick<
 > & {
 	batch?: string | null;
 	stage?: string | null;
+	phoneNumber?: string | null;
 };
 
 const normalizeStageValue = (value: string) => {
@@ -62,6 +63,8 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 
 	const filteredApplicants = useMemo(() => {
 		const q = deferredQuery.trim().toLowerCase();
+		// Strip non-digits so "+251 91-234-5678" matches "0912345678" etc.
+		const phoneQuery = q.replace(/\D/g, "");
 		const normalizedStageFilter = deferredStage
 			? normalizeStageValue(deferredStage)
 			: "";
@@ -69,10 +72,17 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 			const name = `${item.firstName ?? ""} ${item.middleName ?? ""} ${item.lastName ?? ""}`
 				.toLowerCase();
 			const email = (item.email ?? "").toString().toLowerCase();
+			const phone = (item.phoneNumber ?? "").toString().toLowerCase();
+			const phoneDigits = phone.replace(/\D/g, "");
 			const batch = (item.batch ?? "").toString();
 			const stage = (item.stage ?? "").toString();
 
-			const matchesSearch = q ? name.includes(q) || email.includes(q) : true;
+			const matchesSearch = q
+				? name.includes(q) ||
+				  email.includes(q) ||
+				  phone.includes(q) ||
+				  (phoneQuery !== "" && phoneDigits.includes(phoneQuery))
+				: true;
 			const matchesBatch = !deferredBatch || batch === deferredBatch;
 			const normalizedStage = normalizeStageValue(stage);
 			const matchesStage = !normalizedStageFilter
