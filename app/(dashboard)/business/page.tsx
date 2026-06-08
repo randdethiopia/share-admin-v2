@@ -88,21 +88,13 @@ export default function BusinessPage() {
 	} = api.BusinessProfile.GetList.useQuery();
 
 	const { mutate: approveBusiness, isPending: isApproving } =
-		api.BusinessProfile.Approve.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
+		api.BusinessProfile.Approve.useMutation();
 	const { mutate: rejectBusiness, isPending: isRejecting } =
-		api.BusinessProfile.Reject.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
+		api.BusinessProfile.Reject.useMutation();
 	const { mutate: approveUpdate, isPending: isApprovingUpdate } =
-		api.BusinessProfile.UpdateApprove.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
+		api.BusinessProfile.UpdateApprove.useMutation();
 	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
-		api.BusinessProfile.UpdateReject.useMutation({
-			onSuccess: () => setConfirmOpen(false),
-		});
+		api.BusinessProfile.UpdateReject.useMutation();
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -142,10 +134,14 @@ export default function BusinessPage() {
 
 	const submitConfirm = () => {
 		if (!selectedId) return;
-		if (confirmAction === "approve") approveBusiness(selectedId);
-		else if (confirmAction === "reject") rejectBusiness(selectedId);
-		else if (confirmAction === "update-approve") approveUpdate(selectedId);
-		else rejectUpdate(selectedId);
+		const mutationOptions = {
+			onSuccess: () => setConfirmOpen(false),
+		};
+		if (confirmAction === "approve") approveBusiness(selectedId, mutationOptions);
+		else if (confirmAction === "reject") rejectBusiness(selectedId, mutationOptions);
+		else if (confirmAction === "update-approve")
+			approveUpdate(selectedId, mutationOptions);
+		else rejectUpdate(selectedId, mutationOptions);
 	};
 
 	const isMutating =

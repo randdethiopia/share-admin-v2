@@ -7,7 +7,7 @@ import {
 	UseQueryOptions,
 } from "@tanstack/react-query";
 
-import { agentDebugLog } from "@/lib/debug-agent-log";
+
 
 
 
@@ -220,13 +220,7 @@ const getRolesFn = async () => {
 			permissionIdsLen: Array.isArray(coord.permissionIds) ? coord.permissionIds.length : null,
 		};
 	}
-	agentDebugLog({
-		runId: "iterate2",
-		hypothesisId: "H1-H2-shape",
-		location: "lib/api/access.ts:getRolesFn",
-		message: "getRoles response shape",
-		data: { roleCount: rolesRaw.length, summary, coordinatorShape },
-	});
+	
 	// #endregion
 	return data;
 }

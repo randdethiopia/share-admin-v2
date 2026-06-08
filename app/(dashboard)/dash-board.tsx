@@ -46,7 +46,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#E2EDF8]">
+    <div className="flex min-h-screen bg-slate-50">
       
       <aside
         className="fixed hidden h-full w-64 border-r bg-white md:block"
@@ -85,12 +85,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </SheetContent>
           </Sheet>
 
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-sm font-semibold text-slate-900">
             {currentTitle}
           </span>
         </header>
 
-        <main className="min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden">
+        <main className="min-w-0 flex-1 p-4 md:p-8 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>
