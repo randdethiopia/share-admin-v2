@@ -2,9 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { Check, Eye, Loader2, MoreHorizontal, Search, X } from "lucide-react";
 
 import api from "@/lib/api";
 import type { BusinessProfileType } from "@/lib/api";
+import { AdminCard } from "@/components/shared/admin/AdminCard";
+import { FilterField } from "@/components/shared/admin/FilterField";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -18,6 +22,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -36,7 +47,6 @@ import {
 } from "@/components/ui/table";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, Search, X } from "lucide-react";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
 type ConfirmAction =
@@ -44,6 +54,12 @@ type ConfirmAction =
 	| "reject"
 	| "update-approve"
 	| "update-reject";
+
+const inputSurfaceClass =
+	"bg-slate-50 border border-slate-200/80 h-12 rounded-lg text-sm";
+
+const tableHeadClass =
+	"h-11 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500";
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -63,11 +79,107 @@ function statusBadgeClass(status: string) {
 	}
 }
 
-function formatDate(value?: string) {
-	if (!value) return "-";
-	const d = new Date(value);
-	if (Number.isNaN(d.getTime())) return "-";
-	return d.toLocaleDateString();
+function getBusinessDisplayName(business: BusinessProfileType) {
+	const businessName = business.businessName?.trim();
+	if (businessName) return businessName;
+
+	const ownerName = business.name?.trim();
+	if (ownerName) return ownerName;
+
+	const firstName = business.smeId?.firstName?.trim() ?? "";
+	const lastName = business.smeId?.lastName?.trim() ?? "";
+	return `${firstName} ${lastName}`.trim();
+}
+
+function getBusinessActionVisibility(status?: string) {
+	const normalized = normalizeStatus(status);
+	return {
+		showApprove: normalized === "PENDING" || normalized === "REJECTED",
+		showReject: normalized === "PENDING" || normalized === "APPROVED",
+	};
+}
+
+function isUpdateRequestPending(updateStatus?: string) {
+	const normalized = normalizeStatus(updateStatus);
+	return normalized === "REQUEST_UPDATE" || normalized === "PENDING";
+}
+
+function BusinessActionsMenu({
+	business,
+	onApprove,
+	onReject,
+	onUpdateApprove,
+	onUpdateReject,
+	disabled,
+}: {
+	business: BusinessProfileType;
+	onApprove: (id: string) => void;
+	onReject: (id: string) => void;
+	onUpdateApprove: (id: string) => void;
+	onUpdateReject: (id: string) => void;
+	disabled?: boolean;
+}) {
+	const { showApprove, showReject } = getBusinessActionVisibility(business.status);
+	const showUpdateActions = isUpdateRequestPending(business.updateStatus);
+	const hasBusinessActions = showApprove || showReject;
+	const hasActionItems = hasBusinessActions || showUpdateActions;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={disabled}
+					className="h-9 w-9 rounded-lg border border-transparent text-slate-500 hover:bg-slate-100 hover:border-slate-200/80 hover:text-slate-700"
+				>
+					<MoreHorizontal className="h-4 w-4" />
+					<span className="sr-only">Open actions</span>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-52 rounded-xl">
+				<DropdownMenuItem asChild>
+					<Link
+						href={`/business/${business._id}`}
+						className="flex cursor-pointer items-center"
+					>
+						<Eye className="mr-2 h-4 w-4" />
+						View Details
+					</Link>
+				</DropdownMenuItem>
+
+				{hasActionItems && <DropdownMenuSeparator />}
+
+				{showApprove && (
+					<DropdownMenuItem onClick={() => onApprove(business._id)}>
+						<Check className="mr-2 h-4 w-4 text-emerald-600" />
+						Approve Business
+					</DropdownMenuItem>
+				)}
+				{showReject && (
+					<DropdownMenuItem onClick={() => onReject(business._id)}>
+						<X className="mr-2 h-4 w-4 text-red-600" />
+						Reject Business
+					</DropdownMenuItem>
+				)}
+
+				{showUpdateActions && hasBusinessActions && <DropdownMenuSeparator />}
+
+				{showUpdateActions && (
+					<DropdownMenuItem onClick={() => onUpdateApprove(business._id)}>
+						<Check className="mr-2 h-4 w-4 text-emerald-600" />
+						Approve Profile Update
+					</DropdownMenuItem>
+				)}
+				{showUpdateActions && (
+					<DropdownMenuItem onClick={() => onUpdateReject(business._id)}>
+						<X className="mr-2 h-4 w-4 text-red-600" />
+						Reject Profile Update
+					</DropdownMenuItem>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
 }
 
 export default function BusinessPage() {
@@ -147,12 +259,19 @@ export default function BusinessPage() {
 	const isMutating =
 		isApproving || isRejecting || isApprovingUpdate || isRejectingUpdate;
 
-	const isUpdateRequestPending = (updateStatus?: string) =>
-		normalizeStatus(updateStatus) === "REQUEST_UPDATE" ||
-		normalizeStatus(updateStatus) === "PENDING";
+	const renderActionsMenu = (business: BusinessProfileType) => (
+		<BusinessActionsMenu
+			business={business}
+			onApprove={(id) => openConfirm("approve", id)}
+			onReject={(id) => openConfirm("reject", id)}
+			onUpdateApprove={(id) => openConfirm("update-approve", id)}
+			onUpdateReject={(id) => openConfirm("update-reject", id)}
+			disabled={isMutating}
+		/>
+	);
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
+		<div className="space-y-6">
 			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -198,22 +317,15 @@ export default function BusinessPage() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<div className="px-4">
-				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-					Business
-				</h1>
-				<p className="text-zinc-600 text-sm font-medium">
-					See all your businesses
-				</p>
-			</div>
+			<PageHeader title="Business" description="See all your businesses" />
 
-			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
-				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+			<AdminCard className="min-h-[70vh] p-4 sm:p-6 md:p-8">
+				<div className="mb-8 flex flex-col justify-between gap-4 md:flex-row">
 					<div className="relative w-full max-w-sm">
-						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+						<Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 						<Input
 							placeholder="Search"
-							className="pl-11 bg-[#F3F8FF] border-none h-12 rounded-xl text-sm"
+							className={cn("pl-11", inputSurfaceClass)}
 							value={search}
 							onChange={(e) => {
 								setSearch(e.target.value);
@@ -222,8 +334,7 @@ export default function BusinessPage() {
 						/>
 					</div>
 
-					<div className="flex flex-col sm:flex-row sm:items-center gap-3">
-						<span className="text-xs font-bold text-gray-400">Status</span>
+					<FilterField label="Filter Status">
 						<Select
 							value={status}
 							onValueChange={(value) => {
@@ -239,7 +350,12 @@ export default function BusinessPage() {
 								}
 							}}
 						>
-							<SelectTrigger className="w-full sm:w-40 md:w-36 bg-[#F3F8FF] border-none h-12 rounded-xl text-xs font-bold">
+							<SelectTrigger
+								className={cn(
+									"w-full sm:w-40 md:w-36 text-xs font-semibold",
+									inputSurfaceClass
+								)}
+							>
 								<SelectValue placeholder="All" />
 							</SelectTrigger>
 							<SelectContent>
@@ -250,171 +366,78 @@ export default function BusinessPage() {
 								<SelectItem value="REJECTED">Rejected</SelectItem>
 							</SelectContent>
 						</Select>
-					</div>
+					</FilterField>
 				</div>
 
-				{/* Mobile cards */}
-				<div className="md:hidden space-y-3">
+				<div className="border-t border-slate-200/80 md:hidden">
 					{isLoading ? (
-						<div className="h-40 flex items-center justify-center text-sm text-gray-600">
-							<Loader2 className="animate-spin mr-2" /> Loading...
+						<div className="flex h-40 items-center justify-center text-sm text-slate-600">
+							<Loader2 className="mr-2 animate-spin" /> Loading...
 						</div>
 					) : isError ? (
-						<div className="h-40 flex items-center justify-center text-sm text-red-600 text-center px-2">
+						<div className="flex h-40 items-center justify-center px-2 text-center text-sm text-red-600">
 							{(error as { response?: { data?: { message?: string } } })
 								?.response?.data?.message || "Failed to load businesses"}
 						</div>
 					) : filteredData.length === 0 ? (
-						<div className="h-40 flex items-center justify-center text-sm text-gray-500">
+						<div className="flex h-40 items-center justify-center text-sm text-slate-500">
 							No businesses found.
 						</div>
 					) : (
 						pageData.map((business) => (
 							<div
 								key={business._id}
-								className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+								className="border-b border-slate-100 p-4 last:border-b-0"
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-											<p className="text-sm font-bold text-gray-900 truncate">
-												{business.businessName || "-"}
-										</p>
-										<p className="text-xs text-gray-600 truncate">
-												{business.email || business.bphoneNumber || "-"}
+										<p className="truncate text-sm font-semibold text-slate-900">
+											{getBusinessDisplayName(business)}
 										</p>
 									</div>
-
-									<div className="flex items-center gap-2">
+									<div className="flex shrink-0 items-center gap-2">
 										<Badge
 											className={cn(
-												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
+												"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
 												statusBadgeClass(business.status)
 											)}
 										>
-												{normalizeStatus(business.status) || "PENDING"}
+											{normalizeStatus(business.status) || "PENDING"}
 										</Badge>
+										{renderActionsMenu(business)}
 									</div>
 								</div>
 
-								<div className="mt-3 grid grid-cols-2 gap-3">
-									<div className="rounded-xl bg-[#F3F8FF] px-3 py-2">
-										<p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-											Approved
-										</p>
-											<p className="text-xs font-semibold text-gray-700">
-												{formatDate(business.approvedAt)}
-										</p>
-									</div>
-									<div className="rounded-xl bg-[#F3F8FF] px-3 py-2">
-										<p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-											Status
-										</p>
-											<p className="text-xs font-semibold text-gray-700">
-												{normalizeStatus(business.status) || "PENDING"}
-										</p>
-									</div>
-								</div>
-
-								<div className="mt-4 flex items-center gap-2">
-									<Button
-										asChild
-										variant="ghost"
-										size="icon"
-										title="View details"
-										className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-									>
-										<Link href={`/business/${business._id}`}>
-											<Eye size={16} />
-										</Link>
-									</Button>
-
-									{normalizeStatus(business.status) === "PENDING" && (
-										<>
-											<Button
-												variant="ghost"
-												size="icon"
-												title="Reject"
-												onClick={() => openConfirm("reject", business._id)}
-												disabled={isMutating}
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100"
-											>
-												<X size={16} />
-											</Button>
-											<Button
-												variant="ghost"
-												size="icon"
-												title="Approve"
-												onClick={() => openConfirm("approve", business._id)}
-												disabled={isMutating}
-												className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-											>
-												<Check size={16} />
-											</Button>
-										</>
-									)}
-								</div>
-
-								{isUpdateRequestPending(business.updateStatus) && (
-									<div className="mt-3 flex items-center gap-2">
-										<Button
-											variant="outline"
-											onClick={() => openConfirm("update-approve", business._id)}
-											disabled={isMutating}
-											className="h-9 rounded-xl px-3 text-xs"
-										>
-											Approve Update
-										</Button>
-										<Button
-											variant="outline"
-											onClick={() => openConfirm("update-reject", business._id)}
-											disabled={isMutating}
-											className="h-9 rounded-xl px-3 text-xs text-red-600 border-red-200"
-										>
-											Reject Update
-										</Button>
-									</div>
-								)}
 							</div>
 						))
 					)}
 				</div>
 
-				{/* Desktop table */}
-				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
+				<div className="hidden border-t border-slate-200/80 md:block">
 					<div className="overflow-x-auto">
 						<Table>
-							<TableHeader className="bg-[#D6E6F2]">
+							<TableHeader className="bg-slate-50 border-b border-slate-200/80">
 								<TableRow className="border-none hover:bg-transparent">
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Name
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Info
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Status
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										View
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Approval
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Profile Update
+									<TableHead className={tableHeadClass}>Name</TableHead>
+									<TableHead className={tableHeadClass}>Status</TableHead>
+									<TableHead className={cn(tableHeadClass, "text-center")}>
+										Actions
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{isLoading ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center">
-											<Loader2 className="animate-spin inline mr-2" /> Loading...
+										<TableCell colSpan={3} className="h-40 text-center">
+											<Loader2 className="mr-2 inline animate-spin" /> Loading...
 										</TableCell>
 									</TableRow>
 								) : isError ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center text-sm text-red-600">
+										<TableCell
+											colSpan={3}
+											className="h-40 text-center text-sm text-red-600"
+										>
 											{(error as { response?: { data?: { message?: string } } })
 												?.response?.data?.message ||
 												"Failed to load businesses"}
@@ -422,7 +445,10 @@ export default function BusinessPage() {
 									</TableRow>
 								) : filteredData.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={6} className="h-40 text-center text-sm text-gray-500">
+										<TableCell
+											colSpan={3}
+											className="h-40 text-center text-sm text-slate-500"
+										>
 											No businesses found.
 										</TableCell>
 									</TableRow>
@@ -430,109 +456,41 @@ export default function BusinessPage() {
 									pageData.map((business) => (
 										<TableRow
 											key={business._id}
-											className="hover:bg-slate-50/50 border-gray-50"
+											className="border-slate-50 hover:bg-slate-50/50"
 										>
-											<TableCell className="px-6 py-4 text-xs font-bold text-gray-600">
-												<div className="flex flex-col">
-													
-													<span className="text-[11px] text-black-800 font-medium truncate">
-														{business.name || business.bphoneNumber}
-													</span>
-												</div>	
-											</TableCell>
-											<TableCell className="px-6 py-4 text-xs text-gray-500 font-medium">
-                        <span className="truncate">{business.businessName}</span>
-												Approved: {formatDate(business.approvedAt)}
+											<TableCell className="px-6 py-4">
+												<span className="truncate text-sm font-bold text-slate-900">
+													{getBusinessDisplayName(business)}
+												</span>
 											</TableCell>
 											<TableCell className="px-6 py-4">
 												<Badge
 													className={cn(
-														"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
+														"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
 														statusBadgeClass(business.status)
 													)}
 												>
 													{normalizeStatus(business.status) || "PENDING"}
 												</Badge>
 											</TableCell>
-											<TableCell className="px-6 py-4 text-center">
-												<Button
-													asChild
-													variant="ghost"
-													size="icon"
-													title="View details"
-													className="h-8 w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-												>
-													<Link href={`/business/${business._id}`}>
-														<Eye size={16} />
-													</Link>
-												</Button>
-											</TableCell>
 											<TableCell className="px-6 py-4">
-												{normalizeStatus(business.status) === "PENDING" ? (
-													<div className="flex items-center justify-center gap-2">
-														<Button
-															variant="ghost"
-															size="icon"
-															title="Approve"
-															onClick={() => openConfirm("approve", business._id)}
-															disabled={isMutating}
-															className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-														>
-															<Check size={14} />
-														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															title="Reject"
-															onClick={() => openConfirm("reject", business._id)}
-															disabled={isMutating}
-															className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
-														>
-															<X size={14} />
-														</Button>
-													</div>
-												) : (
-													<span className="text-xs text-gray-400">-</span>
-												)}
-											</TableCell>
-											<TableCell className="px-6 py-4 text-center">
-												{isUpdateRequestPending(business.updateStatus) ? (
-													<div className="flex items-center justify-center gap-2">
-														<Button
-															variant="outline"
-															className="h-8 px-3 rounded-lg"
-															onClick={() => openConfirm("update-approve", business._id)}
-															disabled={isMutating}
-														>
-															<Check size={12} className="mr-1" />
-															Approve
-														</Button>
-														<Button
-															variant="outline"
-															className="h-8 px-3 rounded-lg text-red-600 border-red-200"
-															onClick={() => openConfirm("update-reject", business._id)}
-															disabled={isMutating}
-														>
-															<X size={12} className="mr-1" />
-															Reject
-														</Button>
-													</div>
-												) : (
-													<span className="text-xs text-gray-400">—</span>
-												)}
+												<div className="flex justify-center">
+													{renderActionsMenu(business)}
+												</div>
 											</TableCell>
 										</TableRow>
 									))
-								)
-								}
+								)}
 							</TableBody>
 						</Table>
 					</div>
 				</div>
 
-				<div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="mt-6 flex flex-col gap-4 border-t border-slate-200/80 pt-6 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex items-center gap-2">
-						<span className="text-xs font-bold text-gray-400">Items per page</span>
+						<span className="text-xs font-semibold text-slate-500">
+							Items per page
+						</span>
 						<Select
 							value={String(pageSize)}
 							onValueChange={(value) => {
@@ -540,7 +498,7 @@ export default function BusinessPage() {
 								setPage(1);
 							}}
 						>
-							<SelectTrigger className="w-24 bg-[#F3F8FF] border-none h-10 rounded-xl text-xs font-bold">
+							<SelectTrigger className="h-10 w-24 rounded-lg border border-slate-200/80 bg-slate-50 text-xs font-semibold">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -559,7 +517,7 @@ export default function BusinessPage() {
 						disabled={isLoading || isError}
 					/>
 				</div>
-			</div>
+			</AdminCard>
 		</div>
 	);
 }

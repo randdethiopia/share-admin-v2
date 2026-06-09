@@ -294,7 +294,7 @@ export default function MentorProfilePage() {
 		"bg-slate-50 border border-slate-200/80 h-12 rounded-lg text-sm";
 
 	return (
-		<div className="space-y-6 m-4">
+		<div className="space-y-6">
 			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
