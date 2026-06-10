@@ -19,7 +19,16 @@ type FilterLogic = "and" | "or";
 
 type FilterOperator = "eq" | "contains" | "gt" | "lt" | "after" | "before";
 
-type FilterField = "fullName" | "age" | "status" | "city";
+type FilterField =
+	| "fullName"
+	| "age"
+	| "status"
+	| "city"
+	| "region"
+	| "zone"
+	| "woreda"
+	| "gender"
+	| "phoneNumber";
 
 export type FilterCondition = {
 	id: string;
@@ -68,6 +77,16 @@ const DEFAULT_FIELDS: Array<{ value: FilterField; label: string }> = [
 	{ value: "age", label: "Age" },
 	{ value: "status", label: "Status" },
 	{ value: "city", label: "City" },
+	{ value: "region", label: "Region" },
+	{ value: "zone", label: "Zone" },
+	{ value: "woreda", label: "Woreda" },
+	{ value: "gender", label: "Gender" },
+	{ value: "phoneNumber", label: "Phone" },
+];
+
+const GENDER_OPTIONS: Array<{ value: string; label: string }> = [
+	{ value: "male", label: "Male" },
+	{ value: "female", label: "Female" },
 ];
 
 const FilterRow = ({
@@ -80,6 +99,8 @@ const FilterRow = ({
 	onRemove: () => void;
 }) => {
 	const isCityField = condition.field === "city";
+	const isGenderField = condition.field === "gender";
+	const isSelectField = isCityField || isGenderField;
 
 	const { data: cities = [], isLoading: citiesLoading } =
 		Adress.GetCities.useQuery();
@@ -127,8 +148,8 @@ const FilterRow = ({
 				</SelectContent>
 			</Select>
 
-			{/* City is always equality-matched, so its operator is implicit. */}
-			{!isCityField && (
+			{/* City and gender are always equality-matched, so the operator is implicit. */}
+			{!isSelectField && (
 				<Select
 					value={condition.operator}
 					onValueChange={(val) =>
@@ -152,7 +173,23 @@ const FilterRow = ({
 			)}
 
 			<div className="flex-1 flex items-center gap-3">
-				{isCityField ? (
+				{isGenderField ? (
+					<Select
+						value={condition.value}
+						onValueChange={(val) => onUpdate({ ...condition, value: val })}
+					>
+						<SelectTrigger className="flex-1 bg-white border-none rounded-xl h-10 shadow-sm text-xs">
+							<SelectValue placeholder="Select gender" />
+						</SelectTrigger>
+						<SelectContent>
+							{GENDER_OPTIONS.map((option) => (
+								<SelectItem key={option.value} value={option.value}>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				) : isCityField ? (
 					<>
 						<Select
 							value={condition.value}
@@ -203,7 +240,9 @@ const FilterRow = ({
 				) : (
 					<Input
 						className="bg-white border-none h-10 rounded-xl shadow-sm text-xs"
-						placeholder="Value..."
+						placeholder={
+							condition.field === "phoneNumber" ? "Phone number..." : "Value..."
+						}
 						value={condition.value}
 						onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
 					/>

@@ -241,7 +241,7 @@ export default function TraineePage() {
 					<p className="text-zinc-600 text-sm font-medium">See all your trainees</p>
 				</div>
 				<div className="flex flex-wrap gap-3">
-					<Button
+					{/* <Button
 						variant="outline"
 						onClick={() =>
 							setIsSelectable((v) => {
@@ -258,7 +258,7 @@ export default function TraineePage() {
 						)}
 					>
 						{isSelectable ? "Cancel Selection" : "Bulk Assign"}
-					</Button>
+					</Button> */}
 					{isSelectable && (
 						<Button
 							className="bg-blue-600 hover:bg-blue-700 rounded-xl px-6 font-bold"
@@ -269,16 +269,12 @@ export default function TraineePage() {
 						</Button>
 					)}
 					<AssignTraineesToCoordinator />
-					<Button
+					{/* <Button
 						asChild
 						className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
 					>
 						<Link href="/trainee/list/create-trainee">Create</Link>
-					</Button>
-					<Button className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold">
-						<Upload size={16} className="mr-2" />
-						Import
-					</Button>
+					</Button> */}
 				</div>
 			</div>
 
@@ -377,8 +373,7 @@ export default function TraineePage() {
 						</div>
 					) : isError ? (
 						<div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-							{(error as { response?: { data?: { message?: string } } })
-								?.response?.data?.message || "Failed to load trainees"}
+							{(error as { response?: { data?: { message?: string } } }) && "Failed to load trainees"}
 						</div>
 					) : visibleTrainees.length === 0 ? (
 						<div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-600">

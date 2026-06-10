@@ -41,6 +41,22 @@ import { ApplicantListItem } from "@/lib/api/waitlist";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
+const DEFAULT_CSV_FIELDS = [
+	"firstName",
+	"middleName",
+	"lastName",
+	"email",
+	"phoneNumber",
+	"gender",
+	"region",
+	"city",
+	"subcity",
+	"woreda",
+	"employmentStatus",
+	"batch",
+	"stage",
+] as const;
+
 function asString(value: unknown) {
 	if (value === null || value === undefined) return "";
 	if (Array.isArray(value)) return value.join(", ");
@@ -58,6 +74,16 @@ function getApplicantFieldValue(applicant: ApplicantListItem, key: string): stri
 			return [applicant.firstName, applicant.middleName, applicant.lastName]
 				.filter(Boolean)
 				.join(" ");
+		case "firstName":
+			return applicant.firstName ?? "";
+		case "middleName":
+			return applicant.middleName ?? "";
+		case "lastName":
+			return applicant.lastName ?? "";
+		case "gender":
+			return applicant.gender ?? "";
+		case "region":
+			return applicant.region ?? "";
 		case "maritalStatus":
 			return formatMaritalStatus(applicant.maritalStatus);
 		case "digitalDevices":
@@ -92,6 +118,11 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 		return applicant.subcity?._id === subId;
 	}
 
+	if (condition.field === "gender") {
+		if (!value) return true;
+		return applicant.gender === value;
+	}
+
 	const getFieldValue = (): string | number => {
 		switch (condition.field) {
 			case "fullName":
@@ -109,6 +140,14 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 				]
 					.filter(Boolean)
 					.join(" ");
+			case "zone":
+				return applicant.zone;
+			case "region":
+				return applicant.region;
+			case "woreda":
+				return applicant.woreda;
+			case "phoneNumber":
+				return applicant.phoneNumber;
 			default:
 				return "";
 		}
@@ -130,6 +169,24 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 
 	const left = asString(fieldValue).toLowerCase();
 	const right = value.toLowerCase();
+
+	if (condition.field === "phoneNumber") {
+		const phoneDigits = asString(fieldValue).replace(/\D/g, "");
+		const queryDigits = value.replace(/\D/g, "");
+		if (operator === "eq") {
+			return queryDigits
+				? phoneDigits === queryDigits
+				: left === right;
+		}
+		if (operator === "contains") {
+			return queryDigits
+				? phoneDigits.includes(queryDigits)
+				: right
+					? left.includes(right)
+					: true;
+		}
+		return false;
+	}
 
 	if (operator === "eq") return left === right;
 	if (operator === "contains") return right ? left.includes(right) : true;
@@ -183,11 +240,7 @@ export default function WaitListPage() {
 	const [page, setPage] = React.useState(1);
 	const pageSize = 7;
 	const [selectedFields, setSelectedFields] = React.useState<string[]>([
-		"fullName",
-		"email",
-		"employmentStatus",
-		"batch",
-		"stage",
+		...DEFAULT_CSV_FIELDS,
 	]);
 	const [, startTransition] = React.useTransition();
 
@@ -345,7 +398,7 @@ export default function WaitListPage() {
 
 		const headers = selectedFields.length
 			? selectedFields
-			: ["fullName", "email", "batch", "stage"];
+			: [...DEFAULT_CSV_FIELDS];
 		const csv = [
 			headers.join(","),
 			...rows.map((row) =>
@@ -529,7 +582,7 @@ export default function WaitListPage() {
 										</DropdownMenuContent>
 									</DropdownMenu>
 
-						<Button
+						{/* <Button
 							type="button"
 							variant="outline"
 							onClick={() => setServerFilterModalOpen(true)}
@@ -537,7 +590,7 @@ export default function WaitListPage() {
 						>
 							<SlidersHorizontal className="mr-2 h-4 w-4" />
 							BUlk Filters
-						</Button>
+						</Button> */}
 					</div>
 				</div>
 			</header>
