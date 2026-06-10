@@ -23,6 +23,7 @@ export interface ProfileType extends ProfileFormType {
 	status: "ACTIVE" | "TERMINATED";
 	createdAt: string;
 	approvedAt: string;
+	roles?: { _id: string; name: string }[];
 }
 
 // --- Worker functions ---

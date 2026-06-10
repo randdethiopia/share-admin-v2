@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import api from "@/lib/api";
@@ -30,6 +31,7 @@ interface AssignRoleModalProps {
 
 const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenChange }) => {
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const queryClient = useQueryClient();
 
   const { mutate: assignRole, isPending: roleAssigning } =
     api.Access.assignRole.useMutation();
@@ -66,6 +68,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
       {
         onSuccess: () => {
           toast.success("Roles assigned successfully");
+          queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
           setSelectedRoleIds([]);
           onOpenChange(false);
         },
