@@ -79,16 +79,43 @@ function statusBadgeClass(status: string) {
 	}
 }
 
-function getBusinessDisplayName(business: BusinessProfileType) {
-	const businessName = business.businessName?.trim();
-	if (businessName) return businessName;
+function formatDate(value?: string) {
+	if (!value) return "-";
+	const d = new Date(value);
+	if (Number.isNaN(d.getTime())) return "-";
+	return d.toLocaleDateString();
+}
 
+function getBusinessOwnerName(business: BusinessProfileType) {
 	const ownerName = business.name?.trim();
 	if (ownerName) return ownerName;
 
 	const firstName = business.smeId?.firstName?.trim() ?? "";
 	const lastName = business.smeId?.lastName?.trim() ?? "";
-	return `${firstName} ${lastName}`.trim();
+	return `${firstName} ${lastName}`.trim() || "-";
+}
+
+function getBusinessApprovalDisplay(business: BusinessProfileType) {
+	if (normalizeStatus(business.status) !== "APPROVED" || !business.approvedAt) {
+		return "-";
+	}
+	return formatDate(business.approvedAt);
+}
+
+function BusinessNameCell({ business }: { business: BusinessProfileType }) {
+	return (
+		<div className="flex min-w-0 flex-col space-y-1">
+			<span className="truncate text-sm font-bold text-slate-900">
+				{getBusinessOwnerName(business)}
+			</span>
+			<span className="truncate text-xs font-medium text-slate-500">
+				{business.email?.trim() || "-"}
+			</span>
+			<span className="truncate text-xs font-medium text-slate-500">
+				{business.businessName?.trim() || "-"}
+			</span>
+		</div>
+	);
 }
 
 function getBusinessActionVisibility(status?: string) {
@@ -391,8 +418,9 @@ export default function BusinessPage() {
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-										<p className="truncate text-sm font-semibold text-slate-900">
-											{getBusinessDisplayName(business)}
+										<BusinessNameCell business={business} />
+										<p className="mt-2 text-xs text-slate-500">
+											Approved at: {getBusinessApprovalDisplay(business)}
 										</p>
 									</div>
 									<div className="flex shrink-0 items-center gap-2">
@@ -419,6 +447,7 @@ export default function BusinessPage() {
 							<TableHeader className="bg-slate-50 border-b border-slate-200/80">
 								<TableRow className="border-none hover:bg-transparent">
 									<TableHead className={tableHeadClass}>Name</TableHead>
+									<TableHead className={tableHeadClass}>Approved at</TableHead>
 									<TableHead className={tableHeadClass}>Status</TableHead>
 									<TableHead className={cn(tableHeadClass, "text-center")}>
 										Actions
@@ -428,14 +457,14 @@ export default function BusinessPage() {
 							<TableBody>
 								{isLoading ? (
 									<TableRow>
-										<TableCell colSpan={3} className="h-40 text-center">
+										<TableCell colSpan={4} className="h-40 text-center">
 											<Loader2 className="mr-2 inline animate-spin" /> Loading...
 										</TableCell>
 									</TableRow>
 								) : isError ? (
 									<TableRow>
 										<TableCell
-											colSpan={3}
+											colSpan={4}
 											className="h-40 text-center text-sm text-red-600"
 										>
 											{(error as { response?: { data?: { message?: string } } })
@@ -446,7 +475,7 @@ export default function BusinessPage() {
 								) : filteredData.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={3}
+											colSpan={4}
 											className="h-40 text-center text-sm text-slate-500"
 										>
 											No businesses found.
@@ -458,10 +487,11 @@ export default function BusinessPage() {
 											key={business._id}
 											className="border-slate-50 hover:bg-slate-50/50"
 										>
-											<TableCell className="px-6 py-4">
-												<span className="truncate text-sm font-bold text-slate-900">
-													{getBusinessDisplayName(business)}
-												</span>
+											<TableCell className="whitespace-normal px-6 py-4">
+												<BusinessNameCell business={business} />
+											</TableCell>
+											<TableCell className="px-6 py-4 text-xs font-medium text-slate-500">
+												{getBusinessApprovalDisplay(business)}
 											</TableCell>
 											<TableCell className="px-6 py-4">
 												<Badge
