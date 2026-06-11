@@ -30,6 +30,7 @@ export function OverviewChart({ title, data, colorVar, className }: OverviewChar
 	// Default brand green (fallback)
 	const fallbackGreen = "#34A853";
 	const strokeColor = colorVar ? `hsl(var(--${colorVar}))` : fallbackGreen;
+	const hasData = data.some((point) => point.value > 0);
 
 	const reactId = React.useId();
 	const gradientId = React.useMemo(
@@ -50,7 +51,7 @@ export function OverviewChart({ title, data, colorVar, className }: OverviewChar
 			>
 				<h3 className="text-lg font-bold text-gray-700 mb-8 px-2">{title}</h3>
 				<div className="flex-1 w-full">
-					{data.length === 0 ? (
+					{data.length === 0 || !hasData ? (
 						<div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-50 text-sm font-semibold text-slate-500">
 							No data for the selected range
 						</div>
@@ -99,6 +100,8 @@ export function OverviewChart({ title, data, colorVar, className }: OverviewChar
 								stroke={safeStroke}
 								strokeWidth={3}
 								fill={`url(#${gradientId})`}
+								dot={{ r: 3, strokeWidth: 2, fill: "#fff" }}
+								activeDot={{ r: 5 }}
 								animationDuration={1500}
 							/>
 							</AreaChart>
@@ -112,4 +115,3 @@ export function OverviewChart({ title, data, colorVar, className }: OverviewChar
 
 // Back-compat: existing dashboard code imports `AnalyticsChart`.
 export const AnalyticsChart = OverviewChart;
-
