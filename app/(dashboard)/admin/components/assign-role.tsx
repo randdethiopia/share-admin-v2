@@ -21,6 +21,7 @@ interface AssignTarget {
   id: string;
   name: string;
   phoneNumber: string;
+  roles?: { _id: string; name: string }[];
 };
 
 interface AssignRoleModalProps {
@@ -39,6 +40,17 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
     api.Access.getRoles.useQuery();
   const roles: Role[] = rolesData?.roles ?? [];
 
+  React.useEffect(() => {
+    if (open && admin) {
+      const existingIds = (admin.roles ?? []).map((role) => role._id);
+      setSelectedRoleIds(existingIds);
+      return;
+    }
+    if (!open) {
+      setSelectedRoleIds([]);
+    }
+  }, [open, admin]);
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setSelectedRoleIds([]);
@@ -55,10 +67,6 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
 
   const handleAssignRoleSubmit = () => {
     if (!admin) return;
-    if (selectedRoleIds.length === 0) {
-      toast.error("Please select at least one role");
-      return;
-    }
 
     assignRole(
       {

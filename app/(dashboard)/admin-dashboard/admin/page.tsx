@@ -2,7 +2,16 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Eye, Loader2, Plus, Search, UserCheck, UserX } from "lucide-react";
+import {
+	Eye,
+	Key,
+	Loader2,
+	MoreHorizontal,
+	Plus,
+	Search,
+	UserCheck,
+	UserX,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import api from "@/lib/api";
@@ -18,6 +27,13 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -93,6 +109,67 @@ function SheetDetailRow({
 const tableHeadClass =
 	"h-11 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:px-8";
 
+function AdminActionsMenu({
+	admin,
+	isSelfAdmin,
+	disabled,
+	onViewDetails,
+	onAssignRole,
+	onActivate,
+	onDeactivate,
+}: {
+	admin: ProfileType;
+	isSelfAdmin: boolean;
+	disabled?: boolean;
+	onViewDetails: (admin: ProfileType) => void;
+	onAssignRole: (admin: ProfileType) => void;
+	onActivate: (admin: ProfileType) => void;
+	onDeactivate: (admin: ProfileType) => void;
+}) {
+	const showActivate = admin.status === "TERMINATED";
+	const showDeactivate = admin.status === "ACTIVE" && !isSelfAdmin;
+	const showStatusActions = showActivate || showDeactivate;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={disabled}
+					className="h-9 w-9 rounded-lg border border-transparent text-slate-500 hover:bg-slate-100 hover:border-slate-200/80 hover:text-slate-700"
+				>
+					<MoreHorizontal className="h-4 w-4" />
+					<span className="sr-only">Open actions</span>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-48 rounded-xl">
+				<DropdownMenuItem onClick={() => onViewDetails(admin)}>
+					<Eye className="mr-2 h-4 w-4" />
+					View Details
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={() => onAssignRole(admin)}>
+					<Key className="mr-2 h-4 w-4" />
+					Assign Role
+				</DropdownMenuItem>
+				{showStatusActions && <DropdownMenuSeparator />}
+				{showActivate && (
+					<DropdownMenuItem onClick={() => onActivate(admin)}>
+						<UserCheck className="mr-2 h-4 w-4 text-emerald-600" />
+						Activate
+					</DropdownMenuItem>
+				)}
+				{showDeactivate && (
+					<DropdownMenuItem onClick={() => onDeactivate(admin)}>
+						<UserX className="mr-2 h-4 w-4 text-red-600" />
+						Deactivate
+					</DropdownMenuItem>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export default function AdminManagementPage() {
 	const [search, setSearch] = React.useState("");
 	const [page, setPage] = React.useState(1);
@@ -103,6 +180,7 @@ export default function AdminManagementPage() {
 		id: string;
 		name: string;
 		phoneNumber: string;
+		roles?: { _id: string; name: string }[];
 	} | null>(null);
 	const [pendingAction, setPendingAction] = React.useState<{
 		type: "activate" | "deactivate";
@@ -187,6 +265,7 @@ export default function AdminManagementPage() {
 			id: admin._id,
 			name: `${admin.firstName} ${admin.lastName}`.trim(),
 			phoneNumber: admin.phoneNumber,
+			roles: admin.roles,
 		});
 	};
 
@@ -269,11 +348,15 @@ export default function AdminManagementPage() {
 					<Table className="min-w-180">
 						<TableHeader className="bg-slate-50 border-b border-slate-200/80">
 							<TableRow className="border-none hover:bg-transparent">
-								<TableHead className={tableHeadClass}>Name</TableHead>
-								<TableHead className={tableHeadClass}>Email</TableHead>
-								<TableHead className={tableHeadClass}>Phone</TableHead>
-								<TableHead className={tableHeadClass}>Status</TableHead>
-								<TableHead className={cn(tableHeadClass, "text-right")}>
+								<TableHead className={cn(tableHeadClass, "w-[45%]")}>
+									Name
+								</TableHead>
+								<TableHead className={cn(tableHeadClass, "w-[25%]")}>
+									Status
+								</TableHead>
+								<TableHead
+									className={cn(tableHeadClass, "w-[30%] text-right")}
+								>
 									Actions
 								</TableHead>
 							</TableRow>
@@ -282,7 +365,7 @@ export default function AdminManagementPage() {
 							{isLoading ? (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={3}
 										className="h-40 text-center text-slate-500"
 									>
 										<Loader2 className="mr-2 inline animate-spin" /> Loading...
@@ -291,7 +374,7 @@ export default function AdminManagementPage() {
 							) : filteredAdmins.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={3}
 										className="h-40 text-center text-sm text-slate-500"
 									>
 										No admins found.
@@ -306,12 +389,6 @@ export default function AdminManagementPage() {
 										<TableCell className="px-6 py-5 font-bold text-slate-900 sm:px-8">
 											{admin.firstName} {admin.lastName}
 										</TableCell>
-										<TableCell className="px-6 py-5 text-sm font-medium text-slate-500 sm:px-8">
-											{admin.email}
-										</TableCell>
-										<TableCell className="px-6 py-5 text-sm font-medium text-slate-500 sm:px-8">
-											{admin.phoneNumber}
-										</TableCell>
 										<TableCell className="px-6 py-5 sm:px-8">
 											<Badge
 												className={cn(
@@ -322,51 +399,19 @@ export default function AdminManagementPage() {
 												{getStatusLabel(admin.status)}
 											</Badge>
 										</TableCell>
-
 										<TableCell className="px-6 py-5 sm:px-8">
-											<div className="flex items-center justify-end gap-2">
-												<button
-													type="button"
-													onClick={() => openDetails(admin)}
-													className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
-													aria-label={`View ${getAdminDisplayName(admin)} details`}
-												>
-													<Eye size={16} />
-												</button>
-												<div className="flex w-8 justify-start">
-													{admin.status === "TERMINATED" ? (
-														<button
-															type="button"
-															onClick={() => openConfirm("activate", admin)}
-															className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100"
-															aria-label={`Activate ${getAdminDisplayName(admin)}`}
-															title="Activate"
-														>
-															<UserCheck size={16} />
-														</button>
-													) : isSelf(admin) ? (
-														<span className="inline-flex h-8 w-8 items-center justify-center text-[10px] font-medium text-slate-400">
-															You
-														</span>
-													) : (
-														<button
-															type="button"
-															onClick={() => openConfirm("deactivate", admin)}
-															className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 transition-colors hover:bg-red-100"
-															aria-label={`Deactivate ${getAdminDisplayName(admin)}`}
-															title="Deactivate"
-														>
-															<UserX size={16} />
-														</button>
-													)}
-												</div>
-
-												<button
-													onClick={() => openAssignRole(admin)}
-													className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-emerald-600 hover:cursor-pointer"
-												>
-													Assign Role
-												</button>
+											<div className="flex justify-end">
+												<AdminActionsMenu
+													admin={admin}
+													isSelfAdmin={isSelf(admin)}
+													disabled={isWorking}
+													onViewDetails={openDetails}
+													onAssignRole={openAssignRole}
+													onActivate={(a) => openConfirm("activate", a)}
+													onDeactivate={(a) =>
+														openConfirm("deactivate", a)
+													}
+												/>
 											</div>
 										</TableCell>
 									</TableRow>
