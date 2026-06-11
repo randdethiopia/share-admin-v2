@@ -34,9 +34,15 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, Search, X } from "lucide-react";
+import { Check, Eye, Loader2, Search, X, MoreHorizontal } from "lucide-react";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
 
@@ -262,7 +268,7 @@ export default function ExpertPage() {
 					</div>
 				</div>
 
-				{/* Mobile: Card list */}
+				
 				<div className="md:hidden space-y-3">
 					{isLoading ? (
 						<div className="h-40 flex items-center justify-center text-sm text-gray-600">
@@ -322,50 +328,53 @@ export default function ExpertPage() {
 									</div>
 								</div>
 
-								<div className="mt-4 flex items-center gap-2">
-									<Button
-										asChild
-										variant="ghost"
-										size="icon"
-										title="View details"
-										className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-									>
-										<Link href={`/expert/${advisor._id}`}>
-											<Eye size={16} />
-										</Link>
-									</Button>
-
-									{normalizeStatus(advisor.status) === "PENDING" && (
-										<>
+								<div className="mt-4 flex items-center justify-end">
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
 											<Button
 												variant="ghost"
 												size="icon"
-												title="Reject"
-												onClick={() => openReject(advisor._id)}
-												disabled={isMutating}
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100"
+												className="h-8 w-8 rounded-full"
 											>
-												<X size={16} />
+												<MoreHorizontal size={16} />
 											</Button>
-											<Button
-												variant="ghost"
-												size="icon"
-												title="Approve"
-												onClick={() => openApprove(advisor._id)}
-												disabled={isMutating}
-												className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-											>
-												<Check size={16} />
-											</Button>
-										</>
-									)}
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end" className="w-40">
+											<DropdownMenuItem asChild>
+												<Link href={`/expert/${advisor._id}`} className="flex items-center gap-2 cursor-pointer">
+													<Eye size={14} />
+													<span>View Details</span>
+												</Link>
+											</DropdownMenuItem>
+											{normalizeStatus(advisor.status) === "PENDING" && (
+												<>
+													<DropdownMenuItem
+														onClick={() => openApprove(advisor._id)}
+														disabled={isMutating}
+														className="flex items-center gap-2 cursor-pointer text-emerald-600 focus:text-emerald-600"
+													>
+														<Check size={14} />
+														<span>Approve</span>
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														onClick={() => openReject(advisor._id)}
+														disabled={isMutating}
+														className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
+													>
+														<X size={14} />
+														<span>Reject</span>
+													</DropdownMenuItem>
+												</>
+											)}
+										</DropdownMenuContent>
+									</DropdownMenu>
 								</div>
 							</div>
 						))
 					)}
 				</div>
 
-				{/* Desktop: Table */}
+				
 				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
 					<div className="overflow-x-auto">
 						<Table>
@@ -433,43 +442,45 @@ export default function ExpertPage() {
 												</Badge>
 											</TableCell>
 											<TableCell className="px-6 py-4 text-center">
-												<div className="flex items-center justify-center gap-2">
-													<Button
-														asChild
-														variant="ghost"
-														size="icon"
-														title="View details"
-														className="h-8 w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-													>
-														<Link href={`/expert/${advisor._id}`}>
-															<Eye size={16} />
-														</Link>
-													</Button>
-													{normalizeStatus(advisor.status) === "PENDING" && (
-														<>
-															<Button
-																variant="ghost"
-																size="icon"
-																title="Reject"
-																onClick={() => openReject(advisor._id)}
-																disabled={isMutating}
-																className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
-															>
-																<X size={16} />
-															</Button>
-															<Button
-																variant="ghost"
-																size="icon"
-																title="Approve"
-																onClick={() => openApprove(advisor._id)}
-																disabled={isMutating}
-																className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-															>
-																<Check size={16} />
-															</Button>
-														</>
-													)}
-												</div>
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="h-8 w-8 rounded-full"
+														>
+															<MoreHorizontal size={16} />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end" className="w-40">
+														<DropdownMenuItem asChild>
+															<Link href={`/expert/${advisor._id}`} className="flex items-center gap-2 cursor-pointer">
+																<Eye size={14} />
+																<span>View Details</span>
+															</Link>
+														</DropdownMenuItem>
+														{normalizeStatus(advisor.status) === "PENDING" && (
+															<>
+																<DropdownMenuItem
+																	onClick={() => openApprove(advisor._id)}
+																	disabled={isMutating}
+																	className="flex items-center gap-2 cursor-pointer text-emerald-600 focus:text-emerald-600"
+																>
+																	<Check size={14} />
+																	<span>Approve</span>
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={() => openReject(advisor._id)}
+																	disabled={isMutating}
+																	className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
+																>
+																	<X size={14} />
+																	<span>Reject</span>
+																</DropdownMenuItem>
+															</>
+														)}
+													</DropdownMenuContent>
+												</DropdownMenu>
 											</TableCell>
 										</TableRow>
 									))

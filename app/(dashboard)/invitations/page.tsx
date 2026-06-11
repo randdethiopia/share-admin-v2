@@ -34,6 +34,13 @@ function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toLowerCase();
 }
 
+function statusBadgeClass(status?: string) {
+	const s = normalizeStatus(status);
+	if (s.includes("accept")) return "bg-[#E6F4EA] text-[#1E8E3E]";
+	if (s.includes("reject")) return "bg-[#FDECEC] text-[#B91C1C]";
+	return "bg-[#FFF7E6] text-[#B45309]";
+}
+
 export default function InvitationsPage() {
 	const router = useRouter();
 	const [search, setSearch] = useState("");
@@ -144,34 +151,26 @@ export default function InvitationsPage() {
 							No invitations found.
 						</div>
 					) : (
-						pageData.map((item) => {
-							const status = normalizeStatus(item.status);
-							const statusClass = status.includes("accept")
-								? "bg-[#34A853] text-white"
-								: status.includes("reject")
-									? "bg-red-500 text-white"
-									: "bg-[#F59E0B] text-white";
-
-							return (
-								<div
-									key={item._id}
-									className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-								>
-									<div className="flex items-start justify-between gap-3">
-										<div className="min-w-0">
-											<p className="text-sm font-bold text-gray-900 truncate">
-												{item.company?.businessName || "-"}
-											</p>
-											<p className="text-xs text-gray-600 truncate">
-												{item.advisor?.fullName || "-"}
-											</p>
-										</div>
+						pageData.map((item) => (
+							<div
+								key={item._id}
+								className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										<p className="text-sm font-bold text-gray-900 truncate">
+											{item.company?.businessName || "-"}
+										</p>
+										<p className="text-xs text-gray-600 truncate">
+											{item.advisor?.fullName || "-"}
+										</p>
+									</div>
 
 									<div className="flex items-center gap-2">
 										<Badge
 											className={cn(
 												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-												statusClass
+												statusBadgeClass(item.status)
 											)}
 										>
 											{item.status || "-"}
@@ -207,8 +206,7 @@ export default function InvitationsPage() {
 									</div>
 								</div>
 							</div>
-						);
-						})
+						))
 					)}
 				</div>
 
@@ -216,59 +214,51 @@ export default function InvitationsPage() {
 				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
 					<div className="overflow-x-auto">
 						<Table>
-						<TableHeader className="bg-[#D6E6F2]">
-							<TableRow className="border-none hover:bg-transparent">
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-									Business
-								</TableHead>
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-									Expert
-								</TableHead>
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-									Duration
-								</TableHead>
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-									Payment Term
-								</TableHead>
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-									Status
-								</TableHead>
-								<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-									Action
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{isLoading ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-40 text-center">
-										<Loader2 className="animate-spin inline mr-2" />
-										Loading...
-									</TableCell>
+							<TableHeader className="bg-[#D6E6F2]">
+								<TableRow className="border-none hover:bg-transparent">
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Business
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Expert
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Duration
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Payment Term
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Status
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
+										Action
+									</TableHead>
 								</TableRow>
-							) : isError ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-40 text-center text-sm text-red-600">
-										{(error as { response?: { data?: { message?: string } } })?.response?.data
-											?.message || "Failed to load invitations"}
-									</TableCell>
-								</TableRow>
-							) : filteredData.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-40 text-center text-sm text-gray-500">
-										No invitations found.
-									</TableCell>
-								</TableRow>
-							) : (
-								pageData.map((item) => {
-									const status = normalizeStatus(item.status);
-									const statusClass = status.includes("accept")
-										? "bg-[#34A853] text-white"
-										: status.includes("reject")
-											? "bg-red-500 text-white"
-											: "bg-[#F59E0B] text-white";
-
-									return (
+							</TableHeader>
+							<TableBody>
+								{isLoading ? (
+									<TableRow>
+										<TableCell colSpan={6} className="h-40 text-center">
+											<Loader2 className="animate-spin inline mr-2" />
+											Loading...
+										</TableCell>
+									</TableRow>
+								) : isError ? (
+									<TableRow>
+										<TableCell colSpan={6} className="h-40 text-center text-sm text-red-600">
+											{(error as { response?: { data?: { message?: string } } })?.response?.data
+												?.message || "Failed to load invitations"}
+										</TableCell>
+									</TableRow>
+								) : filteredData.length === 0 ? (
+									<TableRow>
+										<TableCell colSpan={6} className="h-40 text-center text-sm text-gray-500">
+											No invitations found.
+										</TableCell>
+									</TableRow>
+								) : (
+									pageData.map((item) => (
 										<TableRow
 											key={item._id}
 											className="hover:bg-slate-50/50 border-gray-50"
@@ -289,7 +279,7 @@ export default function InvitationsPage() {
 												<Badge
 													className={cn(
 														"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-														statusClass
+														statusBadgeClass(item.status)
 													)}
 												>
 													{item.status || "-"}
@@ -306,11 +296,10 @@ export default function InvitationsPage() {
 													<Eye size={16} />
 												</Button>
 											</TableCell>
-									</TableRow>
-									);
-								})
-							)}
-						</TableBody>
+										</TableRow>
+									))
+								)}
+							</TableBody>
 						</Table>
 					</div>
 				</div>
@@ -327,4 +316,3 @@ export default function InvitationsPage() {
 		</div>
 	);
 }
-

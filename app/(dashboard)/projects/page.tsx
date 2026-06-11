@@ -44,7 +44,6 @@ import {
 	Check,
 	Clock,
 	Eye,
-	Loader2,
 	Search,
 	Trash2,
 	X,
@@ -55,6 +54,13 @@ type StatusFilter = "all" | ProjectStatus;
 
 function normalizeProjectStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
+}
+
+function toDateOnly(value?: string) {
+	if (!value) return "";
+	const d = new Date(value);
+	if (Number.isNaN(d.getTime())) return "";
+	return d.toISOString().slice(0, 10);
 }
 
 function formatDate(value?: string) {
@@ -128,6 +134,7 @@ export default function ProjectsPage() {
 	const canMutateProjects = hasHydrated && isAdmin && hasToken;
 	const [search, setSearch] = React.useState("");
 	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
+	const [dueDateFilter, setDueDateFilter] = React.useState("");
 	const [page, setPage] = React.useState(1);
 	const [rejectId, setRejectId] = React.useState<string | null>(null);
 	const [rejectOpen, setRejectOpen] = React.useState(false);
@@ -141,7 +148,6 @@ export default function ProjectsPage() {
 		isError,
 		error,
 		refetch,
-		isFetching,
 	} = api.Project.GetList.useQuery({
 		enabled: canFetchProjects,
 	});
@@ -158,10 +164,17 @@ export default function ProjectsPage() {
 				? (p.projectName ?? "").trim().toLowerCase().startsWith(q)
 				: true;
 			const normalized = normalizeProjectStatus(String(p.status ?? ""));
-			const matchStatus = statusFilter === "all" || normalized === statusFilter;
-			return matchText && matchStatus;
+			if (normalized === "TRASH" || normalized === "DELETED") return false;
+			const matchStatus =
+				statusFilter === "all"
+					? true
+					: normalized === statusFilter;
+			const matchDueDate = dueDateFilter
+				? toDateOnly(p.endDate) === dueDateFilter
+				: true;
+			return matchText && matchStatus && matchDueDate;
 		});
-	}, [projects, search, statusFilter]);
+	}, [projects, search, statusFilter, dueDateFilter]);
 
 	const pagination = React.useMemo(
 		() => getPaginationMeta(filteredData.length, page, pageSize),
@@ -358,14 +371,28 @@ export default function ProjectsPage() {
 							</SelectContent>
 						</Select>
 
+						<Input
+							type="date"
+							value={dueDateFilter}
+							onChange={(e) => {
+								setDueDateFilter(e.target.value);
+								setPage(1);
+							}}
+							className="w-full sm:w-44 bg-[#F3F8FF] border-none h-12 rounded-xl"
+							aria-label="Filter by due date"
+						/>
+
 						<Button
+							type="button"
 							variant="outline"
 							className="h-12 rounded-xl"
-							onClick={() => refetch()}
-							disabled={isFetching}
+							onClick={() => {
+								setDueDateFilter("");
+								setPage(1);
+							}}
+							disabled={!dueDateFilter}
 						>
-							{isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-							Refresh
+							Reset date
 						</Button>
 					</div>
 				</div>
