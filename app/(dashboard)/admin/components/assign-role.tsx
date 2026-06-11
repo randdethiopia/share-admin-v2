@@ -75,13 +75,13 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
       },
       {
         onSuccess: () => {
-          toast.success("Roles assigned successfully");
+          toast.success("Roles updated successfully");
           queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
           setSelectedRoleIds([]);
           onOpenChange(false);
         },
         onError: () => {
-          toast.error("Failed to assign roles");
+          toast.error("Failed to update roles");
         },
       }
     );
