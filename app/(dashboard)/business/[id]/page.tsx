@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
 	ArrowLeft,
 	Calendar,
 	Building2,
+	Check,
 	FileText,
 	Globe,
 	Image as ImageIcon,
@@ -17,14 +18,27 @@ import {
 	Tag,
 	User,
 	ExternalLink,
+	X,
 } from "lucide-react";
 
 import api from "@/lib/api";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+type ConfirmAction = "approve" | "reject" | "update-approve" | "update-reject";
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -73,13 +87,30 @@ function getAvatarFallback(name?: string) {
 		.toUpperCase();
 }
 
+function getBusinessActionVisibility(status?: string) {
+	const normalized = normalizeStatus(status);
+	return {
+		showApprove: normalized === "PENDING" || normalized === "REJECTED",
+		showReject: normalized === "PENDING" || normalized === "APPROVED",
+	};
+}
+
+function isUpdateRequestPending(updateStatus?: string) {
+	const normalized = normalizeStatus(updateStatus);
+	return normalized === "REQUEST_UPDATE" || normalized === "PENDING";
+}
+
 export default function BusinessDetailPage() {
 	const params = useParams();
 	const router = useRouter();
-	const id = useMemo(() => {
+	const id = React.useMemo(() => {
 		const raw = (params as { id?: string | string[] })?.id;
 		return Array.isArray(raw) ? raw[0] : raw;
 	}, [params]);
+
+	const [confirmOpen, setConfirmOpen] = React.useState(false);
+	const [confirmAction, setConfirmAction] =
+		React.useState<ConfirmAction>("approve");
 
 	const {
 		data: business,
@@ -91,26 +122,108 @@ export default function BusinessDetailPage() {
 		enabled: Boolean(id),
 	});
 
+	const { mutate: approveBusiness, isPending: isApproving } =
+		api.BusinessProfile.Approve.useMutation();
+	const { mutate: rejectBusiness, isPending: isRejecting } =
+		api.BusinessProfile.Reject.useMutation();
+	const { mutate: approveUpdate, isPending: isApprovingUpdate } =
+		api.BusinessProfile.UpdateApprove.useMutation();
+	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
+		api.BusinessProfile.UpdateReject.useMutation();
+
+	const isMutating =
+		isApproving || isRejecting || isApprovingUpdate || isRejectingUpdate;
+
+	const openConfirm = (action: ConfirmAction) => {
+		setConfirmAction(action);
+		setConfirmOpen(true);
+	};
+
+	const submitConfirm = () => {
+		if (!id) return;
+		const mutationOptions = {
+			onSuccess: () => setConfirmOpen(false),
+		};
+		if (confirmAction === "approve") approveBusiness(id, mutationOptions);
+		else if (confirmAction === "reject") rejectBusiness(id, mutationOptions);
+		else if (confirmAction === "update-approve")
+			approveUpdate(id, mutationOptions);
+		else rejectUpdate(id, mutationOptions);
+	};
+
+	const alertDialog = (
+		<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{confirmAction === "approve"
+							? "Approve business?"
+							: confirmAction === "reject"
+								? "Reject business?"
+								: confirmAction === "update-approve"
+									? "Approve profile update?"
+									: "Reject profile update?"}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						This action cannot be undone.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isMutating}>Cancel</AlertDialogCancel>
+					<AlertDialogAction
+						onClick={(e) => {
+							e.preventDefault();
+							submitConfirm();
+						}}
+						disabled={isMutating}
+						className={cn(
+							confirmAction === "approve" ||
+								confirmAction === "update-approve"
+								? "bg-emerald-600 hover:bg-emerald-700"
+								: "bg-red-600 hover:bg-red-700"
+						)}
+					>
+						{isMutating
+							? "Please wait…"
+							: confirmAction === "approve"
+								? "Approve"
+								: confirmAction === "reject"
+									? "Reject"
+									: confirmAction === "update-approve"
+										? "Approve update"
+										: "Reject update"}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+
 	if (!id) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
-				<div className="mx-auto max-w-6xl rounded-3xl border border-blue-50 bg-white p-6 shadow-sm">
-					<p className="text-sm font-semibold text-red-600">Missing business id.</p>
-					<Button variant="outline" className="mt-4 rounded-xl" asChild>
-						<Link href="/business">Back to list</Link>
-					</Button>
+			<>
+				{alertDialog}
+				<div className="space-y-6">
+					<div className="mx-auto max-w-6xl rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
+						<p className="text-sm font-semibold text-red-600">Missing business id.</p>
+						<Button variant="outline" className="mt-4 rounded-xl" asChild>
+							<Link href="/business">Back to list</Link>
+						</Button>
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
-				<div className="mx-auto flex h-64 max-w-6xl items-center justify-center">
-					<Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+			<>
+				{alertDialog}
+				<div className="space-y-6">
+					<div className="mx-auto flex h-64 max-w-6xl items-center justify-center">
+						<Loader2 className="h-10 w-10 animate-spin text-slate-500" />
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
@@ -120,21 +233,31 @@ export default function BusinessDetailPage() {
 				?.message || "Business profile not found.";
 
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
-				<div className="mx-auto max-w-6xl rounded-3xl border border-blue-50 bg-white p-6 shadow-sm">
-					<p className="text-center text-sm font-semibold text-red-600">{message}</p>
-					<div className="mt-4 flex justify-center">
-						<Button variant="outline" className="rounded-xl" asChild>
-							<Link href="/business">Back to list</Link>
-						</Button>
+			<>
+				{alertDialog}
+				<div className="space-y-6">
+					<div className="mx-auto max-w-6xl rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
+						<p className="text-center text-sm font-semibold text-red-600">{message}</p>
+						<div className="mt-4 flex justify-center">
+							<Button variant="outline" className="rounded-xl" asChild>
+								<Link href="/business">Back to list</Link>
+							</Button>
+						</div>
 					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
 	const status = normalizeStatus(business.status);
 	const updateStatus = normalizeStatus(business.updateStatus);
+	const displayName =
+		business.businessName?.trim() ||
+		business.name?.trim() ||
+		`${business.smeId?.firstName ?? ""} ${business.smeId?.lastName ?? ""}`.trim() ||
+		"Business";
+	const { showApprove, showReject } = getBusinessActionVisibility(business.status);
+	const showUpdateActions = isUpdateRequestPending(business.updateStatus);
 	const categories = Array.isArray(business.categories) ? business.categories : [];
 	const socialNetwork = Array.isArray(business.socialNetwork)
 		? business.socialNetwork
@@ -143,54 +266,103 @@ export default function BusinessDetailPage() {
 	const attachments = Array.isArray(business.attachment) ? business.attachment : [];
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] px-4 py-6 sm:px-6 lg:px-8">
-			<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-				<div className="flex flex-col gap-3 rounded-3xl border border-blue-50 bg-white p-6 shadow-sm">
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						<button
-							onClick={() => router.back()}
-							type="button"
-							className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline"
-						>
-							<ArrowLeft size={14} /> Back to list
-						</button>
-						<div className="flex flex-wrap items-center gap-2">
-							<Badge
-								className={cn(
-									"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-									statusBadgeClass(status)
-								)}
+		<>
+			{alertDialog}
+			<div className="space-y-6">
+				<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+					<div className="flex flex-col gap-3 rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<button
+								onClick={() => router.back()}
+								type="button"
+								className="inline-flex items-center gap-2 text-sm font-bold text-slate-700 hover:underline"
 							>
-								{status || "PENDING"}
-							</Badge>
-							{updateStatus ? (
-								<Badge className="rounded-md border-none bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-700 shadow-none">
-									Update: {updateStatus}
+								<ArrowLeft size={14} /> Back to list
+							</button>
+							<div className="flex flex-wrap items-center gap-2">
+								<Badge
+									className={cn(
+										"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
+										statusBadgeClass(status)
+									)}
+								>
+									{status || "PENDING"}
 								</Badge>
-							) : null}
+								{updateStatus ? (
+									<Badge className="rounded-md border-none bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600 shadow-none">
+										Update: {updateStatus}
+									</Badge>
+								) : null}
+								{showApprove && (
+									<Button
+										size="sm"
+										disabled={isMutating}
+										onClick={() => openConfirm("approve")}
+										className="h-8 rounded-lg bg-emerald-600 px-3 text-xs font-semibold hover:bg-emerald-700"
+									>
+										<Check className="mr-1 h-3.5 w-3.5" />
+										Approve
+									</Button>
+								)}
+								{showReject && (
+									<Button
+										size="sm"
+										variant="destructive"
+										disabled={isMutating}
+										onClick={() => openConfirm("reject")}
+										className="h-8 rounded-lg px-3 text-xs font-semibold"
+									>
+										<X className="mr-1 h-3.5 w-3.5" />
+										Reject
+									</Button>
+								)}
+								{showUpdateActions && (
+									<>
+										<Button
+											size="sm"
+											variant="outline"
+											disabled={isMutating}
+											onClick={() => openConfirm("update-approve")}
+											className="h-8 rounded-lg px-3 text-xs font-semibold"
+										>
+											<Check className="mr-1 h-3.5 w-3.5 text-emerald-600" />
+											Approve Update
+										</Button>
+										<Button
+											size="sm"
+											variant="outline"
+											disabled={isMutating}
+											onClick={() => openConfirm("update-reject")}
+											className="h-8 rounded-lg border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50"
+										>
+											<X className="mr-1 h-3.5 w-3.5" />
+											Reject Update
+										</Button>
+									</>
+								)}
+							</div>
 						</div>
-					</div>
 
-					<div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-						<Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-							<AvatarImage src={business.avatar?.url} />
-							<AvatarFallback className="bg-blue-600 text-2xl font-bold text-white">
-								{getAvatarFallback(business.businessName || business.name)}
-							</AvatarFallback>
-						</Avatar>
-						<div className="min-w-0 flex-1">
-							<p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-								Business profile
-							</p>
-							<h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-								{business.businessName || business.name || "Business"}
-							</h1>
-							<p className="mt-2 text-sm text-slate-600">
-								{business.description || "No description provided."}
-							</p>
+						<div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+							<Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+								<AvatarImage src={business.avatar?.url} />
+								<AvatarFallback className="bg-slate-700 text-2xl font-bold text-white">
+									{getAvatarFallback(displayName)}
+								</AvatarFallback>
+							</Avatar>
+							<div className="min-w-0 flex-1">
+								<p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+									Business profile
+								</p>
+								<h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+									{displayName}
+								</h1>
+								<p className="mt-2 text-sm text-slate-600">
+									{business.description || "No description provided."}
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
 				<div className="grid gap-6 lg:grid-cols-3">
 					<Card className="rounded-3xl border-none shadow-sm lg:col-span-2">
@@ -362,6 +534,7 @@ export default function BusinessDetailPage() {
 				</div>
 			</div>
 		</div>
+		</>
 	);
 }
 
