@@ -503,20 +503,39 @@ export default function ExpertDetailPage() {
 							<p className="text-[10px] font-bold text-gray-400 uppercase mb-4">
 								Attachment
 							</p>
-							<a
-								href={cvUrl || "#"}
-								target="_blank"
-								rel="noreferrer"
-								download={Boolean(cvUrl)}
-								className={cn(
-									"flex items-center justify-between w-full p-4 rounded-2xl font-bold transition-all shadow-sm",
-									cvUrl
-										? "bg-white text-blue-600 hover:bg-blue-50"
-										: "bg-slate-100 text-slate-400 pointer-events-none"
-								)}
-							>
-								Download CV <Download size={18} />
-							</a>
+							{cvUrl ? (
+								<Button
+									onClick={() => {
+										try {
+											// Create a temporary anchor element
+											const link = document.createElement('a');
+											
+											// If it's a full URL (starts with http), open in new tab
+											if (cvUrl.startsWith('http://') || cvUrl.startsWith('https://')) {
+												window.open(cvUrl, '_blank', 'noopener,noreferrer');
+											} else {
+												// For relative URLs or blob URLs, use download
+												link.href = cvUrl;
+												link.download = `cv_${advisor.fullName?.replace(/\s/g, '_') || 'document'}.pdf`;
+												document.body.appendChild(link);
+												link.click();
+												document.body.removeChild(link);
+											}
+										} catch (error) {
+											console.error('Download failed:', error);
+											
+											window.open(cvUrl, '_blank', 'noopener,noreferrer');
+										}
+									}}
+									className="flex items-center justify-between w-full p-4 rounded-2xl font-bold transition-all shadow-sm bg-white text-blue-600 hover:bg-blue-50"
+								>
+									Download CV <Download size={18} />
+								</Button>
+							) : (
+								<div className="flex items-center justify-between w-full p-4 rounded-2xl font-bold shadow-sm bg-slate-100 text-slate-400 cursor-not-allowed">
+									No CV Available <Download size={18} />
+								</div>
+							)}
 						</div>
 					</div>
 				</aside>
