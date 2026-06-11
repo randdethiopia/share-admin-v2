@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { X, Plus, Layers } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { X, Plus, Layers, Check, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,18 +13,21 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import Adress from "@/lib/api/adress";
 
 type FilterLogic = "and" | "or";
 
 type FilterOperator = "eq" | "contains" | "gt" | "lt" | "after" | "before";
 
-type FilterField = "fullName" | "age" | "status";
+type FilterField = "fullName" | "age" | "status" | "city";
 
 export type FilterCondition = {
 	id: string;
 	field: FilterField;
 	operator: FilterOperator;
 	value: string;
+	
+	subValue?: string;
 };
 
 export type FilterGroup = {
@@ -38,6 +41,8 @@ type FilterBuilderProps = {
 	onFiltersChange: (filters: FilterGroup) => void;
 	initialFilters?: FilterGroup;
 	allApplicants?: unknown[];
+	// Optional hook fired after Apply, used by the host (e.g. a modal) to close itself.
+	onApply?: () => void;
 };
 
 const generateId = (): string => {
@@ -62,9 +67,9 @@ const DEFAULT_FIELDS: Array<{ value: FilterField; label: string }> = [
 	{ value: "fullName", label: "Full Name" },
 	{ value: "age", label: "Age" },
 	{ value: "status", label: "Status" },
+	{ value: "city", label: "City" },
 ];
 
-// --- 1. ATOM: THE FILTER ROW (A single leaf) ---
 const FilterRow = ({
 	condition,
 	onUpdate,
@@ -74,19 +79,43 @@ const FilterRow = ({
 	onUpdate: (updated: FilterCondition) => void;
 	onRemove: () => void;
 }) => {
+	const isCityField = condition.field === "city";
+
+	const { data: cities = [], isLoading: citiesLoading } =
+		Adress.GetCities.useQuery();
+
+	const selectedCity = useMemo(
+		() => cities.find((c) => c._id === condition.value),
+		[cities, condition.value],
+	);
+	const cityHasSubcity = Boolean(selectedCity?.hasSubcity);
+
+	const { data: subcities = [], isLoading: subcitiesLoading } =
+		Adress.GetSubCities.useQuery(
+			condition.value,
+			isCityField && cityHasSubcity,
+		);
+
+	const handleFieldChange = (val: string) => {
+		const newField = val as FilterField;
+		const nowCity = newField === "city";
+		const wasCity = condition.field === "city";
+		// A city `_id` is meaningless for other fields (and vice versa), so
+		// reset `value` when switching in or out of the city field.
+		const resetValue = nowCity !== wasCity;
+		onUpdate({
+			...condition,
+			field: newField,
+			operator: nowCity ? "eq" : condition.operator,
+			value: resetValue ? "" : condition.value,
+			subValue: undefined,
+		});
+	};
+
 	return (
 		<div className="flex items-center gap-3 p-3 bg-[#F3F8FF]/50 rounded-2xl group transition-all hover:bg-[#F3F8FF]">
-			{/* Field Selector */}
-			<Select
-				value={condition.field}
-				onValueChange={(val) =>
-					onUpdate({
-						...condition,
-						field: val as FilterField,
-					})
-				}
-			>
-		<SelectTrigger className="w-40 bg-white border-none rounded-xl h-10 shadow-sm font-bold text-xs">
+			<Select value={condition.field} onValueChange={handleFieldChange}>
+				<SelectTrigger className="w-40 bg-white border-none rounded-xl h-10 shadow-sm font-bold text-xs">
 					<SelectValue placeholder="Field" />
 				</SelectTrigger>
 				<SelectContent>
@@ -98,39 +127,89 @@ const FilterRow = ({
 				</SelectContent>
 			</Select>
 
-			{/* Operator Selector */}
-			<Select
-				value={condition.operator}
-				onValueChange={(val) =>
-					onUpdate({
-						...condition,
-						operator: val as FilterOperator,
-					})
-				}
-			>
-		<SelectTrigger className="w-32.5 bg-white border-none rounded-xl h-10 shadow-sm font-medium text-xs">
-					<SelectValue placeholder="Operator" />
-				</SelectTrigger>
-				<SelectContent>
-					{DEFAULT_OPERATORS.map((op) => (
-						<SelectItem key={op} value={op}>
-							{op.toUpperCase()}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			{/* City is always equality-matched, so its operator is implicit. */}
+			{!isCityField && (
+				<Select
+					value={condition.operator}
+					onValueChange={(val) =>
+						onUpdate({
+							...condition,
+							operator: val as FilterOperator,
+						})
+					}
+				>
+					<SelectTrigger className="w-32.5 bg-white border-none rounded-xl h-10 shadow-sm font-medium text-xs">
+						<SelectValue placeholder="Operator" />
+					</SelectTrigger>
+					<SelectContent>
+						{DEFAULT_OPERATORS.map((op) => (
+							<SelectItem key={op} value={op}>
+								{op.toUpperCase()}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			)}
 
-			{/* Value Input */}
-			<div className="flex-1">
-				<Input
-					className="bg-white border-none h-10 rounded-xl shadow-sm text-xs"
-					placeholder="Value..."
-					value={condition.value}
-					onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
-				/>
+			<div className="flex-1 flex items-center gap-3">
+				{isCityField ? (
+					<>
+						<Select
+							value={condition.value}
+							onValueChange={(val) =>
+								onUpdate({ ...condition, value: val, subValue: undefined })
+							}
+							disabled={citiesLoading}
+						>
+							<SelectTrigger className="flex-1 bg-white border-none rounded-xl h-10 shadow-sm text-xs">
+								<SelectValue
+									placeholder={citiesLoading ? "Loading cities..." : "Select city"}
+								/>
+							</SelectTrigger>
+							<SelectContent>
+								{cities.map((c) => (
+									<SelectItem key={c._id} value={c._id}>
+										{c.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						{cityHasSubcity && (
+							<Select
+								value={condition.subValue ?? ""}
+								onValueChange={(val) =>
+									onUpdate({ ...condition, subValue: val })
+								}
+								disabled={!condition.value || subcitiesLoading}
+							>
+								<SelectTrigger className="flex-1 bg-white border-none rounded-xl h-10 shadow-sm text-xs">
+									<SelectValue
+										placeholder={
+											subcitiesLoading ? "Loading subcities..." : "Select subcity"
+										}
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									{subcities.map((sc) => (
+										<SelectItem key={sc._id} value={sc._id}>
+											{sc.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+					</>
+				) : (
+					<Input
+						className="bg-white border-none h-10 rounded-xl shadow-sm text-xs"
+						placeholder="Value..."
+						value={condition.value}
+						onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
+					/>
+				)}
 			</div>
 
-			{/* Remove Button */}
 			<Button
 				variant="ghost"
 				size="icon"
@@ -144,7 +223,6 @@ const FilterRow = ({
 	);
 };
 
-// --- 2. BRANCH: THE GROUP COMPONENT (Recursive) ---
 const FilterGroupComponent = ({
 	group,
 	onUpdate,
@@ -195,7 +273,6 @@ const FilterGroupComponent = ({
 					: "border-slate-100 bg-slate-50/50 mt-4 ml-6",
 			)}
 		>
-			{/* Logic Toggle (AND/OR) */}
 			<div className="flex items-center justify-between mb-6">
 				<div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border">
 					{(["and", "or"] as const).map((logic) => (
@@ -227,7 +304,6 @@ const FilterGroupComponent = ({
 				)}
 			</div>
 
-			{/* Render Child Conditions (Leaves) */}
 			<div className="space-y-3">
 				{group.conditions.map((cond) => (
 					<FilterRow
@@ -251,7 +327,6 @@ const FilterGroupComponent = ({
 				))}
 			</div>
 
-			{/* Render Child Groups (Branches) - RECURSION HAPPENS HERE */}
 			{group.groups.map((subGroup) => (
 				<FilterGroupComponent
 					key={subGroup.id}
@@ -272,7 +347,6 @@ const FilterGroupComponent = ({
 				/>
 			))}
 
-			{/* Add Controls */}
 			<div className="flex gap-3 mt-6">
 				<Button
 					onClick={addCondition}
@@ -295,36 +369,61 @@ const FilterGroupComponent = ({
 	);
 };
 
-// --- 3. ROOT: THE FILTER BUILDER ---
+// Seed the builder with one rule so the modal isn't an empty canvas on open
+// or after reset. The user can still remove it via the row's X button.
+const defaultGroup = (): FilterGroup => ({
+	id: generateId(),
+	logic: "and",
+	conditions: [
+		{ id: generateId(), field: "fullName", operator: "eq", value: "" },
+	],
+	groups: [],
+});
+
 export const FilterBuilder = ({
 	onFiltersChange,
 	initialFilters,
+	onApply,
 }: FilterBuilderProps) => {
-	const initialRootGroup = useMemo<FilterGroup>(() => {
-		return (
-			initialFilters ?? {
-				id: generateId(),
-				logic: "and",
-				conditions: [],
-				groups: [],
-			}
-		);
-	}, [initialFilters]);
+	const initialRootGroup = useMemo<FilterGroup>(
+		() => initialFilters ?? defaultGroup(),
+		[initialFilters],
+	);
 
 	const [rootGroup, setRootGroup] = useState<FilterGroup>(initialRootGroup);
 
-	const onFiltersChangeRef = useRef(onFiltersChange);
-	useEffect(() => {
-		onFiltersChangeRef.current = onFiltersChange;
-	}, [onFiltersChange]);
+	const handleApply = () => {
+		onFiltersChange(rootGroup);
+		onApply?.();
+	};
 
-	useEffect(() => {
-		onFiltersChangeRef.current(rootGroup);
-	}, [rootGroup]);
+	const handleReset = () => {
+		setRootGroup(defaultGroup());
+	};
 
 	return (
 		<div className="w-full">
 			<FilterGroupComponent group={rootGroup} onUpdate={setRootGroup} />
+
+			<div className="flex items-center justify-end gap-3 mt-6">
+				<Button
+					type="button"
+					variant="outline"
+					onClick={handleReset}
+					className="rounded-xl h-10 font-bold text-xs border-slate-200 text-slate-500 hover:text-slate-700"
+				>
+					<RotateCcw size={14} className="mr-2" />
+					Reset
+				</Button>
+				<Button
+					type="button"
+					onClick={handleApply}
+					className="rounded-xl h-10 font-bold text-xs bg-blue-600 text-white hover:bg-blue-700"
+				>
+					<Check size={14} className="mr-2" />
+					Apply Filters
+				</Button>
+			</div>
 		</div>
 	);
 };

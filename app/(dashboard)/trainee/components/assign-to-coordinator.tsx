@@ -7,6 +7,7 @@ import { AxiosError } from "axios";
 
 import CoordinatorApi, { type CoordinatorType } from "@/lib/api/coordinator";
 import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
+import Adress from "@/lib/api/adress";
 import useAuthStore from "@/store/useAuthStore";
 import type { ErrorRes } from "@/types/core";
 import { Button } from "@/components/ui/button";
@@ -38,25 +39,22 @@ import {
 type AssignFilterForm = {
   minAge: string;
   maxAge: string;
-  address: string;
+  cityId: string;
+  subcityId: string;
+  gender: string;
+};
+
+type AppliedAddress = { id: string; name: string } | null;
+
+type AppliedFilters = {
+  minAge: string;
+  maxAge: string;
+  city: AppliedAddress;
+  subcity: AppliedAddress;
   gender: string;
 };
 
 const ANY_GENDER = "any";
-const DEFAULT_ADDRESS = "addis_ababa";
-
-type Address = { name: string; slug: string };
-
-const addresses: Address[] = [
-  { name: "Addis Ababa", slug: "addis_ababa" },
-  { name: "Adama", slug: "adama" },
-  { name: "Bahir Dar", slug: "bahir_dar" },
-  { name: "Hawassa", slug: "hawassa" },
-  { name: "Mekelle", slug: "mekelle" },
-];
-
-const addressNameBySlug = (slug: string) =>
-  addresses.find((a) => a.slug === slug)?.name ?? slug;
 
 const genderOptions: Array<{ value: string; label: string }> = [
   { value: ANY_GENDER, label: "-- (not included)" },
@@ -90,10 +88,19 @@ const normalizeGender = (value: string) => {
   return trimmed && trimmed !== ANY_GENDER ? trimmed : "";
 };
 
-const initialFilters: AssignFilterForm = {
+const initialFormFilters: AssignFilterForm = {
   minAge: "",
   maxAge: "",
-  address: DEFAULT_ADDRESS,
+  cityId: "",
+  subcityId: "",
+  gender: ANY_GENDER,
+};
+
+const initialAppliedFilters: AppliedFilters = {
+  minAge: "",
+  maxAge: "",
+  city: null,
+  subcity: null,
   gender: ANY_GENDER,
 };
 
@@ -104,23 +111,47 @@ export function AssignTraineesToCoordinator() {
 
   const [open, setOpen] = useState(false);
   const [selectedCoordinatorId, setSelectedCoordinatorId] = useState("");
-  const [filters, setFilters] = useState<AssignFilterForm>(initialFilters);
+  const [filters, setFilters] =
+    useState<AssignFilterForm>(initialFormFilters);
   const [appliedFilters, setAppliedFilters] =
-    useState<AssignFilterForm>(initialFilters);
+    useState<AppliedFilters>(initialAppliedFilters);
   const [hasApplied, setHasApplied] = useState(false);
   const lastTraineeSuccessToastKey = useRef("");
 
-  const addressFilter = appliedFilters.address.trim();
+  const { data: cities = [], isLoading: isCitiesLoading } =
+    Adress.GetCities.useQuery(open);
 
-  const queryFilters = useMemo(
-    () => ({
-      minAge: normalizeAge(appliedFilters.minAge),
-      maxAge: normalizeAge(appliedFilters.maxAge),
-      address: appliedFilters.address.trim(),
-      gender: normalizeGender(appliedFilters.gender),
-    }),
-    [appliedFilters]
+  const selectedFormCity = useMemo(
+    () => cities.find((c) => c._id === filters.cityId),
+    [cities, filters.cityId]
   );
+  const formCityHasSubcity = Boolean(selectedFormCity?.hasSubcity);
+
+  const { data: subcities = [], isLoading: isSubcitiesLoading } =
+    Adress.GetSubCities.useQuery(
+      filters.cityId,
+      open && formCityHasSubcity
+    );
+
+  const queryFilters = useMemo(() => {
+    const params: {
+      minAge?: string;
+      maxAge?: string;
+      city?: string;
+      subcity?: string;
+      gender?: string;
+    } = {};
+    const minAge = normalizeAge(appliedFilters.minAge);
+    if (minAge) params.minAge = minAge;
+    const maxAge = normalizeAge(appliedFilters.maxAge);
+    if (maxAge) params.maxAge = maxAge;
+    if (appliedFilters.city?.id) params.city = appliedFilters.city.id;
+    if (appliedFilters.subcity?.id)
+      params.subcity = appliedFilters.subcity.id;
+    const gender = normalizeGender(appliedFilters.gender);
+    if (gender) params.gender = gender;
+    return params;
+  }, [appliedFilters]);
 
   const {
     data: traineeData,
@@ -208,18 +239,24 @@ export function AssignTraineesToCoordinator() {
     if (!nextOpen) {
       lastTraineeSuccessToastKey.current = "";
       setSelectedCoordinatorId("");
-      setFilters(initialFilters);
-      setAppliedFilters(initialFilters);
+      setFilters(initialFormFilters);
+      setAppliedFilters(initialAppliedFilters);
       setHasApplied(false);
     }
   };
 
   const handleApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const city = cities.find((c) => c._id === filters.cityId);
+    const subcity = subcities.find((s) => s._id === filters.subcityId);
     setAppliedFilters({
       minAge: filters.minAge,
       maxAge: filters.maxAge,
-      address: filters.address.trim(),
+      city: city ? { id: city._id, name: city.name } : null,
+      subcity:
+        city && city.hasSubcity && subcity
+          ? { id: subcity._id, name: subcity.name }
+          : null,
       gender: filters.gender,
     });
     setHasApplied(true);
@@ -272,7 +309,8 @@ export function AssignTraineesToCoordinator() {
 
           <div className="space-y-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              Filters: {addressFilter ? addressNameBySlug(addressFilter) : "-"}
+              Filters: {appliedFilters.city?.name ?? "-"}
+              {appliedFilters.subcity ? ` • ${appliedFilters.subcity.name}` : ""}
               {normalizeGender(appliedFilters.gender)
                 ? ` • ${normalizeGender(appliedFilters.gender)}`
                 : ""}
@@ -290,26 +328,67 @@ export function AssignTraineesToCoordinator() {
             >
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-700">
-                  Address
+                  City
                 </label>
                 <Select
-                  value={filters.address || DEFAULT_ADDRESS}
+                  value={filters.cityId}
                   onValueChange={(value) =>
-                    setFilters((prev) => ({ ...prev, address: value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      cityId: value,
+                      subcityId: "",
+                    }))
                   }
+                  disabled={isCitiesLoading}
                 >
                   <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select address" />
+                    <SelectValue
+                      placeholder={
+                        isCitiesLoading ? "Loading cities..." : "Select city"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {addresses.map((option) => (
-                      <SelectItem key={option.slug} value={option.slug}>
+                    {cities.map((option) => (
+                      <SelectItem key={option._id} value={option._id}>
                         {option.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {formCityHasSubcity && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Subcity
+                  </label>
+                  <Select
+                    value={filters.subcityId}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, subcityId: value }))
+                    }
+                    disabled={!filters.cityId || isSubcitiesLoading}
+                  >
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue
+                        placeholder={
+                          isSubcitiesLoading
+                            ? "Loading subcities..."
+                            : "Select subcity"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subcities.map((option) => (
+                        <SelectItem key={option._id} value={option._id}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-700">

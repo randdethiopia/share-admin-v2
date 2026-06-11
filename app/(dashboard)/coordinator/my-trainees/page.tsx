@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	Suspense,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -86,7 +87,7 @@ function resolveErrorCopy(error: unknown): { message: string; hint?: string } {
 const MONGO_OBJECT_ID = /^[a-f\d]{24}$/i;
 const COORDINATOR_URL_PARAM = "coordinator";
 
-export default function CoordinatorMyTraineesPage() {
+function CoordinatorMyTraineesPageInner() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -542,5 +543,21 @@ export default function CoordinatorMyTraineesPage() {
 				</div>
 			</div>
 		</>
+	);
+}
+
+// `useSearchParams()` triggers a CSR bailout during prerender; the Suspense
+// boundary lets Next.js statically render this route's shell.
+export default function CoordinatorMyTraineesPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex h-[60vh] items-center justify-center">
+					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<CoordinatorMyTraineesPageInner />
+		</Suspense>
 	);
 }

@@ -9,17 +9,9 @@ import TrainingSessionApi, {
 	enrollTraineesSummaryFromResponse,
 	trainingSessionErrorMessage,
 } from "@/lib/api/training-session";
-import PaginationControls from "@/components/shared/PaginationControls";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -36,6 +28,9 @@ import { ArrowLeft, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const MONGO_OBJECT_ID = /^[a-f\d]{24}$/i;
+
+const FETCH_ALL_PAGE = 1;
+const FETCH_ALL_LIMIT = 6000;
 
 function resolveTraineeName(trainee: TraineeType) {
 	const fullName = `${trainee.firstname ?? ""} ${trainee.lastname ?? ""}`.trim();
@@ -78,8 +73,6 @@ export default function AssignTraineesToSessionPage() {
 		isCoordinatorListError,
 	} = useCoordinatorScope();
 
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
 	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -87,7 +80,6 @@ export default function AssignTraineesToSessionPage() {
 	useEffect(() => {
 		const t = setTimeout(() => {
 			setSearch(searchInput);
-			setPage(1);
 		}, 350);
 		return () => clearTimeout(t);
 	}, [searchInput]);
@@ -99,8 +91,8 @@ export default function AssignTraineesToSessionPage() {
 
 	const coordinatorRosterQuery = TraineeAuth.GetCoordinatorTrainees.useQuery(
 		effectiveCoordinatorId,
-		page,
-		pageSize,
+		FETCH_ALL_PAGE,
+		FETCH_ALL_LIMIT,
 		undefined,
 		search.trim() || undefined,
 		undefined,
@@ -108,8 +100,8 @@ export default function AssignTraineesToSessionPage() {
 	);
 
 	const myRosterQuery = TraineeAuth.GetMyCoordinatorTrainees.useQuery(
-		page,
-		pageSize,
+		FETCH_ALL_PAGE,
+		FETCH_ALL_LIMIT,
 		undefined,
 		search.trim() || undefined,
 		undefined,
@@ -121,7 +113,6 @@ export default function AssignTraineesToSessionPage() {
 		: myRosterQuery;
 
 	const trainees = useMemo(() => data?.data ?? [], [data]);
-	const totalItems = data?.meta?.totalItems ?? 0;
 
 	const { mutate, isPending } = TrainingSessionApi.EnrollTrainees.useMutation({
 		onError: (err) => {
@@ -180,7 +171,7 @@ export default function AssignTraineesToSessionPage() {
 				</div>
 			) : null}
 
-			<div className="mb-6 flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
+			<div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<div className="relative w-full max-w-sm">
 					<Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 					<Input
@@ -190,29 +181,8 @@ export default function AssignTraineesToSessionPage() {
 						onChange={(e) => setSearchInput(e.target.value)}
 					/>
 				</div>
-				<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-					<div className="w-full sm:w-40">
-						<label className="mb-1 ml-1 block text-[10px] font-bold uppercase text-gray-400">
-							Rows per page
-						</label>
-						<Select
-							value={String(pageSize)}
-							onValueChange={(v) => {
-								const n = Number(v);
-								setPageSize(Number.isFinite(n) && n > 0 ? n : 10);
-								setPage(1);
-							}}
-						>
-							<SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="10">10</SelectItem>
-								<SelectItem value="20">20</SelectItem>
-								<SelectItem value="50">50</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
+				<div className="text-xs font-medium text-slate-500">
+					{trainees.length} trainee{trainees.length === 1 ? "" : "s"} loaded
 				</div>
 			</div>
 
@@ -296,15 +266,6 @@ export default function AssignTraineesToSessionPage() {
 				</Table>
 			</div>
 
-			<div className="mt-6">
-				<PaginationControls
-					page={page}
-					onPageChange={setPage}
-					totalItems={totalItems}
-					pageSize={pageSize}
-					disabled={isLoading || isError}
-				/>
-			</div>
 		</>
 	);
 

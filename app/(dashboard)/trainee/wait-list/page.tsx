@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
-import api, { getWaitListServerSideFn, type WaitListType } from "@/lib/api";
+import api, { getWaitListServerSideFn } from "@/lib/api";
+import {
+	formatDigitalDevices,
+	formatEducationalBackground,
+	formatEmploymentStatus,
+	formatMaritalStatus,
+} from "@/lib/api/applicantLabels";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
@@ -31,27 +37,78 @@ import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { ApplicantListItem } from "@/lib/api/waitlist";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
 function asString(value: unknown) {
 	if (value === null || value === undefined) return "";
+	if (Array.isArray(value)) return value.join(", ");
+	if (typeof value === "object") {
+		const o = value as Record<string, unknown>;
+		if (typeof o.name === "string") return o.name;
+		return JSON.stringify(value);
+	}
 	return String(value);
 }
 
-function matchesCondition(applicant: WaitListType, condition: FilterCondition) {
+function getApplicantFieldValue(applicant: ApplicantListItem, key: string): string {
+	switch (key) {
+		case "fullName":
+			return [applicant.firstName, applicant.middleName, applicant.lastName]
+				.filter(Boolean)
+				.join(" ");
+		case "maritalStatus":
+			return formatMaritalStatus(applicant.maritalStatus);
+		case "digitalDevices":
+			return formatDigitalDevices(applicant.digitalDevices);
+		case "educationalBackground":
+			return formatEducationalBackground(applicant.educationalBackground);
+		case "employmentStatus":
+			return formatEmploymentStatus(applicant.employmentStatus);
+		case "previousEmploymentStatus":
+			return formatEmploymentStatus(applicant.previousEmploymentStatus);
+		case "city":
+			return applicant.city?.name ?? "";
+		case "subcity":
+			return applicant.subcity?.name ?? "";
+		default:
+			return asString(
+				(applicant as unknown as Record<string, unknown>)[key]
+			);
+	}
+}
+
+function matchesCondition(applicant: ApplicantListItem, condition: FilterCondition) {
 	const operator = condition.operator;
 	const rawValue = condition.value ?? "";
 	const value = rawValue.toString().trim();
 
-	const getFieldValue = () => {
+	if (condition.field === "city") {
+		if (!value) return true;
+		if (applicant.city?._id !== value) return false;
+		const subId = condition.subValue?.trim();
+		if (!subId) return true;
+		return applicant.subcity?._id === subId;
+	}
+
+	const getFieldValue = (): string | number => {
 		switch (condition.field) {
 			case "fullName":
-				return asString(applicant.fullName);
+				return [applicant.firstName, applicant.middleName, applicant.lastName]
+					.filter(Boolean)
+					.join(" ");
 			case "age":
 				return applicant.age;
 			case "status":
-				return asString(applicant.currentEmploymentStatus);
+				// Match against both the code and the readable label so the user
+				// can type either "UNE" or "unemployed".
+				return [
+					applicant.employmentStatus,
+					formatEmploymentStatus(applicant.employmentStatus),
+				]
+					.filter(Boolean)
+					.join(" ");
 			default:
 				return "";
 		}
@@ -68,7 +125,6 @@ function matchesCondition(applicant: WaitListType, condition: FilterCondition) {
 		if (operator === "eq") return numField === numValue;
 		if (operator === "gt") return numField > numValue;
 		if (operator === "lt") return numField < numValue;
-		// fallback: string compare
 		return false;
 	}
 
@@ -85,7 +141,7 @@ function matchesCondition(applicant: WaitListType, condition: FilterCondition) {
 	return false;
 }
 
-function matchesGroup(applicant: WaitListType, group: FilterGroup): boolean {
+function matchesGroup(applicant: ApplicantListItem, group: FilterGroup): boolean {
 	const conditionsOk = group.conditions.map((c) => matchesCondition(applicant, c));
 	const subgroupsOk = group.groups.map((g) => matchesGroup(applicant, g));
 	const results = [...conditionsOk, ...subgroupsOk];
@@ -116,6 +172,7 @@ function downloadTextFile(filename: string, content: string, mime = "text/plain"
 export default function WaitListPage() {
 	const isMobile = useIsMobile();
 	const [bulkFilters, setBulkFilters] = React.useState<FilterGroup | undefined>(undefined);
+	const [bulkFilterModalOpen, setBulkFilterModalOpen] = React.useState(false);
 	const [customReportOpen, setCustomReportOpen] = React.useState(false);
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
 	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
@@ -128,7 +185,7 @@ export default function WaitListPage() {
 	const [selectedFields, setSelectedFields] = React.useState<string[]>([
 		"fullName",
 		"email",
-		"currentEmploymentStatus",
+		"employmentStatus",
 		"batch",
 		"stage",
 	]);
@@ -141,8 +198,8 @@ export default function WaitListPage() {
 		error,
 	} = api.WaitList.Get.useQuery({ page: 1, limit: 6000 });
 
-	const allApplicants = React.useMemo(() => {
-		return (waitListRes?.data ?? []) as WaitListType[];
+	const allApplicants = React.useMemo<ApplicantListItem[]>(() => {
+		return waitListRes?.data ?? [];
 	}, [waitListRes]);
 
 	const applicantById = React.useMemo(() => {
@@ -165,14 +222,14 @@ export default function WaitListPage() {
 		setStageFilter,
 		setSelectedId,
 		selectedId,
-	} = useWaitList<WaitListType>(advancedFiltered, {
+	} = useWaitList<ApplicantListItem>(advancedFiltered, {
 		autoSelectFirst: !isMobile,
 	});
 
 	const deferredSelectedId = React.useDeferredValue(selectedId);
 
 	const onSelectApplicant = React.useCallback(
-		(applicant: WaitListType) => {
+		(applicant: ApplicantListItem) => {
 			startTransition(() => setSelectedId(applicant._id));
 		},
 		[startTransition, setSelectedId]
@@ -218,15 +275,12 @@ export default function WaitListPage() {
 		try {
 			setIsServerFiltering(true);
 			const result = await getWaitListServerSideFn(payload);
-			console.log("Wait-list server filter payload:", payload);
-			console.log("Wait-list server filter result:", result);
 			toast.dismiss(toastId);
 			toast.success(
 				`Filter completed successfully. ${result.data?.length ?? 0} applicant(s) returned.`
 			);
 			setServerFilterModalOpen(false);
 		} catch (err) {
-			console.error("Wait-list server filter failed:", err);
 			toast.dismiss(toastId);
 			const message =
 				typeof err === "object" && err !== null && "response" in err
@@ -265,14 +319,16 @@ export default function WaitListPage() {
 
 	const analytics = React.useMemo(() => {
 		const total = filteredApplicants.length;
-		const unemployed = filteredApplicants.filter((a) =>
-			asString(a.currentEmploymentStatus).toLowerCase().includes("unemployed")
+		const unemployed = filteredApplicants.filter(
+			(a) => a.employmentStatus === "UNE"
 		).length;
 		const ages = filteredApplicants
 			.map((a) => a.age)
 			.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
 		const avgAge = ages.length ? Math.round(ages.reduce((s, n) => s + n, 0) / ages.length) : 0;
-		const hasComputer = filteredApplicants.filter((a) => Boolean(a.hasComputerAccess)).length;
+		const hasComputer = filteredApplicants.filter((a) =>
+			Array.isArray(a.digitalDevices) && a.digitalDevices.includes("LAP")
+		).length;
 		const computerAccessPercentage = total ? Math.round((hasComputer / total) * 100) : 0;
 
 		return { total, unemployed, avgAge, computerAccessPercentage };
@@ -282,19 +338,21 @@ export default function WaitListPage() {
 		const rows = (filteredApplicants ?? []).map((a) => {
 			const rec: Record<string, string> = {};
 			for (const key of selectedFields) {
-				rec[key] = asString((a as unknown as Record<string, unknown>)[key]);
+				rec[key] = getApplicantFieldValue(a, key);
 			}
 			return rec;
 		});
 
-		const headers = selectedFields.length ? selectedFields : ["fullName", "email", "batch", "stage"];
+		const headers = selectedFields.length
+			? selectedFields
+			: ["fullName", "email", "batch", "stage"];
 		const csv = [
 			headers.join(","),
 			...rows.map((row) =>
 				headers
 					.map((h) => {
 						const cell = row[h] ?? "";
-						const escaped = String(cell).replace(/\"/g, '""');
+						const escaped = String(cell).replace(/"/g, '""');
 						return `"${escaped}"`;
 					})
 					.join(",")
@@ -321,6 +379,28 @@ export default function WaitListPage() {
 			paginationMeta.endIndexExclusive
 		);
 	}, [filteredApplicants, paginationMeta.startIndex, paginationMeta.endIndexExclusive]);
+
+	// For the AnalyticsSection report preview only flatten what isn't display-ready:
+	// derive `fullName`, map abbreviated codes to labels, and replace `city`/`subcity`
+	// object refs with their `name` so the table cells aren't `[object Object]`.
+	const previewRows = React.useMemo(() => {
+		return filteredApplicants.map((a) => {
+			const rec: Record<string, string | number> = {
+				...(a as unknown as Record<string, string | number>),
+			};
+			rec.fullName = [a.firstName, a.middleName, a.lastName]
+				.filter(Boolean)
+				.join(" ");
+			rec.maritalStatus = formatMaritalStatus(a.maritalStatus);
+			rec.digitalDevices = formatDigitalDevices(a.digitalDevices);
+			rec.educationalBackground = formatEducationalBackground(a.educationalBackground);
+			rec.employmentStatus = formatEmploymentStatus(a.employmentStatus);
+			rec.previousEmploymentStatus = formatEmploymentStatus(a.previousEmploymentStatus);
+			rec.city = a.city?.name ?? "";
+			rec.subcity = a.subcity?.name ?? "";
+			return rec;
+		});
+	}, [filteredApplicants]);
 
 	React.useEffect(() => {
 		if (paginationMeta.safePage !== page) {
@@ -355,7 +435,7 @@ export default function WaitListPage() {
 					setReportFormat={setReportFormat}
 					selectedFields={selectedFields}
 					setSelectedFields={setSelectedFields}
-					filteredMessages={filteredApplicants}
+					filteredMessages={previewRows}
 				/>
 			</div>
 
@@ -371,7 +451,7 @@ export default function WaitListPage() {
 						<div className="relative w-full md:w-64">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 							<Input
-								placeholder="Search name, email…"
+								placeholder="Search name, email, phone…"
 								className="pl-9 bg-white border-none rounded-xl h-10 text-sm shadow-sm"
 								value={searchQuery}
 								onChange={(e) => onSearchChange(e.target.value)}
@@ -379,10 +459,14 @@ export default function WaitListPage() {
 						</div>
 
 						{/* Advanced filters */}
-						<BulkActionModal>
+						<BulkActionModal
+							open={bulkFilterModalOpen}
+							onOpenChange={setBulkFilterModalOpen}
+						>
 							<FilterBuilder
 								onFiltersChange={onBulkFiltersChange}
 								initialFilters={bulkFilters}
+								onApply={() => setBulkFilterModalOpen(false)}
 							/>
 						</BulkActionModal>
 
@@ -548,4 +632,3 @@ export default function WaitListPage() {
 		</div>
 	);
 }
-

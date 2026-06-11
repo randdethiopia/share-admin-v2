@@ -16,11 +16,18 @@ import { cn } from "@/lib/utils";
 interface BulkActionModalProps {
 	children: React.ReactNode;
 	className?: string;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
-export const BulkActionModal = ({ children, className }: BulkActionModalProps) => {
+export const BulkActionModal = ({
+	children,
+	className,
+	open,
+	onOpenChange,
+}: BulkActionModalProps) => {
 	return (
-		<Dialog>
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
 				<Button
 					variant="outline"
@@ -34,7 +41,7 @@ export const BulkActionModal = ({ children, className }: BulkActionModalProps) =
 
 			<DialogContent
 				className={cn(
-					"max-h-[85vh] max-w-4xl overflow-y-auto rounded-[2rem] border-none p-10 shadow-2xl",
+					"max-h-[85vh] w-fit w-2xl overflow-y-auto rounded-[2rem] border-none p-10 shadow-2xl sm:max-w-6xl",
 					className,
 				)}
 			>

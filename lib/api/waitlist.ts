@@ -10,6 +10,145 @@ import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { z } from "zod";
 
+
+
+export type ApplicantCityRef = {
+	_id: string;
+	name: string;
+	slug: string;
+	isActive: boolean;
+	hasSubCity: boolean;
+};
+
+export type ApplicantSubCityRef = {
+	_id: string;
+	name: string;
+	slug: string;
+	isActive: boolean;
+};
+
+export type ApplicantGender = "male" | "female";
+
+export type ApplicantMaritalStatus = "SGL" | "MRD" | "DIV" | "WID" | "PNS";
+
+export type ApplicantYesNo = "yes" | "no";
+
+export type ApplicantDisabilityType =
+	| "IPD"
+	| "LDI"
+	| "SPI"
+	| "PHD"
+	| "HI"
+	| "VI";
+
+export type ApplicantDigitalDevice = "SP" | "TAB" | "LAP";
+
+export type ApplicantEducationalBackground =
+	| "NFE"
+	| "PS"
+	| "MS"
+	| "SS"
+	| "VTT"
+	| "VTD"
+	| "CUD"
+	| "CUB"
+	| "CUM"
+	| "CUDR"
+	| "PC";
+
+export type ApplicantEmploymentStatus =
+	| "EFT"
+	| "EPT"
+	| "SE"
+	| "UNE"
+	| "STU"
+	| "OTH";
+
+export type ApplicantMonthlyEarnings =
+	| "0-1000"
+	| "1001-3000"
+	| "3001-5000"
+	| "5001-10000"
+	| "10001-20000"
+	| "20000+"
+	| "Prefer not to say";
+
+export type ApplicantWeeklyCommitment =
+	| "1-5"
+	| "6-10"
+	| "11-20"
+	| "21-30"
+	| "30+";
+
+export type ApplicantSkillLevel =
+	| "Beginner"
+	| "Intermediate"
+	| "Advanced"
+	| "Expert";
+
+export type ApplicantLanguageProficiency =
+	| "Basic"
+	| "Intermediate"
+	| "Advanced"
+	| "Native";
+
+export type ApplicantHumanitarianStatus =
+	| "Refugee"
+	| "Asylum Seeker"
+	| "Internally Displaced Person (IDP)"
+	| "Returnee"
+	| "None";
+
+export type ApplicantListItem = {
+	_id: string;
+	firstName: string;
+	middleName: string;
+	lastName: string;
+	phoneNumber: string;
+	birthDate: string;
+	email: string;
+	age: number;
+	gender: ApplicantGender;
+	maritalStatus: ApplicantMaritalStatus;
+	hasDisability: ApplicantYesNo;
+	disabilityType?: ApplicantDisabilityType;
+	digitalDevices: ApplicantDigitalDevice[];
+	educationalBackground: ApplicantEducationalBackground;
+	studySubject: string;
+	region: string;
+	city: ApplicantCityRef;
+	subcity?: ApplicantSubCityRef | null;
+	woreda: string;
+	zone: string;
+	employmentStatus: ApplicantEmploymentStatus;
+	previousEmploymentStatus: ApplicantEmploymentStatus;
+	monthlyEarnings: ApplicantMonthlyEarnings;
+	batch?: string;
+	stage?: string;
+	weeklyCommitment: ApplicantWeeklyCommitment;
+	technicalDigitalSkills: ApplicantSkillLevel;
+	englishProficiency: ApplicantLanguageProficiency;
+	amharicProficiency: ApplicantLanguageProficiency;
+	participatedMasterCardFundedProgram: ApplicantYesNo;
+	acceptsSafeguardingConducts: ApplicantYesNo;
+	humanitarianStatus: ApplicantHumanitarianStatus;
+	alreadyOnEdge?: boolean;
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type GetApplicantsResponseMeta = {
+	totalItems: number;
+	totalPages: number;
+	currentPage: number;
+	pageSize: number;
+};
+
+export type GetApplicantsResponse = {
+	data: ApplicantListItem[];
+	meta: GetApplicantsResponseMeta;
+};
+
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export const waitListFormSchema = z.object({
@@ -107,6 +246,9 @@ export const UpdateStageSchema = z.object({
 
 export type UpdateStageSchemaType = z.infer<typeof UpdateStageSchema>;
 
+// ─── Legacy shape (kept for components not yet migrated) ──────────────────────
+
+/** @deprecated Use {@link ApplicantListItem} (new backend contract). */
 export interface WaitListType extends WaitListFormValues {
 	_id: string;
 	batch: string;
@@ -116,6 +258,7 @@ export interface WaitListType extends WaitListFormValues {
 	createdAt: string;
 }
 
+/** @deprecated Use {@link GetApplicantsResponse}. */
 export interface WaitListRes extends SuccessRes {
 	data: WaitListType[];
 }
@@ -136,7 +279,7 @@ export async function getWaitListFn(params?: { page?: number; limit?: number }) 
 	const limit = params?.limit ?? 6000;
 	return (
 		await axios.get(`${API_URL}/api/applicant?limit=${limit}&page=${page}`)
-	).data as WaitListRes;
+	).data as GetApplicantsResponse;
 }
 
 export async function getWaitListOptionsFn() {
@@ -146,7 +289,8 @@ export async function getWaitListOptionsFn() {
 }
 
 export async function getWaitListServerSideFn(body: unknown) {
-	return (await axios.post(`${API_URL}/api/applicant/wait-list`, body)).data as WaitListRes;
+	return (await axios.post(`${API_URL}/api/applicant/wait-list`, body))
+		.data as GetApplicantsResponse;
 }
 
 export async function updateWaitListStageFn(data: UpdateStageSchemaType) {
@@ -255,7 +399,7 @@ const WaitListApi = {
 	Get: {
 		useQuery: (
 			params?: { page?: number; limit?: number },
-			options?: UseQueryOptions<WaitListRes, AxiosError<ErrorRes>>
+			options?: UseQueryOptions<GetApplicantsResponse, AxiosError<ErrorRes>>
 		) =>
 			useQuery({
 				queryKey: ["Waitlist", params?.page ?? 1, params?.limit ?? 6000],
@@ -299,7 +443,7 @@ const WaitListApi = {
 	GetServerSide: {
 		useQuery: (
 			body: unknown,
-			options?: UseQueryOptions<WaitListRes, AxiosError<ErrorRes>>
+			options?: UseQueryOptions<GetApplicantsResponse, AxiosError<ErrorRes>>
 		) =>
 			useQuery({
 				queryKey: ["Waitlist", "server", body],
