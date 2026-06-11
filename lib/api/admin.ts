@@ -18,6 +18,7 @@ export interface AdminLoginSuccessResType extends SuccessRes {
     isActive: boolean;
     email: string,
     role: Roles,
+    firstTimeLogin?: boolean,
     permissions?: string[],
     __v: number;
   };
