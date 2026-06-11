@@ -27,6 +27,7 @@ import {
 	formatEmploymentStatus,
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
+import { getApplicantFullName } from "@/lib/applicantName";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,13 +124,7 @@ export function ApplicantDetail({
 		);
 	}
 
-	const fullName = [
-		selectedMessage.firstName,
-		selectedMessage.middleName,
-		selectedMessage.lastName,
-	]
-		.filter(Boolean)
-		.join(" ");
+	const fullName = getApplicantFullName(selectedMessage);
 	const email = (selectedMessage.email ?? "").toString();
 	const phoneNumber = (selectedMessage.phoneNumber ?? "").toString();
 	const employmentLabel = formatEmploymentStatus(selectedMessage.employmentStatus);
@@ -159,7 +154,10 @@ export function ApplicantDetail({
 							</AvatarFallback>
 						</Avatar>
 						<div className="space-y-2 min-w-0">
-							<h2 className="text-xl font-black text-slate-700 tracking-tight truncate">
+							<h2
+								className="text-xl font-black text-slate-700 tracking-tight break-words line-clamp-2"
+								title={fullName || undefined}
+							>
 								{fullName || "—"}
 							</h2>
 							<div className="flex gap-2 flex-wrap">

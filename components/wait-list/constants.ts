@@ -8,8 +8,8 @@ export type AvailableField = {
 export const AVAILABLE_FIELDS: AvailableField[] = [
 	{ key: "fullName", label: "Full Name", category: "Personal" },
 	{ key: "firstName", label: "First Name", category: "Personal" },
-	{ key: "middleName", label: "Middle Name", category: "Personal" },
-	{ key: "lastName", label: "Last Name", category: "Personal" },
+	{ key: "fatherName", label: "Father Name", category: "Personal" },
+	{ key: "GrandFatherName", label: "Grandfather Name", category: "Personal" },
 	{ key: "email", label: "Email", category: "Personal" },
 	{ key: "phoneNumber", label: "Phone Number", category: "Personal" },
 	{ key: "age", label: "Age", category: "Personal" },

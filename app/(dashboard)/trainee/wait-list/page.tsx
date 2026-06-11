@@ -38,13 +38,17 @@ import { useWaitList } from "@/hooks/useWaitlist";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
+import {
+	getApplicantFullName,
+	getApplicantNameParts,
+} from "@/lib/applicantName";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
 const DEFAULT_CSV_FIELDS = [
 	"firstName",
-	"middleName",
-	"lastName",
+	"fatherName",
+	"GrandFatherName",
 	"email",
 	"phoneNumber",
 	"gender",
@@ -69,17 +73,17 @@ function asString(value: unknown) {
 }
 
 function getApplicantFieldValue(applicant: ApplicantListItem, key: string): string {
+	const nameParts = getApplicantNameParts(applicant);
+
 	switch (key) {
 		case "fullName":
-			return [applicant.firstName, applicant.middleName, applicant.lastName]
-				.filter(Boolean)
-				.join(" ");
+			return getApplicantFullName(applicant);
 		case "firstName":
-			return applicant.firstName ?? "";
-		case "middleName":
-			return applicant.middleName ?? "";
-		case "lastName":
-			return applicant.lastName ?? "";
+			return nameParts.firstName;
+		case "fatherName":
+			return nameParts.fatherName;
+		case "GrandFatherName":
+			return nameParts.GrandFatherName;
 		case "gender":
 			return applicant.gender ?? "";
 		case "region":
@@ -126,9 +130,7 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 	const getFieldValue = (): string | number => {
 		switch (condition.field) {
 			case "fullName":
-				return [applicant.firstName, applicant.middleName, applicant.lastName]
-					.filter(Boolean)
-					.join(" ");
+				return getApplicantFullName(applicant);
 			case "age":
 				return applicant.age;
 			case "status":
@@ -441,9 +443,11 @@ export default function WaitListPage() {
 			const rec: Record<string, string | number> = {
 				...(a as unknown as Record<string, string | number>),
 			};
-			rec.fullName = [a.firstName, a.middleName, a.lastName]
-				.filter(Boolean)
-				.join(" ");
+			rec.fullName = getApplicantFullName(a);
+			const nameParts = getApplicantNameParts(a);
+			rec.firstName = nameParts.firstName;
+			rec.fatherName = nameParts.fatherName;
+			rec.GrandFatherName = nameParts.GrandFatherName;
 			rec.maritalStatus = formatMaritalStatus(a.maritalStatus);
 			rec.digitalDevices = formatDigitalDevices(a.digitalDevices);
 			rec.educationalBackground = formatEducationalBackground(a.educationalBackground);

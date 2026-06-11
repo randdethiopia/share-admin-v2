@@ -102,8 +102,8 @@ export type ApplicantHumanitarianStatus =
 export type ApplicantListItem = {
 	_id: string;
 	firstName: string;
-	middleName: string;
-	lastName: string;
+	fatherName?: string;
+	GrandFatherName?: string;
 	phoneNumber: string;
 	birthDate: string;
 	email: string;
@@ -265,6 +265,27 @@ export interface WaitListRes extends SuccessRes {
 
 type ToastCtx = { toastId?: string | number };
 
+function markWaitlistApplicantOnEdge(
+	queryClient: ReturnType<typeof useQueryClient>,
+	applicantId: string
+) {
+	queryClient.setQueriesData<GetApplicantsResponse>(
+		{ queryKey: ["Waitlist"] },
+		(old) => {
+			if (!old?.data) return old;
+
+			return {
+				...old,
+				data: old.data.map((applicant) =>
+					applicant._id === applicantId
+						? { ...applicant, alreadyOnEdge: true }
+						: applicant
+				),
+			};
+		}
+	);
+}
+
 // --- Worker functions ---
 export async function createWaitListApplicantFn(data: WaitListFormValues) {
 	return (await axios.post(`${API_URL}/api/applicant/`, data)).data as SuccessRes;
@@ -324,7 +345,7 @@ const WaitListApi = {
 				onSuccess: (res, variables, context) => {
 					if (context?.toastId) toast.dismiss(context.toastId);
 					toast.success(res.message || "Created successfully");
-					queryClient.invalidateQueries({ queryKey: ["Waitlist"] });
+					markWaitlistApplicantOnEdge(queryClient, variables);
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
 				},
 				onError: (err, variables, context) => {
