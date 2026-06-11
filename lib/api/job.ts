@@ -20,7 +20,7 @@ export interface JobLocation {
 
 export interface JobType {
   _id: string;
-  businessId?: unknown;
+  businessId?: any;
   title?: string;
   jobTitle?: string;
   companyName?: string;
@@ -42,11 +42,11 @@ export async function getJobsFn(): Promise<JobType[]> {
   return response.data?.jobs || response.data?.data || response.data;
 }
 
-export async function approveJobFn(id: string): Promise<SuccessRes> {
+export async function approveJobFn(id: string) {
   return (await axios.post(`${API_URL}/api/job/approve/${id}`)).data;
 }
 
-export async function rejectJobFn(id: string): Promise<SuccessRes> {
+export async function rejectJobFn(id: string) {
   return (await axios.post(`${API_URL}/api/job/reject/${id}`)).data;
 }
 
@@ -67,15 +67,14 @@ export const JobApi = {
   Approve: {
     useMutation: (
       options?: Omit<
-        UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, string>,
+        UseMutationOptions<any, AxiosError<ErrorRes>, string>,
         "mutationFn"
       >,
     ) => {
       const queryClient = useQueryClient();
       return useMutation({
         mutationFn: approveJobFn,
-        ...options,
-        onSuccess: (data, variables, context, meta) => {
+        onSuccess: (data, variables, context) => {
           toast.success(data.message || "Job approved successfully!");
           queryClient.setQueryData<JobType[]>(["Jobs"], (prev) =>
             prev?.map((job) =>
@@ -85,28 +84,34 @@ export const JobApi = {
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ["Jobs"] });
           }, 1500);
-          options?.onSuccess?.(data, variables, context, meta);
+          if (options?.onSuccess) {
+            // @ts-ignore
+            options.onSuccess(data, variables, context);
+          }
         },
-        onError: (error, variables, context, meta) => {
+        onError: (error, variables, context) => {
           toast.error(error.response?.data?.message || "Failed to approve job");
-          options?.onError?.(error, variables, context, meta);
+          if (options?.onError) {
+            // @ts-ignore
+            options.onError(error, variables, context);
+          }
         },
+        ...options,
       });
     },
   },
   Reject: {
     useMutation: (
       options?: Omit<
-        UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, string>,
+        UseMutationOptions<any, AxiosError<ErrorRes>, string>,
         "mutationFn"
       >,
     ) => {
       const queryClient = useQueryClient();
       return useMutation({
         mutationFn: rejectJobFn,
-        ...options,
-        onSuccess: (data, variables, context, meta) => {
-          toast.error(data.message || "Job rejected successfully!");
+        onSuccess: (data, variables, context) => {
+          toast.success(data.message || "Job rejected successfully!");
           queryClient.setQueryData<JobType[]>(["Jobs"], (prev) =>
             prev?.map((job) =>
               job._id === variables ? { ...job, status: "REJECTED" } : job
@@ -115,12 +120,19 @@ export const JobApi = {
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ["Jobs"] });
           }, 1500);
-          options?.onSuccess?.(data, variables, context, meta);
+          if (options?.onSuccess) {
+            // @ts-ignore
+            options.onSuccess(data, variables, context);
+          }
         },
-        onError: (error, variables, context, meta) => {
+        onError: (error, variables, context) => {
           toast.error(error.response?.data?.message || "Failed to reject job");
-          options?.onError?.(error, variables, context, meta);
+          if (options?.onError) {
+            // @ts-ignore
+            options.onError(error, variables, context);
+          }
         },
+        ...options,
       });
     },
   },

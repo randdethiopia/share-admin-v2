@@ -10,7 +10,7 @@ import OpportunityApi from "@/lib/api/opportunity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import Editor from "@/components/shared/Editor";
+import Editor from "@/components/shared/Editor"; 
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
@@ -23,17 +23,6 @@ function getUpdateErrorMessage(err: unknown): string {
   return "Not updated";
 }
 
-function safeUrl(value?: string | null): string {
-  if (!value) return "";
-  try { new URL(value); return value; } catch { return ""; }
-}
-
-function coerceTags(tags: unknown): string {
-  if (!tags) return "";
-  if (Array.isArray(tags)) return tags.join(", ");
-  return String(tags);
-}
-
 export default function EditOpportunityPage() {
   const params = useParams();
   const router = useRouter();
@@ -42,12 +31,11 @@ export default function EditOpportunityPage() {
   const updateToastIdRef = useRef<string | number | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 1. DATA LOGIC
   const { data: opportunities, isLoading } = OpportunityApi.GetList.useQuery();
   const item = opportunities?.find((op) => op._id === id);
-
+  
   const { mutate: updateOp, isPending: isUpdating } = OpportunityApi.Update.useMutation(id, {
     onMutate: () => {
       updateToastIdRef.current = toast.loading("Updating...");
@@ -55,6 +43,7 @@ export default function EditOpportunityPage() {
     onSuccess: () => {
       if (updateToastIdRef.current !== null) toast.dismiss(updateToastIdRef.current);
       toast.success("Updated successfully");
+
       setIsRedirecting(true);
       redirectTimeoutRef.current = setTimeout(() => {
         router.push("/opportunity");
@@ -72,35 +61,27 @@ export default function EditOpportunityPage() {
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
   }, []);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
     defaultValues: {
-      title: "",
-      organizationName: "",
-      isPublic: false,
-      description: "",
-      externalLink: "",
-      tags: "",
-      deadlineDate: "",
+      title: "", organizationName: "", isPublic: false,
+      description: "", externalLink: "", tags: "", deadlineDate: "",
       image: { url: "", id: "temp" },
     },
   });
 
   useEffect(() => {
     if (item) {
-      const formattedDate = item.deadlineDate
-        ? new Date(item.deadlineDate).toISOString().split("T")[0]
-        : "";
-      form.reset({
-        title: item.title || "",
-        organizationName: item.organizationName || "",
-        isPublic: item.isPublic ?? false,
-        description: item.description || "",
-        externalLink: safeUrl(item.externalLink),
-        tags: coerceTags(item.tags),
+      const formattedDate = item.deadlineDate ? new Date(item.deadlineDate).toISOString().split('T')[0] : "";
+      form.reset({ 
+        ...item,
+        externalLink: item.externalLink || "",
+        tags: item.tags || "",
         deadlineDate: formattedDate,
-        image: item.image || { url: "", id: "temp" },
+        image: item.image || { url: "", id: "temp" }
       });
     }
   }, [item, form]);
@@ -108,6 +89,7 @@ export default function EditOpportunityPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     setPreviewUrl(URL.createObjectURL(file));
   };
 
@@ -130,7 +112,7 @@ export default function EditOpportunityPage() {
       <div className="mx-6 mb-10 bg-white rounded-[3rem] p-10 shadow-sm">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-5xl">
-
+            
             <FormField name="title" control={form.control} render={({ field }) => (
               <FormItem>
                 <FormLabel className="font-semibold text-gray-700">Opportunity Title *</FormLabel>
@@ -155,22 +137,19 @@ export default function EditOpportunityPage() {
               </FormItem>
             )} />
 
+            
             <div className="flex items-center gap-6">
-              <div className="w-40 aspect-video rounded-2xl bg-gray-100 overflow-hidden relative border-2 border-dashed border-gray-200 flex items-center justify-center">
+               <div className="w-40 aspect-video rounded-2xl bg-gray-100 overflow-hidden relative border-2 border-dashed border-gray-200 flex-center">
                 {effectivePreviewUrl ? (
                   <img src={effectivePreviewUrl} className="object-cover w-full h-full" alt="" />
                 ) : (
                   <span className="text-gray-400 text-xs text-center p-2">No Image Selected</span>
                 )}
-              </div>
-              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-              <Button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl h-10 px-8 shadow-md"
-              >
-                Browse
-              </Button>
+               </div>
+               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+               <Button type="button" onClick={() => fileInputRef.current?.click()} className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl h-10 px-8 shadow-md">
+                 Browse
+               </Button>
             </div>
 
             <Button
