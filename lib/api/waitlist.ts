@@ -102,11 +102,11 @@ export type ApplicantHumanitarianStatus =
 export type ApplicantListItem = {
 	_id: string;
 	firstName: string;
-	fatherName?: string;
-	GrandFatherName?: string;
+	middleName?: string;
+	lastName?: string;
 	phoneNumber: string;
 	birthDate: string;
-	email: string;
+	email?: string;
 	age: number;
 	gender: ApplicantGender;
 	maritalStatus: ApplicantMaritalStatus;
@@ -151,86 +151,140 @@ export type GetApplicantsResponse = {
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-export const waitListFormSchema = z.object({
-	// Personal Info
-	fullName: z
-		.string()
-		.min(2, { message: "Full name must be at least 2 characters." }),
-	phoneNumber: z
-		.string()
-		.min(10, { message: "Please enter a valid phone number." }),
-	email: z.string().email({ message: "Please enter a valid email address." }),
-	age: z.coerce.number().min(18, { message: "You must be at least 18 years old." }),
-	birthDate: z
-		.string()
-		.min(10)
-		.max(10)
-		.regex(/^\d{4}-\d{2}-\d{2}$/, {
+const applicantMaritalStatusSchema = z.enum(["SGL", "MRD", "DIV", "WID", "PNS"]);
+const applicantYesNoSchema = z.enum(["yes", "no"]);
+const applicantDisabilityTypeSchema = z.enum([
+	"IPD",
+	"LDI",
+	"SPI",
+	"PHD",
+	"HI",
+	"VI",
+]);
+const applicantDigitalDeviceSchema = z.enum(["SP", "TAB", "LAP"]);
+const applicantEducationalBackgroundSchema = z.enum([
+	"NFE",
+	"PS",
+	"MS",
+	"SS",
+	"VTT",
+	"VTD",
+	"CUD",
+	"CUB",
+	"CUM",
+	"CUDR",
+	"PC",
+]);
+const applicantEmploymentStatusSchema = z.enum([
+	"EFT",
+	"EPT",
+	"SE",
+	"UNE",
+	"STU",
+	"OTH",
+]);
+const applicantMonthlyEarningsSchema = z.enum([
+	"0-1000",
+	"1001-3000",
+	"3001-5000",
+	"5001-10000",
+	"10001-20000",
+	"20000+",
+	"Prefer not to say",
+]);
+const applicantWeeklyCommitmentSchema = z.enum([
+	"1-5",
+	"6-10",
+	"11-20",
+	"21-30",
+	"30+",
+]);
+const applicantSkillLevelSchema = z.enum([
+	"Beginner",
+	"Intermediate",
+	"Advanced",
+	"Expert",
+]);
+const applicantLanguageProficiencySchema = z.enum([
+	"Basic",
+	"Intermediate",
+	"Advanced",
+	"Native",
+]);
+const applicantHumanitarianStatusSchema = z.enum([
+	"Refugee",
+	"Asylum Seeker",
+	"Internally Displaced Person (IDP)",
+	"Returnee",
+	"None",
+]);
+
+export const applicantCreateSchema = z
+	.object({
+		firstName: z
+			.string()
+			.trim()
+			.min(2, { message: "First name must be at least 2 characters." }),
+		middleName: z
+			.string()
+			.trim()
+			.min(2, { message: "Father's name must be at least 2 characters." }),
+		lastName: z
+			.string()
+			.trim()
+			.min(2, { message: "Grandfather's name must be at least 2 characters." }),
+		phoneNumber: z
+			.string()
+			.regex(/^0\d{9}$/, {
+				message: "Phone number must be 10 digits starting with 0.",
+			}),
+		birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
 			message: "Birth date must be in YYYY-MM-DD format.",
 		}),
-	sex: z.enum(["male", "female"] as const, {
-		message: "Please select your sex.",
-	}),
-	maritalStatus: z.enum(
-		["single", "married", "divorced", "widowed", "prefer-not-to-say"] as const,
-		{
-			message: "Please select your marital status.",
+		age: z.coerce
+			.number()
+			.int()
+			.min(18, { message: "You must be at least 18 years old." })
+			.max(120),
+		email: z.union([z.string().email(), z.literal("")]).optional(),
+		gender: z.enum(["male", "female"] as const, {
+			message: "Please select your gender.",
+		}),
+		region: z.string().min(1, { message: "Region is required." }),
+		city: z.string().optional(),
+		subcity: z.string().optional(),
+		woreda: z.string().min(1, { message: "Woreda is required." }),
+		zone: z.string().min(1, { message: "Zone is required." }),
+		maritalStatus: applicantMaritalStatusSchema,
+		hasDisability: applicantYesNoSchema,
+		disabilityType: applicantDisabilityTypeSchema.optional(),
+		humanitarianStatus: applicantHumanitarianStatusSchema,
+		digitalDevices: z
+			.array(applicantDigitalDeviceSchema)
+			.min(1, { message: "Select at least one digital device." }),
+		educationalBackground: applicantEducationalBackgroundSchema,
+		studySubject: z.string().default("none"),
+		employmentStatus: applicantEmploymentStatusSchema,
+		previousEmploymentStatus: applicantEmploymentStatusSchema,
+		monthlyEarnings: applicantMonthlyEarningsSchema,
+		weeklyCommitment: applicantWeeklyCommitmentSchema,
+		technicalDigitalSkills: applicantSkillLevelSchema,
+		englishProficiency: applicantLanguageProficiencySchema,
+		amharicProficiency: applicantLanguageProficiencySchema,
+		participatedMasterCardFundedProgram: applicantYesNoSchema,
+		acceptsSafeguardingConducts: applicantYesNoSchema,
+	})
+	.superRefine((data, ctx) => {
+		if (data.hasDisability === "yes" && !data.disabilityType) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["disabilityType"],
+				message: "Disability type is required when has disability is yes.",
+			});
 		}
-	),
-	hasDisability: z.boolean(),
-	disabilityDetails: z.string().optional(),
-	digitalDevices: z.array(z.string()).optional(),
+	});
 
-	// Product Application
-	educationLevel: z
-		.string({ message: "Please select your education level." })
-		.min(1, { message: "Please select your education level." }),
-	studySubject: z.string().optional(),
-	region: z.string().min(1, { message: "Region is required." }),
-	subcity: z.string().min(1, { message: "Subcity is required." }),
-	woreda: z.string().min(1, { message: "Woreda is required." }),
-	zone: z.string().min(1, { message: "Zone is required." }),
-	currentEmploymentStatus: z
-		.string({ message: "Please select your current employment status." })
-		.min(1, { message: "Please select your current employment status." }),
-	otherCurrentEmployment: z.string().optional(),
-	previousEmploymentStatus: z
-		.string({ message: "Please select your previous employment status." })
-		.min(1, { message: "Please select your previous employment status." }),
-	otherPreviousEmployment: z.string().optional(),
-	monthlyEarnings: z.string().optional(),
-
-	// Ethical AI
-	hasComputerAccess: z.boolean({
-		message: "Please indicate if you have computer access.",
-	}),
-	weeklyCommitment: z
-		.string({ message: "Please select your weekly commitment." })
-		.min(1, { message: "Please select your weekly commitment." }),
-	computerSkill: z
-		.string({ message: "Please select your computer skill level." })
-		.min(1, { message: "Please select your computer skill level." }),
-	internetSkill: z
-		.string({ message: "Please select your internet skill level." })
-		.min(1, { message: "Please select your internet skill level." }),
-	mediaSkill: z
-		.string({ message: "Please select your media skill level." })
-		.min(1, { message: "Please select your media skill level." }),
-	englishProficiency: z
-		.string({ message: "Please select your English proficiency." })
-		.min(1, { message: "Please select your English proficiency." }),
-	amharicProficiency: z
-		.string({ message: "Please select your Amharic proficiency." })
-		.min(1, { message: "Please select your Amharic proficiency." }),
-	prevMasterCardMember: z.boolean({
-		message: "Please fill out this field",
-	}),
-	doYouAcceptSafeguardingConducts: z.boolean({
-		message: "Please fill out this field",
-	}),
-});
-
-export type WaitListFormValues = z.infer<typeof waitListFormSchema>;
+export type ApplicantCreateRequest = z.infer<typeof applicantCreateSchema>;
 
 export type WaitListOptionsRes = {
 	success: boolean;
@@ -245,23 +299,6 @@ export const UpdateStageSchema = z.object({
 });
 
 export type UpdateStageSchemaType = z.infer<typeof UpdateStageSchema>;
-
-// ─── Legacy shape (kept for components not yet migrated) ──────────────────────
-
-/** @deprecated Use {@link ApplicantListItem} (new backend contract). */
-export interface WaitListType extends WaitListFormValues {
-	_id: string;
-	batch: string;
-	stage: string;
-	id: string;
-	__v: number;
-	createdAt: string;
-}
-
-/** @deprecated Use {@link GetApplicantsResponse}. */
-export interface WaitListRes extends SuccessRes {
-	data: WaitListType[];
-}
 
 type ToastCtx = { toastId?: string | number };
 
@@ -287,7 +324,7 @@ function markWaitlistApplicantOnEdge(
 }
 
 // --- Worker functions ---
-export async function createWaitListApplicantFn(data: WaitListFormValues) {
+export async function createWaitListApplicantFn(data: ApplicantCreateRequest) {
 	return (await axios.post(`${API_URL}/api/applicant/`, data)).data as SuccessRes;
 }
 
@@ -363,7 +400,7 @@ const WaitListApi = {
 			options?: UseMutationOptions<
 				SuccessRes,
 				AxiosError<ErrorRes>,
-				WaitListFormValues,
+				ApplicantCreateRequest,
 				ToastCtx
 			>
 		) => {

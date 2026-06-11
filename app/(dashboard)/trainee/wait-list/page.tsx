@@ -3,12 +3,8 @@
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import api, { getWaitListServerSideFn } from "@/lib/api";
-import {
-	formatDigitalDevices,
-	formatEducationalBackground,
-	formatEmploymentStatus,
-	formatMaritalStatus,
-} from "@/lib/api/applicantLabels";
+import { formatEmploymentStatus } from "@/lib/api/applicantLabels";
+import { applicantToExportRow, exportApplicantsToDefaultCsv } from "@/lib/applicantExport";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
@@ -38,17 +34,14 @@ import { useWaitList } from "@/hooks/useWaitlist";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
-import {
-	getApplicantFullName,
-	getApplicantNameParts,
-} from "@/lib/applicantName";
+import { getApplicantFullName } from "@/lib/applicantName";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
-const DEFAULT_CSV_FIELDS = [
+const DEFAULT_REPORT_FIELDS = [
 	"firstName",
-	"fatherName",
-	"GrandFatherName",
+	"middleName",
+	"lastName",
 	"email",
 	"phoneNumber",
 	"gender",
@@ -70,43 +63,6 @@ function asString(value: unknown) {
 		return JSON.stringify(value);
 	}
 	return String(value);
-}
-
-function getApplicantFieldValue(applicant: ApplicantListItem, key: string): string {
-	const nameParts = getApplicantNameParts(applicant);
-
-	switch (key) {
-		case "fullName":
-			return getApplicantFullName(applicant);
-		case "firstName":
-			return nameParts.firstName;
-		case "fatherName":
-			return nameParts.fatherName;
-		case "GrandFatherName":
-			return nameParts.GrandFatherName;
-		case "gender":
-			return applicant.gender ?? "";
-		case "region":
-			return applicant.region ?? "";
-		case "maritalStatus":
-			return formatMaritalStatus(applicant.maritalStatus);
-		case "digitalDevices":
-			return formatDigitalDevices(applicant.digitalDevices);
-		case "educationalBackground":
-			return formatEducationalBackground(applicant.educationalBackground);
-		case "employmentStatus":
-			return formatEmploymentStatus(applicant.employmentStatus);
-		case "previousEmploymentStatus":
-			return formatEmploymentStatus(applicant.previousEmploymentStatus);
-		case "city":
-			return applicant.city?.name ?? "";
-		case "subcity":
-			return applicant.subcity?.name ?? "";
-		default:
-			return asString(
-				(applicant as unknown as Record<string, unknown>)[key]
-			);
-	}
 }
 
 function matchesCondition(applicant: ApplicantListItem, condition: FilterCondition) {
@@ -236,13 +192,13 @@ export default function WaitListPage() {
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
 	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
 	const [serverAge, setServerAge] = React.useState("");
-	const [serverSex, setServerSex] = React.useState("");
+	const [serverGender, setServerGender] = React.useState("");
 	const [serverRegion, setServerRegion] = React.useState("");
 	const [isServerFiltering, setIsServerFiltering] = React.useState(false);
 	const [page, setPage] = React.useState(1);
 	const pageSize = 7;
 	const [selectedFields, setSelectedFields] = React.useState<string[]>([
-		...DEFAULT_CSV_FIELDS,
+		...DEFAULT_REPORT_FIELDS,
 	]);
 	const [, startTransition] = React.useTransition();
 
@@ -322,7 +278,7 @@ export default function WaitListPage() {
 		const ageNumber = serverAge.trim() ? Number(serverAge.trim()) : undefined;
 		const payload = {
 			age: Number.isFinite(ageNumber) ? ageNumber : undefined,
-			sex: serverSex.trim() || undefined,
+			gender: serverGender.trim() || undefined,
 			region: serverRegion.trim() || undefined,
 		};
 		const toastId = toast.loading("Applying API filters...");
@@ -346,7 +302,7 @@ export default function WaitListPage() {
 		} finally {
 			setIsServerFiltering(false);
 		}
-	}, [serverAge, serverSex, serverRegion]);
+	}, [serverAge, serverGender, serverRegion]);
 
 	const batches = React.useMemo(() => {
 		return uniqSorted(allApplicants.map((a) => a.batch));
@@ -390,32 +346,9 @@ export default function WaitListPage() {
 	}, [filteredApplicants]);
 
 	const exportToCSV = React.useCallback(() => {
-		const rows = (filteredApplicants ?? []).map((a) => {
-			const rec: Record<string, string> = {};
-			for (const key of selectedFields) {
-				rec[key] = getApplicantFieldValue(a, key);
-			}
-			return rec;
-		});
-
-		const headers = selectedFields.length
-			? selectedFields
-			: [...DEFAULT_CSV_FIELDS];
-		const csv = [
-			headers.join(","),
-			...rows.map((row) =>
-				headers
-					.map((h) => {
-						const cell = row[h] ?? "";
-						const escaped = String(cell).replace(/"/g, '""');
-						return `"${escaped}"`;
-					})
-					.join(",")
-			),
-		].join("\n");
-
+		const csv = exportApplicantsToDefaultCsv(filteredApplicants ?? []);
 		downloadTextFile(`waitlist-${Date.now()}.csv`, csv, "text/csv");
-	}, [filteredApplicants, selectedFields]);
+	}, [filteredApplicants]);
 
 	const selectedMessage = selectedApplicant ?? null;
 	const deferredSelectedMessage = React.useMemo(() => {
@@ -435,29 +368,10 @@ export default function WaitListPage() {
 		);
 	}, [filteredApplicants, paginationMeta.startIndex, paginationMeta.endIndexExclusive]);
 
-	// For the AnalyticsSection report preview only flatten what isn't display-ready:
-	// derive `fullName`, map abbreviated codes to labels, and replace `city`/`subcity`
-	// object refs with their `name` so the table cells aren't `[object Object]`.
-	const previewRows = React.useMemo(() => {
-		return filteredApplicants.map((a) => {
-			const rec: Record<string, string | number> = {
-				...(a as unknown as Record<string, string | number>),
-			};
-			rec.fullName = getApplicantFullName(a);
-			const nameParts = getApplicantNameParts(a);
-			rec.firstName = nameParts.firstName;
-			rec.fatherName = nameParts.fatherName;
-			rec.GrandFatherName = nameParts.GrandFatherName;
-			rec.maritalStatus = formatMaritalStatus(a.maritalStatus);
-			rec.digitalDevices = formatDigitalDevices(a.digitalDevices);
-			rec.educationalBackground = formatEducationalBackground(a.educationalBackground);
-			rec.employmentStatus = formatEmploymentStatus(a.employmentStatus);
-			rec.previousEmploymentStatus = formatEmploymentStatus(a.previousEmploymentStatus);
-			rec.city = a.city?.name ?? "";
-			rec.subcity = a.subcity?.name ?? "";
-			return rec;
-		});
-	}, [filteredApplicants]);
+	const previewRows = React.useMemo(
+		() => filteredApplicants.map(applicantToExportRow),
+		[filteredApplicants]
+	);
 
 	React.useEffect(() => {
 		if (paginationMeta.safePage !== page) {
@@ -635,7 +549,7 @@ export default function WaitListPage() {
 					<DialogHeader>
 						<DialogTitle>API Filters</DialogTitle>
 						<DialogDescription>
-							Filter applicants from backend by age, sex, and region.
+							Filter applicants from backend by age, gender, and region.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -648,9 +562,9 @@ export default function WaitListPage() {
 							onChange={(e) => setServerAge(e.target.value)}
 						/>
 						<Input
-							placeholder="Sex (male/female)"
-							value={serverSex}
-							onChange={(e) => setServerSex(e.target.value)}
+							placeholder="Gender (male/female)"
+							value={serverGender}
+							onChange={(e) => setServerGender(e.target.value)}
 						/>
 						<Input
 							placeholder="Region"

@@ -13,7 +13,7 @@ type WaitListOptions = {
 
 export type WaitlistApplicant = Pick<
 	ApplicantListItem,
-	"_id" | "email" | "firstName" | "fatherName" | "GrandFatherName"
+	"_id" | "email" | "firstName" | "middleName" | "lastName"
 > & {
 	batch?: string | null;
 	stage?: string | null;

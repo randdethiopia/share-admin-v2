@@ -25,7 +25,7 @@ export type { InvestorProfileType } from "./mentor";
 export type { OpportunityType } from "./opportunity";
 export type { ProjectGallery, ProjectStatus, ProjectType, ProjectUpdate } from "./project";
 export type { TraineeType } from "./trainee";
-export type { WaitListType } from "./waitlist";
+export type { ApplicantCreateRequest } from "./waitlist";
 export type { InvitationType } from "./invitation";
 export { getProjectByIdFn } from "./project";
 export { getWaitListServerSideFn } from "./waitlist";
