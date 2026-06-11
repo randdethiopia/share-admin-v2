@@ -7,6 +7,8 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
+import { UserCheck, UserX } from "lucide-react";
+import React from "react";
 import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -142,7 +144,10 @@ const AdminProfileApi = {
 			return useMutation({
 				mutationFn: deactivateAdminFn,
 				onSuccess: (res, id, context) => {
-					toast.success("activated");
+					toast.warning("User deactivated successfully", {
+						description: "This admin can no longer sign in.",
+						icon: React.createElement(UserX, { className: "h-4 w-4" }),
+					});
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -165,7 +170,10 @@ const AdminProfileApi = {
 			return useMutation({
 				mutationFn: activateAdminFn,
 				onSuccess: (res, id, context) => {
-					toast.success("deactivated");
+					toast.success("User activated successfully", {
+						description: "This admin can sign in again.",
+						icon: React.createElement(UserCheck, { className: "h-4 w-4" }),
+					});
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);

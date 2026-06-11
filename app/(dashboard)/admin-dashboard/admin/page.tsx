@@ -38,6 +38,7 @@ import {
 import PaginationControls from "@/components/shared/PaginationControls";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
+import useAuthStore from "@/store/useAuthStore";
 import AssignRoleModal from "../../admin/components/assign-role";
 
 function formatDate(value?: string) {
@@ -60,6 +61,14 @@ function statusBadgeClass(status?: ProfileType["status"]) {
 
 function getAdminDisplayName(admin: ProfileType) {
 	return `${admin.firstName} ${admin.lastName}`.trim() || "-";
+}
+
+function getStatusLabel(status?: ProfileType["status"]) {
+	return status === "TERMINATED"
+		? "Deactivated"
+		: status === "ACTIVE"
+			? "Active"
+			: (status ?? "-");
 }
 
 function SheetDetailRow({
@@ -107,6 +116,12 @@ export default function AdminManagementPage() {
 		api.AdminProfile.Activate.useMutation();
 	const { mutate: deactivate, isPending: isDeactivating } =
 		api.AdminProfile.Deactivate.useMutation();
+
+	const loggedInUserId = useAuthStore((s) => s._id);
+	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+
+	const isSelf = (admin: ProfileType) =>
+		hasHydrated && Boolean(loggedInUserId && admin._id === loggedInUserId);
 
 	const filteredAdmins = React.useMemo(() => {
 		const term = search.trim().toLowerCase();
@@ -157,6 +172,8 @@ export default function AdminManagementPage() {
 		type: "activate" | "deactivate",
 		admin: ProfileType
 	) => {
+		if (type === "deactivate" && isSelf(admin)) return;
+
 		setPendingAction({
 			type,
 			id: admin._id,
@@ -175,6 +192,13 @@ export default function AdminManagementPage() {
 
 	const handleConfirm = () => {
 		if (!pendingAction) return;
+		if (
+			pendingAction.type === "deactivate" &&
+			loggedInUserId &&
+			pendingAction.id === loggedInUserId
+		) {
+			return;
+		}
 		const nextStatus =
 			pendingAction.type === "activate" ? "ACTIVE" : "TERMINATED";
 
@@ -248,6 +272,7 @@ export default function AdminManagementPage() {
 								<TableHead className={tableHeadClass}>Name</TableHead>
 								<TableHead className={tableHeadClass}>Email</TableHead>
 								<TableHead className={tableHeadClass}>Phone</TableHead>
+								<TableHead className={tableHeadClass}>Status</TableHead>
 								<TableHead className={cn(tableHeadClass, "text-right")}>
 									Actions
 								</TableHead>
@@ -257,7 +282,7 @@ export default function AdminManagementPage() {
 							{isLoading ? (
 								<TableRow>
 									<TableCell
-										colSpan={4}
+										colSpan={5}
 										className="h-40 text-center text-slate-500"
 									>
 										<Loader2 className="mr-2 inline animate-spin" /> Loading...
@@ -266,7 +291,7 @@ export default function AdminManagementPage() {
 							) : filteredAdmins.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={4}
+										colSpan={5}
 										className="h-40 text-center text-sm text-slate-500"
 									>
 										No admins found.
@@ -287,6 +312,16 @@ export default function AdminManagementPage() {
 										<TableCell className="px-6 py-5 text-sm font-medium text-slate-500 sm:px-8">
 											{admin.phoneNumber}
 										</TableCell>
+										<TableCell className="px-6 py-5 sm:px-8">
+											<Badge
+												className={cn(
+													"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
+													statusBadgeClass(admin.status)
+												)}
+											>
+												{getStatusLabel(admin.status)}
+											</Badge>
+										</TableCell>
 
 										<TableCell className="px-6 py-5 sm:px-8">
 											<div className="flex items-center justify-end gap-2">
@@ -298,20 +333,30 @@ export default function AdminManagementPage() {
 												>
 													<Eye size={16} />
 												</button>
-												<div className="flex w-24 justify-start">
+												<div className="flex w-8 justify-start">
 													{admin.status === "TERMINATED" ? (
 														<button
+															type="button"
 															onClick={() => openConfirm("activate", admin)}
-															className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-emerald-600 hover:underline"
+															className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100"
+															aria-label={`Activate ${getAdminDisplayName(admin)}`}
+															title="Activate"
 														>
-															<UserCheck size={14} /> Activate
+															<UserCheck size={16} />
 														</button>
+													) : isSelf(admin) ? (
+														<span className="inline-flex h-8 w-8 items-center justify-center text-[10px] font-medium text-slate-400">
+															You
+														</span>
 													) : (
 														<button
+															type="button"
 															onClick={() => openConfirm("deactivate", admin)}
-															className="inline-flex h-8 items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
+															className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+															aria-label={`Deactivate ${getAdminDisplayName(admin)}`}
+															title="Deactivate"
 														>
-															<UserX size={14} /> Deactivate
+															<UserX size={16} />
 														</button>
 													)}
 												</div>
@@ -345,13 +390,13 @@ export default function AdminManagementPage() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>
 							{pendingAction?.type === "activate"
-								? "Deactivate admin"
-								: "Activate admin"}
+								? "Activate admin?"
+								: "Deactivate admin?"}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{pendingAction?.type === "activate"
-								? `Are you sure you want to deactivate ${pendingAction?.name}?`
-								: `Are you sure you want to Activate ${pendingAction?.name}?`}
+								? `Are you sure you want to activate ${pendingAction?.name}?`
+								: `Are you sure you want to deactivate ${pendingAction?.name}?`}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -360,17 +405,16 @@ export default function AdminManagementPage() {
 							onClick={handleConfirm}
 							disabled={isWorking || !pendingAction}
 							className={
-								pendingAction?.type === "deactivate"
+								pendingAction?.type === "activate"
 									? "bg-emerald-600 hover:bg-emerald-700"
 									: "bg-red-600 hover:bg-red-700"
-									
 							}
 						>
 							{isWorking
 								? "Please wait..."
 								: pendingAction?.type === "activate"
-									? "Deactivate"
-									: "Activate"}
+									? "Activate"
+									: "Deactivate"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -397,7 +441,7 @@ export default function AdminManagementPage() {
 										statusBadgeClass(viewingAdmin.status)
 									)}
 								>
-									{viewingAdmin.status}
+									{getStatusLabel(viewingAdmin.status)}
 								</Badge>
 							</SheetHeader>
 
