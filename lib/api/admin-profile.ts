@@ -7,8 +7,6 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { UserCheck, UserX } from "lucide-react";
-import React from "react";
 import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -25,7 +23,6 @@ export interface ProfileType extends ProfileFormType {
 	status: "ACTIVE" | "TERMINATED";
 	createdAt: string;
 	approvedAt: string;
-	roles?: { _id: string; name: string }[];
 }
 
 // --- Worker functions ---
@@ -144,10 +141,7 @@ const AdminProfileApi = {
 			return useMutation({
 				mutationFn: deactivateAdminFn,
 				onSuccess: (res, id, context) => {
-					toast.warning("User deactivated successfully", {
-						description: "This admin can no longer sign in.",
-						icon: React.createElement(UserX, { className: "h-4 w-4" }),
-					});
+					toast.success("activated");
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);
@@ -170,10 +164,7 @@ const AdminProfileApi = {
 			return useMutation({
 				mutationFn: activateAdminFn,
 				onSuccess: (res, id, context) => {
-					toast.success("User activated successfully", {
-						description: "This admin can sign in again.",
-						icon: React.createElement(UserCheck, { className: "h-4 w-4" }),
-					});
+					toast.success("deactivated");
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["AdminProfile", id] });
 					options?.onSuccess?.(res, id, context, undefined as unknown as never);

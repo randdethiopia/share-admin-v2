@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
 import { ideaBankSchema } from "@/lib/validator";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -151,14 +150,6 @@ export default function EditIdeaPage() {
   return (
     <div className="space-y-6">
      <div>
-        <Button
-          type="button"
-          variant="ghost"
-          className="mb-3 inline-flex items-center gap-2 px-0 text-blue-600 hover:bg-transparent hover:text-blue-700"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft size={16} /> Back
-        </Button>
         <h1 className="text-[28px] font-bold text-black">Update idea</h1>
         <p className="text-zinc-600 text-lg">Updating your Idea</p>
       </div>

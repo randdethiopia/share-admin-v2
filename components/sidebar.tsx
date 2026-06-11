@@ -191,11 +191,11 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full flex-col bg-white",
+        "flex h-full w-full flex-col bg-white md:h-screen md:w-70 md:border-r",
         className,
       )}
     >
-      <div className="flex shrink-0 flex-col items-center gap-3 border-b px-6 py-6">
+      <div className="flex flex-col items-center gap-3 border-b px-6 py-6">
         <Avatar className="h-16 w-16">
           <AvatarFallback className="bg-gray-200 text-gray-600">
             <UserCog className="h-8 w-8" />
@@ -212,7 +212,7 @@ export function Sidebar({
         </Button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref =
@@ -314,7 +314,7 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="shrink-0 border-t px-3 py-4">
+      <div className="border-t px-3 py-4">
         <Button
           type="button"
           variant="ghost"
