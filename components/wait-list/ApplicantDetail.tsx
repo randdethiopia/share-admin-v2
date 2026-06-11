@@ -19,7 +19,14 @@ import {
 	UserPlus,
 } from "lucide-react";
 
-import WaitListApi, { type WaitListType } from "@/lib/api/waitlist";
+import WaitListApi, { type ApplicantListItem } from "@/lib/api/waitlist";
+import {
+	formatDigitalDevices,
+	formatDisabilityType,
+	formatEducationalBackground,
+	formatEmploymentStatus,
+	formatMaritalStatus,
+} from "@/lib/api/applicantLabels";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,10 +59,7 @@ function DetailRow({ icon: Icon, label, value }: DetailRowProps) {
 }
 
 function defaultGetInitials(name: string) {
-	const parts = name
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean);
+	const parts = name.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "?";
 	return parts
 		.slice(0, 2)
@@ -73,29 +77,8 @@ function defaultGetStatusColor(status: string) {
 	return "bg-slate-100 text-slate-700";
 }
 
-function titleCase(value: string) {
-	return value
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean)
-		.map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-		.join(" ");
-}
-
-function getEligibilityLabel(applicant: WaitListType): string | null {
-	const obj = applicant as unknown as Record<string, unknown>;
-	const keys = ["eligible", "isEligible", "eligibility", "eligibilityStatus"] as const;
-	for (const key of keys) {
-		const value = obj[key];
-		if (value === null || value === undefined || value === "") continue;
-		if (typeof value === "boolean") return value ? "Eligible" : "Not eligible";
-		return String(value);
-	}
-	return null;
-}
-
 export type ApplicantDetailProps = {
-	selectedMessage: WaitListType | null;
+	selectedMessage: ApplicantListItem | null;
 	getInitials?: (name: string) => string;
 	getStatusColor?: (status: string) => string;
 	deleteMessage?: (id: string) => void;
@@ -140,16 +123,29 @@ export function ApplicantDetail({
 		);
 	}
 
-	const fullName = (selectedMessage.fullName ?? "").toString();
+	const fullName = [
+		selectedMessage.firstName,
+		selectedMessage.middleName,
+		selectedMessage.lastName,
+	]
+		.filter(Boolean)
+		.join(" ");
 	const email = (selectedMessage.email ?? "").toString();
 	const phoneNumber = (selectedMessage.phoneNumber ?? "").toString();
-	const currentEmploymentStatus =
-		(selectedMessage.currentEmploymentStatus ?? "").toString();
-	const educationLevel = (selectedMessage.educationLevel ?? "").toString();
-	const sex = (selectedMessage.sex ?? "").toString();
+	const employmentLabel = formatEmploymentStatus(selectedMessage.employmentStatus);
+	const educationLabel = formatEducationalBackground(
+		selectedMessage.educationalBackground
+	);
 	const age = selectedMessage.age;
-	const stage = (selectedMessage.stage ?? "").toString();
-	const eligibilityLabel = getEligibilityLabel(selectedMessage);
+	const cityName = selectedMessage.city?.name ?? "";
+	const subcityName = selectedMessage.subcity?.name ?? "";
+	const digitalDevicesLabel = formatDigitalDevices(selectedMessage.digitalDevices);
+	const disabilityLabel =
+		selectedMessage.hasDisability === "yes"
+			? formatDisabilityType(selectedMessage.disabilityType) || "Yes"
+			: selectedMessage.hasDisability === "no"
+				? "No"
+				: "";
 
 	return (
 		<div className="hidden md:flex flex-1 flex-col bg-white rounded-3xl m-4 shadow-sm overflow-hidden border border-slate-100">
@@ -170,10 +166,10 @@ export function ApplicantDetail({
 								<Badge
 									className={cn(
 										"rounded-full px-3 font-bold text-[10px] uppercase",
-										getStatusColor(currentEmploymentStatus)
+										getStatusColor(employmentLabel)
 									)}
 								>
-									{currentEmploymentStatus || "—"}
+									{employmentLabel || "—"}
 								</Badge>
 								<Badge
 									variant="outline"
@@ -181,12 +177,12 @@ export function ApplicantDetail({
 								>
 									{selectedMessage.batch || "N/A"}
 								</Badge>
-								{educationLevel ? (
+								{educationLabel ? (
 									<Badge
 										variant="outline"
 										className="rounded-full border-slate-200 text-slate-500 font-bold text-[10px] uppercase"
 									>
-										{educationLevel}
+										{educationLabel}
 									</Badge>
 								) : null}
 								{typeof age === "number" && Number.isFinite(age) ? (
@@ -197,24 +193,12 @@ export function ApplicantDetail({
 										{age} YRS
 									</Badge>
 								) : null}
-								{sex ? (
+								{selectedMessage.gender ? (
 									<Badge
 										variant="outline"
 										className="rounded-full border-slate-200 text-slate-500 font-bold text-[10px] uppercase"
 									>
-										{titleCase(sex)}
-									</Badge>
-								) : null}
-								{eligibilityLabel ? (
-									<Badge
-										className={cn(
-											"rounded-full px-3 font-bold text-[10px] uppercase",
-											eligibilityLabel.toLowerCase().includes("not")
-												? "bg-rose-50 text-rose-700"
-												: "bg-emerald-50 text-emerald-700"
-										)}
-									>
-										{eligibilityLabel}
+										{selectedMessage.gender}
 									</Badge>
 								) : null}
 							</div>
@@ -224,15 +208,25 @@ export function ApplicantDetail({
 					<div className="flex gap-3">
 						<Button
 							onClick={() => createAccount(selectedMessage._id)}
-							disabled={isCreating}
-							className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-6 font-bold shadow-md"
+							disabled={isCreating || selectedMessage.alreadyOnEdge}
+							title={
+								selectedMessage.alreadyOnEdge
+									? "This applicant already has an account on Edge"
+									: undefined
+							}
+							className={cn(
+								"rounded-xl h-10 px-6 font-bold text-white shadow-md",
+								selectedMessage.alreadyOnEdge
+									? "bg-rose-600 hover:bg-rose-600 disabled:opacity-100 disabled:bg-rose-600"
+									: "bg-blue-600 hover:bg-blue-700"
+							)}
 						>
 							{isCreating ? (
 								<Loader2 className="animate-spin" />
 							) : (
 								<UserPlus size={16} className="mr-2" />
 							)}
-							Create Account
+							{selectedMessage.alreadyOnEdge ? "Already on Edge" : "Create Account"}
 						</Button>
 						<Button
 							onClick={() => onDelete(selectedMessage._id)}
@@ -282,6 +276,12 @@ export function ApplicantDetail({
 						>
 							Employment
 						</TabsTrigger>
+						<TabsTrigger
+							value="other"
+							className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm"
+						>
+							Program
+						</TabsTrigger>
 					</TabsList>
 
 					<TabsContent
@@ -294,21 +294,45 @@ export function ApplicantDetail({
 								icon={Calendar}
 								label="Age"
 								value={
-									selectedMessage.age
-										? `${selectedMessage.age} Years Old`
-										: "—"
+									typeof age === "number" && Number.isFinite(age)
+										? `${age} Years Old`
+										: undefined
 								}
 							/>
-							<DetailRow icon={Globe} label="Gender" value={selectedMessage.sex} />
+							<DetailRow
+								icon={Calendar}
+								label="Birth Date"
+								value={selectedMessage.birthDate}
+							/>
+							<DetailRow
+								icon={Globe}
+								label="Gender"
+								value={
+									selectedMessage.gender ? (
+										<span className="capitalize">{selectedMessage.gender}</span>
+									) : undefined
+								}
+							/>
 							<DetailRow
 								icon={User}
 								label="Marital Status"
-								value={selectedMessage.maritalStatus}
+								value={formatMaritalStatus(selectedMessage.maritalStatus)}
+							/>
+							<DetailRow
+								icon={User}
+								label="Has Disability"
+								value={disabilityLabel}
+							/>
+							<DetailRow
+								icon={User}
+								label="Humanitarian Status"
+								value={selectedMessage.humanitarianStatus}
 							/>
 						</div>
 						<div className="space-y-1">
 							<DetailRow icon={MapPin} label="Region" value={selectedMessage.region} />
-							<DetailRow icon={MapPin} label="Subcity" value={selectedMessage.subcity} />
+							<DetailRow icon={MapPin} label="City" value={cityName} />
+							<DetailRow icon={MapPin} label="Subcity" value={subcityName} />
 							<DetailRow icon={MapPin} label="Zone" value={selectedMessage.zone} />
 							<DetailRow icon={MapPin} label="Woreda" value={selectedMessage.woreda} />
 						</div>
@@ -317,8 +341,8 @@ export function ApplicantDetail({
 					<TabsContent value="education" className="space-y-2 mt-0">
 						<DetailRow
 							icon={GraduationCap}
-							label="Education Level"
-							value={selectedMessage.educationLevel}
+							label="Educational Background"
+							value={educationLabel}
 						/>
 						<DetailRow
 							icon={Briefcase}
@@ -327,8 +351,23 @@ export function ApplicantDetail({
 						/>
 						<DetailRow
 							icon={Laptop}
-							label="Computer Skills"
-							value={selectedMessage.computerSkill}
+							label="Technical Digital Skills"
+							value={selectedMessage.technicalDigitalSkills}
+						/>
+						<DetailRow
+							icon={Laptop}
+							label="Digital Devices"
+							value={digitalDevicesLabel}
+						/>
+						<DetailRow
+							icon={Globe}
+							label="English Proficiency"
+							value={selectedMessage.englishProficiency}
+						/>
+						<DetailRow
+							icon={Globe}
+							label="Amharic Proficiency"
+							value={selectedMessage.amharicProficiency}
 						/>
 					</TabsContent>
 
@@ -336,17 +375,66 @@ export function ApplicantDetail({
 						<DetailRow
 							icon={Briefcase}
 							label="Current Status"
-							value={selectedMessage.currentEmploymentStatus}
+							value={employmentLabel}
 						/>
 						<DetailRow
 							icon={Briefcase}
 							label="Previous Status"
-							value={selectedMessage.previousEmploymentStatus}
+							value={formatEmploymentStatus(selectedMessage.previousEmploymentStatus)}
 						/>
 						<DetailRow
 							icon={DollarSign}
 							label="Monthly Earnings"
 							value={selectedMessage.monthlyEarnings}
+						/>
+						<DetailRow
+							icon={Briefcase}
+							label="Weekly Commitment"
+							value={selectedMessage.weeklyCommitment}
+						/>
+					</TabsContent>
+
+					<TabsContent value="other" className="space-y-2 mt-0">
+						<DetailRow
+							icon={User}
+							label="Batch"
+							value={selectedMessage.batch || undefined}
+						/>
+						<DetailRow
+							icon={User}
+							label="Stage"
+							value={selectedMessage.stage || undefined}
+						/>
+						<DetailRow
+							icon={User}
+							label="Participated in MasterCard-funded program"
+							value={
+								selectedMessage.participatedMasterCardFundedProgram ? (
+									<span className="capitalize">
+										{selectedMessage.participatedMasterCardFundedProgram}
+									</span>
+								) : undefined
+							}
+						/>
+						<DetailRow
+							icon={User}
+							label="Accepts Safeguarding Conducts"
+							value={
+								selectedMessage.acceptsSafeguardingConducts ? (
+									<span className="capitalize">
+										{selectedMessage.acceptsSafeguardingConducts}
+									</span>
+								) : undefined
+							}
+						/>
+						<DetailRow
+							icon={Calendar}
+							label="Applied On"
+							value={
+								selectedMessage.createdAt
+									? new Date(selectedMessage.createdAt).toLocaleDateString()
+									: undefined
+							}
 						/>
 					</TabsContent>
 				</Tabs>
@@ -354,4 +442,3 @@ export function ApplicantDetail({
 		</div>
 	);
 }
-

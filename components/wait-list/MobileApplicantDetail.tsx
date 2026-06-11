@@ -2,9 +2,28 @@
 
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Briefcase, ChevronLeft, Globe, GraduationCap, Laptop, Mail, MapPin, Phone, User } from "lucide-react";
+import {
+	Briefcase,
+	Calendar,
+	ChevronLeft,
+	DollarSign,
+	Globe,
+	GraduationCap,
+	Laptop,
+	Mail,
+	MapPin,
+	Phone,
+	User,
+} from "lucide-react";
 
-import type { WaitListType } from "@/lib/api/waitlist";
+import type { ApplicantListItem } from "@/lib/api/waitlist";
+import {
+	formatDigitalDevices,
+	formatDisabilityType,
+	formatEducationalBackground,
+	formatEmploymentStatus,
+	formatMaritalStatus,
+} from "@/lib/api/applicantLabels";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,10 +57,7 @@ function DetailRow({ icon: Icon, label, value }: DetailRowProps) {
 }
 
 function defaultGetInitials(name: string) {
-	const parts = name
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean);
+	const parts = name.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "?";
 	return parts
 		.slice(0, 2)
@@ -59,30 +75,9 @@ function defaultGetStatusColor(status: string) {
 	return "bg-slate-100 text-slate-700";
 }
 
-function titleCase(value: string) {
-	return value
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean)
-		.map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-		.join(" ");
-}
-
-function getEligibilityLabel(applicant: WaitListType): string | null {
-	const obj = applicant as unknown as Record<string, unknown>;
-	const keys = ["eligible", "isEligible", "eligibility", "eligibilityStatus"] as const;
-	for (const key of keys) {
-		const value = obj[key];
-		if (value === null || value === undefined || value === "") continue;
-		if (typeof value === "boolean") return value ? "Eligible" : "Not eligible";
-		return String(value);
-	}
-	return null;
-}
-
 export type MobileApplicantDetailProps = {
-	selectedMessage: WaitListType | null;
-	setSelectedMessage: (message: WaitListType | null) => void;
+	selectedMessage: ApplicantListItem | null;
+	setSelectedMessage: (message: ApplicantListItem | null) => void;
 	getInitials?: (name: string) => string;
 	getStatusColor?: (status: string) => string;
 };
@@ -95,14 +90,27 @@ export function MobileApplicantDetail({
 }: MobileApplicantDetailProps) {
 	if (!selectedMessage) return null;
 
-	const fullName = (selectedMessage.fullName ?? "").toString();
+	const fullName = [
+		selectedMessage.firstName,
+		selectedMessage.middleName,
+		selectedMessage.lastName,
+	]
+		.filter(Boolean)
+		.join(" ");
 	const email = (selectedMessage.email ?? "").toString();
 	const age = selectedMessage.age;
-	const sex = (selectedMessage.sex ?? "").toString();
-	const educationLevel = (selectedMessage.educationLevel ?? "").toString();
-	const currentEmploymentStatus =
-		(selectedMessage.currentEmploymentStatus ?? "").toString();
-	const eligibilityLabel = getEligibilityLabel(selectedMessage);
+	const educationLabel = formatEducationalBackground(
+		selectedMessage.educationalBackground
+	);
+	const employmentLabel = formatEmploymentStatus(selectedMessage.employmentStatus);
+	const cityName = selectedMessage.city?.name ?? "";
+	const subcityName = selectedMessage.subcity?.name ?? "";
+	const disabilityLabel =
+		selectedMessage.hasDisability === "yes"
+			? formatDisabilityType(selectedMessage.disabilityType) || "Yes"
+			: selectedMessage.hasDisability === "no"
+				? "No"
+				: "";
 
 	return (
 		/* Full screen overlay (mobile only) */
@@ -137,10 +145,10 @@ export function MobileApplicantDetail({
 							<Badge
 								className={cn(
 									"rounded-full font-bold text-[9px] uppercase",
-									getStatusColor(currentEmploymentStatus)
+									getStatusColor(employmentLabel)
 								)}
 							>
-								{currentEmploymentStatus || "—"}
+								{employmentLabel || "—"}
 							</Badge>
 							{typeof age === "number" && !Number.isNaN(age) && (
 								<span className="text-xs text-slate-400 font-medium">
@@ -157,32 +165,20 @@ export function MobileApplicantDetail({
 									{selectedMessage.batch}
 								</Badge>
 							) : null}
-							{sex ? (
+							{selectedMessage.gender ? (
 								<Badge
 									variant="outline"
 									className="rounded-full border-slate-200 text-slate-500 font-bold text-[9px] uppercase"
 								>
-									{titleCase(sex)}
+									{selectedMessage.gender}
 								</Badge>
 							) : null}
-							{educationLevel ? (
+							{educationLabel ? (
 								<Badge
 									variant="outline"
-									className="rounded-full border-slate-200 text-slate-500 font-bold text-[9px] uppercase"
+									className="rounded-full border-slate-200 text-slate-500 font-bold text-[9px] uppercase truncate max-w-40"
 								>
-									{educationLevel}
-								</Badge>
-							) : null}
-							{eligibilityLabel ? (
-								<Badge
-									className={cn(
-										"rounded-full font-bold text-[9px] uppercase",
-										eligibilityLabel.toLowerCase().includes("not")
-											? "bg-rose-50 text-rose-700"
-											: "bg-emerald-50 text-emerald-700"
-									)}
-								>
-									{eligibilityLabel}
+									{educationLabel}
 								</Badge>
 							) : null}
 						</div>
@@ -225,11 +221,34 @@ export function MobileApplicantDetail({
 							</CardHeader>
 							<CardContent className="space-y-0">
 								<DetailRow icon={User} label="Full Name" value={fullName} />
-								<DetailRow icon={Globe} label="Gender" value={selectedMessage.sex} />
+								<DetailRow
+									icon={Globe}
+									label="Gender"
+									value={
+										selectedMessage.gender ? (
+											<span className="capitalize">{selectedMessage.gender}</span>
+										) : undefined
+									}
+								/>
 								<DetailRow
 									icon={Phone}
 									label="Phone"
 									value={selectedMessage.phoneNumber}
+								/>
+								<DetailRow
+									icon={Calendar}
+									label="Birth Date"
+									value={selectedMessage.birthDate}
+								/>
+								<DetailRow
+									icon={User}
+									label="Marital Status"
+									value={formatMaritalStatus(selectedMessage.maritalStatus)}
+								/>
+								<DetailRow
+									icon={User}
+									label="Has Disability"
+									value={disabilityLabel}
 								/>
 							</CardContent>
 						</Card>
@@ -242,7 +261,10 @@ export function MobileApplicantDetail({
 							</CardHeader>
 							<CardContent className="space-y-0">
 								<DetailRow icon={MapPin} label="Region" value={selectedMessage.region} />
-								<DetailRow icon={MapPin} label="Subcity" value={selectedMessage.subcity} />
+								<DetailRow icon={MapPin} label="City" value={cityName} />
+								<DetailRow icon={MapPin} label="Subcity" value={subcityName} />
+								<DetailRow icon={MapPin} label="Zone" value={selectedMessage.zone} />
+								<DetailRow icon={MapPin} label="Woreda" value={selectedMessage.woreda} />
 							</CardContent>
 						</Card>
 					</TabsContent>
@@ -250,13 +272,28 @@ export function MobileApplicantDetail({
 					<TabsContent value="education" className="space-y-2 mt-0">
 						<DetailRow
 							icon={GraduationCap}
-							label="Education Level"
-							value={selectedMessage.educationLevel}
+							label="Educational Background"
+							value={educationLabel}
 						/>
 						<DetailRow
 							icon={Laptop}
-							label="Computer Skills"
-							value={selectedMessage.computerSkill}
+							label="Technical Digital Skills"
+							value={selectedMessage.technicalDigitalSkills}
+						/>
+						<DetailRow
+							icon={Laptop}
+							label="Digital Devices"
+							value={formatDigitalDevices(selectedMessage.digitalDevices)}
+						/>
+						<DetailRow
+							icon={Globe}
+							label="English Proficiency"
+							value={selectedMessage.englishProficiency}
+						/>
+						<DetailRow
+							icon={Globe}
+							label="Amharic Proficiency"
+							value={selectedMessage.amharicProficiency}
 						/>
 					</TabsContent>
 
@@ -264,12 +301,22 @@ export function MobileApplicantDetail({
 						<DetailRow
 							icon={Briefcase}
 							label="Current Status"
-							value={selectedMessage.currentEmploymentStatus}
+							value={employmentLabel}
 						/>
 						<DetailRow
 							icon={Briefcase}
 							label="Previous Status"
-							value={selectedMessage.previousEmploymentStatus}
+							value={formatEmploymentStatus(selectedMessage.previousEmploymentStatus)}
+						/>
+						<DetailRow
+							icon={DollarSign}
+							label="Monthly Earnings"
+							value={selectedMessage.monthlyEarnings}
+						/>
+						<DetailRow
+							icon={Briefcase}
+							label="Weekly Commitment"
+							value={selectedMessage.weeklyCommitment}
 						/>
 					</TabsContent>
 				</Tabs>
@@ -289,4 +336,3 @@ export function MobileApplicantDetail({
 		</div>
 	);
 }
-
