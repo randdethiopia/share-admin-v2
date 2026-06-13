@@ -10,9 +10,9 @@ import {
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
-import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
+import { ApplicantsTable } from "@/components/wait-list/ApplicantsTable";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
-import { MobileApplicantDetail } from "@/components/wait-list/MobileApplicantDetail";
+import { AdminCard } from "@/components/shared/admin/AdminCard";
 import { BulkAction } from "@/components/wait-list/BulkAction";
 import { BulkActionModal } from "@/components/wait-list/BulkActionModel";
 import { FilterBuilder, type FilterCondition, type FilterGroup } from "@/components/wait-list/FilterBuilder";
@@ -32,10 +32,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
 import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
 
@@ -170,12 +174,12 @@ function downloadTextFile(filename: string, content: string, mime = "text/plain"
 }
 
 export default function WaitListPage() {
-	const isMobile = useIsMobile();
 	const [bulkFilters, setBulkFilters] = React.useState<FilterGroup | undefined>(undefined);
 	const [bulkFilterModalOpen, setBulkFilterModalOpen] = React.useState(false);
 	const [customReportOpen, setCustomReportOpen] = React.useState(false);
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
 	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
+	const [detailsOpen, setDetailsOpen] = React.useState(false);
 	const [serverAge, setServerAge] = React.useState("");
 	const [serverSex, setServerSex] = React.useState("");
 	const [serverRegion, setServerRegion] = React.useState("");
@@ -223,7 +227,7 @@ export default function WaitListPage() {
 		setSelectedId,
 		selectedId,
 	} = useWaitList<ApplicantListItem>(advancedFiltered, {
-		autoSelectFirst: !isMobile,
+		autoSelectFirst: false,
 	});
 
 	const deferredSelectedId = React.useDeferredValue(selectedId);
@@ -231,6 +235,17 @@ export default function WaitListPage() {
 	const onSelectApplicant = React.useCallback(
 		(applicant: ApplicantListItem) => {
 			startTransition(() => setSelectedId(applicant._id));
+			setDetailsOpen(true);
+		},
+		[startTransition, setSelectedId]
+	);
+
+	const handleDetailsOpenChange = React.useCallback(
+		(open: boolean) => {
+			setDetailsOpen(open);
+			if (!open) {
+				startTransition(() => setSelectedId(null));
+			}
 		},
 		[startTransition, setSelectedId]
 	);
@@ -368,6 +383,19 @@ export default function WaitListPage() {
 		return applicantById.get(deferredSelectedId) ?? selectedMessage;
 	}, [applicantById, deferredSelectedId, selectedMessage]);
 
+	const applicantSheetTitle = React.useMemo(() => {
+		if (!deferredSelectedMessage) return "Applicant details";
+		const name = [
+			deferredSelectedMessage.firstName,
+			deferredSelectedMessage.middleName,
+			deferredSelectedMessage.lastName,
+		]
+			.filter(Boolean)
+			.join(" ")
+			.trim();
+		return name || "Applicant details";
+	}, [deferredSelectedMessage]);
+
 	const paginationMeta = React.useMemo(
 		() => getPaginationMeta(filteredApplicants.length, page, pageSize),
 		[filteredApplicants.length, page, pageSize]
@@ -409,21 +437,11 @@ export default function WaitListPage() {
 	}, [paginationMeta.safePage, page]);
 
 	React.useEffect(() => {
-		if (pagedApplicants.length === 0) {
-			setSelectedId(null);
-			return;
-		}
-		if (isMobile) return;
-		const inPage = pagedApplicants.some((a) => a._id === selectedId);
-		if (!inPage) setSelectedId(pagedApplicants[0]._id);
-	}, [pagedApplicants, selectedId, setSelectedId, isMobile]);
-
-	React.useEffect(() => {
 		setPage(1);
 	}, [searchQuery, batchFilter, stageFilter, bulkFilters]);
 
 	return (
-		<div className="flex flex-col h-full bg-[#E2EDF8] min-h-screen">
+		<div className="space-y-0 bg-slate-50 pb-6">
 			{/* Top: Analytics */}
 			<div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
 				<AnalyticsSection
@@ -440,7 +458,7 @@ export default function WaitListPage() {
 			</div>
 
 			{/* Search & filters */}
-			<header className="px-4 sm:px-6 lg:px-8 py-4 bg-white/70 backdrop-blur-sm border-b border-blue-50 sticky top-0 z-10 mx-4 sm:mx-6 lg:mx-8 rounded-t-[1.5rem] sm:rounded-t-[2rem] lg:rounded-t-[2.5rem] mt-4 sm:mt-6">
+			<header className="px-4 sm:px-6 lg:px-8 py-4 bg-white/70 backdrop-blur-sm border-b border-blue-50 mx-4 sm:mx-6 lg:mx-8 rounded-t-[1.5rem] sm:rounded-t-[2rem] lg:rounded-t-[2.5rem] mt-4 sm:mt-6">
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div className="text-sm font-bold text-gray-500">
 						{filteredApplicants.length} applicants found
@@ -542,36 +560,40 @@ export default function WaitListPage() {
 				</div>
 			</header>
 
-			{/* Split view */}
-			<div className="flex flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 pb-6">
-				<div className="flex flex-col md:flex-row w-full bg-white rounded-b-[1.5rem] sm:rounded-b-[2rem] lg:rounded-b-[2.5rem] shadow-sm overflow-hidden border border-t-0 border-blue-50">
-					<ApplicantsList
+			<div className="px-4 sm:px-6 lg:px-8 pb-6">
+				<AdminCard className="rounded-b-[1.5rem] sm:rounded-b-[2rem] lg:rounded-b-[2.5rem] border border-t-0 border-slate-200/60 shadow-sm">
+					<ApplicantsTable
 						isLoading={isLoading}
 						isError={isError}
 						error={error}
 						filteredMessages={pagedApplicants}
-						selectedMessage={selectedMessage}
-						handleMessageSelect={onSelectApplicant}
+						selectedId={selectedId}
+						onRowSelect={onSelectApplicant}
 						page={page}
 						onPageChange={setPage}
 						totalItems={filteredApplicants.length}
 						pageSize={pageSize}
+						stageLabels={stageLabels}
 					/>
-
-					{!isMobile && (
-						<div className={cn("flex-1", isLoading && "opacity-60")}>
-							<ApplicantDetail selectedMessage={deferredSelectedMessage} />
-						</div>
-					)}
-
-					{isMobile && selectedMessage && (
-						<MobileApplicantDetail
-							selectedMessage={selectedMessage}
-							setSelectedMessage={() => startTransition(() => setSelectedId(null))}
-						/>
-					)}
-				</div>
+				</AdminCard>
 			</div>
+
+			<Sheet open={detailsOpen} onOpenChange={handleDetailsOpenChange}>
+				<SheetContent
+					side="right"
+					className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl"
+				>
+					<SheetHeader className="sr-only">
+						<SheetTitle>{applicantSheetTitle}</SheetTitle>
+					</SheetHeader>
+					<div className="flex h-full min-h-0 flex-col">
+						<ApplicantDetail
+							variant="sheet"
+							selectedMessage={deferredSelectedMessage}
+						/>
+					</div>
+				</SheetContent>
+			</Sheet>
 
 			<Dialog open={serverFilterModalOpen} onOpenChange={setServerFilterModalOpen}>
 				<DialogContent className="sm:max-w-xl">

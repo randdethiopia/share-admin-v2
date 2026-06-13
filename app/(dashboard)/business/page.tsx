@@ -346,7 +346,7 @@ export default function BusinessPage() {
 
 			<PageHeader title="Business" description="See all your businesses" />
 
-			<AdminCard className="min-h-[70vh] p-4 sm:p-6 md:p-8">
+			<AdminCard className="p-4 sm:p-6 md:p-8">
 				<div className="mb-8 flex flex-col justify-between gap-4 md:flex-row">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

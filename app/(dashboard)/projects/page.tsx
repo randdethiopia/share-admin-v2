@@ -442,7 +442,7 @@ export default function ProjectsPage() {
 			</AlertDialog>
 			<PageHeader title="Projects" description="See all projects" />
 
-			<AdminCard className="min-h-[70vh] p-4 sm:p-6 lg:p-8">
+			<AdminCard className="p-4 sm:p-6 lg:p-8">
 				<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 sm:mb-8">
 					<div className="relative w-full lg:max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

@@ -289,7 +289,7 @@ export default function ExpertPage() {
 
 			<PageHeader title="Expert" description="See all your experts" />
 
-			<AdminCard className="min-h-[70vh] p-4 sm:p-6 md:p-10">
+			<AdminCard className="p-4 sm:p-6 md:p-10">
 				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

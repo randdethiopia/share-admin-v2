@@ -49,7 +49,7 @@ export default function NewAdminPage() {
 	});
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8]">
+		<div className="bg-[#E2EDF8]">
 			<div className="px-8 py-10">
 				<h1 className="text-[28px] font-bold tracking-tight text-black">
 					Creating New Admin

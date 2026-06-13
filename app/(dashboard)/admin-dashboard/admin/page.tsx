@@ -471,25 +471,31 @@ export default function AdminManagementPage() {
 					side="right"
 					className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
 				>
-					{viewingAdmin && (
-						<div className="flex h-full min-h-0 flex-col">
-							<SheetHeader className="space-y-2 border-b border-slate-200/80 px-6 pb-5 pt-6 text-left">
-								<SheetTitle className="text-xl font-bold text-slate-900">
-									{getAdminDisplayName(viewingAdmin)}
-								</SheetTitle>
-								<SheetDescription className="text-sm text-slate-500">
-									{viewingAdmin.email || "-"}
-								</SheetDescription>
-								<Badge
-									className={cn(
-										"mt-1 w-fit rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-										statusBadgeClass(viewingAdmin.status)
-									)}
-								>
-									{getStatusLabel(viewingAdmin.status)}
-								</Badge>
-							</SheetHeader>
+					<div className="flex h-full min-h-0 flex-col">
+						<SheetHeader className="space-y-2 border-b border-slate-200/80 px-6 pb-5 pt-6 text-left">
+							<SheetTitle className="text-xl font-bold text-slate-900">
+								{viewingAdmin
+									? getAdminDisplayName(viewingAdmin)
+									: "Admin details"}
+							</SheetTitle>
+							{viewingAdmin ? (
+								<>
+									<SheetDescription className="text-sm text-slate-500">
+										{viewingAdmin.email || "-"}
+									</SheetDescription>
+									<Badge
+										className={cn(
+											"mt-1 w-fit rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
+											statusBadgeClass(viewingAdmin.status)
+										)}
+									>
+										{getStatusLabel(viewingAdmin.status)}
+									</Badge>
+								</>
+							) : null}
+						</SheetHeader>
 
+						{viewingAdmin ? (
 							<div className="flex-1 overflow-y-auto px-6 py-5">
 								<div className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-1">
 									<SheetDetailRow label="Phone">
@@ -524,8 +530,8 @@ export default function AdminManagementPage() {
 									)}
 								</div>
 							</div>
-						</div>
-					)}
+						) : null}
+					</div>
 				</SheetContent>
 			</Sheet>
 
