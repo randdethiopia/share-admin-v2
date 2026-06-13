@@ -118,7 +118,7 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const { role, permissions, hasHydrated, logOut } = useAuthStore();
+  const { user, role, permissions, hasHydrated, logOut } = useAuthStore();
 
   if (!hasHydrated) return null;
 
@@ -203,13 +203,11 @@ export function Sidebar({
         </Avatar>
         <div className="text-center">
           <h2 className="text-lg font-semibold capitalize">
-            {role || "Guest"}
+            {user?.firstName || "Guest"}
+            {user?.lastName || ""}
           </h2>
           <p className="text-xs">Portal Access</p>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600 text-white">
-          View Profile
-        </Button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
