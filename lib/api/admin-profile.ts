@@ -18,9 +18,15 @@ export interface ProfileFormType {
 	phoneNumber: string;
 }
 
+interface Role {
+	_id: string;
+	name: string;
+}
+
 export interface ProfileType extends ProfileFormType {
 	_id: string;
 	status: "ACTIVE" | "TERMINATED";
+	roles: Role[];
 	createdAt: string;
 	approvedAt: string;
 }
