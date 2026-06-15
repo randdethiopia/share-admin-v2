@@ -30,7 +30,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -113,14 +113,12 @@ export function Sidebar({
   className?: string;
   onNavigate?: () => void;
 }) {
-  const [activeId, setActiveId] = useState<string>();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const pathname = usePathname();
   const router = useRouter();
 
   const { user, role, permissions, hasHydrated, logOut } = useAuthStore();
-
-  if (!hasHydrated) return null;
 
   const normalizedPermissions = permissions?.map((permission) =>
     permission.toLowerCase()
@@ -182,11 +180,34 @@ export function Sidebar({
     return items;
   }, []);
 
+  useEffect(() => {
+    const autoOpen: Record<string, boolean> = {};
+
+    filteredItems.forEach((item) => {
+      if (!item.isCollapsable || !item.items?.length) return;
+
+      const childActive = item.items.some(
+        (s) =>
+          pathname === s.href || pathname.startsWith(`${s.href}/`)
+      );
+
+      if (childActive) {
+        autoOpen[item.id] = true;
+      }
+    });
+
+    if (Object.keys(autoOpen).length > 0) {
+      setOpenSections((prev) => ({ ...prev, ...autoOpen }));
+    }
+  }, [pathname]);
+
   const handleLogout = () => {
     Cookies.remove("session_token");
     logOut();
     router.push("/login");
   };
+
+  if (!hasHydrated) return null;
 
   return (
     <div
@@ -226,40 +247,39 @@ export function Sidebar({
                 (s) =>
                   pathname === s.href || pathname.startsWith(`${s.href}/`)
               );
-              const isOpen = childActive || activeId === item.id;
+              const isOpen = openSections[item.id] ?? childActive;
 
               return (
                 <Collapsible
                   key={item.id}
                   open={isOpen}
                   onOpenChange={(open) =>
-                    setActiveId(open ? item.id : undefined)
+                    setOpenSections((prev) => ({ ...prev, [item.id]: open }))
                   }
                   className="space-y-1"
                 >
-                  <div
-                    className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isOpen
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </div>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">Toggle {item.label}</span>
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        isOpen
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-gray-700 hover:bg-gray-50",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                      {isOpen ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Toggle {item.label}</span>
+                    </button>
+                  </CollapsibleTrigger>
 
                   <CollapsibleContent>
                     <div className="ml-6 flex flex-col gap-1">

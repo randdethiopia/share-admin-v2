@@ -394,9 +394,9 @@ export default function WaitListPage() {
 	}, [searchQuery, batchFilter, stageFilter, bulkFilters]);
 
 	return (
-		<div className="flex flex-col h-full bg-[#E2EDF8] min-h-screen">
+		<div className="flex flex-col h-full min-h-screen">
 			{/* Top: Analytics */}
-			<div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+			<div className="px-4 py-6">
 				<AnalyticsSection
 					analytics={analytics}
 					customReportOpen={customReportOpen}
@@ -411,7 +411,7 @@ export default function WaitListPage() {
 			</div>
 
 			{/* Search & filters */}
-			<header className="px-4 sm:px-6 lg:px-8 py-4 bg-white/70 backdrop-blur-sm border-b border-blue-50 sticky top-0 z-10 mx-4 sm:mx-6 lg:mx-8 rounded-t-[1.5rem] sm:rounded-t-[2rem] lg:rounded-t-[2.5rem] mt-4 sm:mt-6">
+			<header className="top-0 z-10 mt-4 w-full min-w-0 rounded-t-[1.5rem] border border-b-0 border-blue-50 bg-white px-4 py-4 shadow-sm sm:mt-6 sm:rounded-t-[2rem] sm:px-6 lg:rounded-t-[2.5rem] lg:px-8">
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div className="text-sm font-bold text-gray-500">
 						{filteredApplicants.length} applicants found
@@ -514,8 +514,8 @@ export default function WaitListPage() {
 			</header>
 
 			{/* Split view */}
-			<div className="flex flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 pb-6">
-				<div className="flex flex-col md:flex-row w-full bg-white rounded-b-[1.5rem] sm:rounded-b-[2rem] lg:rounded-b-[2.5rem] shadow-sm overflow-hidden border border-t-0 border-blue-50">
+			<div className="flex min-w-0 flex-1">
+				<div className="flex w-full min-w-0 flex-col overflow-hidden rounded-b-[1.5rem] border border-t-0 border-blue-50 bg-white shadow-sm sm:rounded-b-[2rem] md:flex-row lg:rounded-b-[2.5rem]">
 					<ApplicantsList
 						isLoading={isLoading}
 						isError={isError}
