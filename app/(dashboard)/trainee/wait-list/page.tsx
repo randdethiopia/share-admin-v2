@@ -35,7 +35,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
 import { getApplicantFullName } from "@/lib/applicantName";
-import { exportApplicantsToDefaultCsv } from "@/lib/applicantExport";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
