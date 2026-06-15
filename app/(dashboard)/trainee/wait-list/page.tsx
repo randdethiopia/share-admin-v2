@@ -3,16 +3,12 @@
 import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import api, { getWaitListServerSideFn } from "@/lib/api";
-import {
-	formatDigitalDevices,
-	formatEducationalBackground,
-	formatEmploymentStatus,
-	formatMaritalStatus,
-} from "@/lib/api/applicantLabels";
+import { formatEmploymentStatus } from "@/lib/api/applicantLabels";
+import { applicantToExportRow, exportApplicantsToDefaultCsv } from "@/lib/applicantExport";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
-import { ApplicantsTable } from "@/components/wait-list/ApplicantsTable";
+import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
-import { AdminCard } from "@/components/shared/admin/AdminCard";
+import { MobileApplicantDetail } from "@/components/wait-list/MobileApplicantDetail";
 import { BulkAction } from "@/components/wait-list/BulkAction";
 import { BulkActionModal } from "@/components/wait-list/BulkActionModel";
 import { FilterBuilder, type FilterCondition, type FilterGroup } from "@/components/wait-list/FilterBuilder";
@@ -32,18 +28,31 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
+import { getApplicantFullName } from "@/lib/applicantName";
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
+
+const DEFAULT_REPORT_FIELDS = [
+	"firstName",
+	"middleName",
+	"lastName",
+	"email",
+	"phoneNumber",
+	"gender",
+	"region",
+	"city",
+	"subcity",
+	"woreda",
+	"employmentStatus",
+	"batch",
+	"stage",
+] as const;
 
 function asString(value: unknown) {
 	if (value === null || value === undefined) return "";
@@ -54,33 +63,6 @@ function asString(value: unknown) {
 		return JSON.stringify(value);
 	}
 	return String(value);
-}
-
-function getApplicantFieldValue(applicant: ApplicantListItem, key: string): string {
-	switch (key) {
-		case "fullName":
-			return [applicant.firstName, applicant.middleName, applicant.lastName]
-				.filter(Boolean)
-				.join(" ");
-		case "maritalStatus":
-			return formatMaritalStatus(applicant.maritalStatus);
-		case "digitalDevices":
-			return formatDigitalDevices(applicant.digitalDevices);
-		case "educationalBackground":
-			return formatEducationalBackground(applicant.educationalBackground);
-		case "employmentStatus":
-			return formatEmploymentStatus(applicant.employmentStatus);
-		case "previousEmploymentStatus":
-			return formatEmploymentStatus(applicant.previousEmploymentStatus);
-		case "city":
-			return applicant.city?.name ?? "";
-		case "subcity":
-			return applicant.subcity?.name ?? "";
-		default:
-			return asString(
-				(applicant as unknown as Record<string, unknown>)[key]
-			);
-	}
 }
 
 function matchesCondition(applicant: ApplicantListItem, condition: FilterCondition) {
@@ -96,12 +78,15 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 		return applicant.subcity?._id === subId;
 	}
 
+	if (condition.field === "gender") {
+		if (!value) return true;
+		return applicant.gender === value;
+	}
+
 	const getFieldValue = (): string | number => {
 		switch (condition.field) {
 			case "fullName":
-				return [applicant.firstName, applicant.middleName, applicant.lastName]
-					.filter(Boolean)
-					.join(" ");
+				return getApplicantFullName(applicant);
 			case "age":
 				return applicant.age;
 			case "status":
@@ -113,6 +98,14 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 				]
 					.filter(Boolean)
 					.join(" ");
+			case "zone":
+				return applicant.zone;
+			case "region":
+				return applicant.region;
+			case "woreda":
+				return applicant.woreda;
+			case "phoneNumber":
+				return applicant.phoneNumber;
 			default:
 				return "";
 		}
@@ -134,6 +127,24 @@ function matchesCondition(applicant: ApplicantListItem, condition: FilterConditi
 
 	const left = asString(fieldValue).toLowerCase();
 	const right = value.toLowerCase();
+
+	if (condition.field === "phoneNumber") {
+		const phoneDigits = asString(fieldValue).replace(/\D/g, "");
+		const queryDigits = value.replace(/\D/g, "");
+		if (operator === "eq") {
+			return queryDigits
+				? phoneDigits === queryDigits
+				: left === right;
+		}
+		if (operator === "contains") {
+			return queryDigits
+				? phoneDigits.includes(queryDigits)
+				: right
+					? left.includes(right)
+					: true;
+		}
+		return false;
+	}
 
 	if (operator === "eq") return left === right;
 	if (operator === "contains") return right ? left.includes(right) : true;
@@ -174,24 +185,20 @@ function downloadTextFile(filename: string, content: string, mime = "text/plain"
 }
 
 export default function WaitListPage() {
+	const isMobile = useIsMobile();
 	const [bulkFilters, setBulkFilters] = React.useState<FilterGroup | undefined>(undefined);
 	const [bulkFilterModalOpen, setBulkFilterModalOpen] = React.useState(false);
 	const [customReportOpen, setCustomReportOpen] = React.useState(false);
 	const [reportFormat, setReportFormat] = React.useState<ReportFormat>("table");
 	const [serverFilterModalOpen, setServerFilterModalOpen] = React.useState(false);
-	const [detailsOpen, setDetailsOpen] = React.useState(false);
 	const [serverAge, setServerAge] = React.useState("");
-	const [serverSex, setServerSex] = React.useState("");
+	const [serverGender, setServerGender] = React.useState("");
 	const [serverRegion, setServerRegion] = React.useState("");
 	const [isServerFiltering, setIsServerFiltering] = React.useState(false);
 	const [page, setPage] = React.useState(1);
 	const pageSize = 7;
 	const [selectedFields, setSelectedFields] = React.useState<string[]>([
-		"fullName",
-		"email",
-		"employmentStatus",
-		"batch",
-		"stage",
+		...DEFAULT_REPORT_FIELDS,
 	]);
 	const [, startTransition] = React.useTransition();
 
@@ -227,7 +234,7 @@ export default function WaitListPage() {
 		setSelectedId,
 		selectedId,
 	} = useWaitList<ApplicantListItem>(advancedFiltered, {
-		autoSelectFirst: false,
+		autoSelectFirst: !isMobile,
 	});
 
 	const deferredSelectedId = React.useDeferredValue(selectedId);
@@ -235,17 +242,6 @@ export default function WaitListPage() {
 	const onSelectApplicant = React.useCallback(
 		(applicant: ApplicantListItem) => {
 			startTransition(() => setSelectedId(applicant._id));
-			setDetailsOpen(true);
-		},
-		[startTransition, setSelectedId]
-	);
-
-	const handleDetailsOpenChange = React.useCallback(
-		(open: boolean) => {
-			setDetailsOpen(open);
-			if (!open) {
-				startTransition(() => setSelectedId(null));
-			}
 		},
 		[startTransition, setSelectedId]
 	);
@@ -282,7 +278,7 @@ export default function WaitListPage() {
 		const ageNumber = serverAge.trim() ? Number(serverAge.trim()) : undefined;
 		const payload = {
 			age: Number.isFinite(ageNumber) ? ageNumber : undefined,
-			sex: serverSex.trim() || undefined,
+			gender: serverGender.trim() || undefined,
 			region: serverRegion.trim() || undefined,
 		};
 		const toastId = toast.loading("Applying API filters...");
@@ -306,7 +302,7 @@ export default function WaitListPage() {
 		} finally {
 			setIsServerFiltering(false);
 		}
-	}, [serverAge, serverSex, serverRegion]);
+	}, [serverAge, serverGender, serverRegion]);
 
 	const batches = React.useMemo(() => {
 		return uniqSorted(allApplicants.map((a) => a.batch));
@@ -350,51 +346,15 @@ export default function WaitListPage() {
 	}, [filteredApplicants]);
 
 	const exportToCSV = React.useCallback(() => {
-		const rows = (filteredApplicants ?? []).map((a) => {
-			const rec: Record<string, string> = {};
-			for (const key of selectedFields) {
-				rec[key] = getApplicantFieldValue(a, key);
-			}
-			return rec;
-		});
-
-		const headers = selectedFields.length
-			? selectedFields
-			: ["fullName", "email", "batch", "stage"];
-		const csv = [
-			headers.join(","),
-			...rows.map((row) =>
-				headers
-					.map((h) => {
-						const cell = row[h] ?? "";
-						const escaped = String(cell).replace(/"/g, '""');
-						return `"${escaped}"`;
-					})
-					.join(",")
-			),
-		].join("\n");
-
+		const csv = exportApplicantsToDefaultCsv(filteredApplicants ?? []);
 		downloadTextFile(`waitlist-${Date.now()}.csv`, csv, "text/csv");
-	}, [filteredApplicants, selectedFields]);
+	}, [filteredApplicants]);
 
 	const selectedMessage = selectedApplicant ?? null;
 	const deferredSelectedMessage = React.useMemo(() => {
 		if (!deferredSelectedId) return null;
 		return applicantById.get(deferredSelectedId) ?? selectedMessage;
 	}, [applicantById, deferredSelectedId, selectedMessage]);
-
-	const applicantSheetTitle = React.useMemo(() => {
-		if (!deferredSelectedMessage) return "Applicant details";
-		const name = [
-			deferredSelectedMessage.firstName,
-			deferredSelectedMessage.middleName,
-			deferredSelectedMessage.lastName,
-		]
-			.filter(Boolean)
-			.join(" ")
-			.trim();
-		return name || "Applicant details";
-	}, [deferredSelectedMessage]);
 
 	const paginationMeta = React.useMemo(
 		() => getPaginationMeta(filteredApplicants.length, page, pageSize),
@@ -408,27 +368,10 @@ export default function WaitListPage() {
 		);
 	}, [filteredApplicants, paginationMeta.startIndex, paginationMeta.endIndexExclusive]);
 
-	// For the AnalyticsSection report preview only flatten what isn't display-ready:
-	// derive `fullName`, map abbreviated codes to labels, and replace `city`/`subcity`
-	// object refs with their `name` so the table cells aren't `[object Object]`.
-	const previewRows = React.useMemo(() => {
-		return filteredApplicants.map((a) => {
-			const rec: Record<string, string | number> = {
-				...(a as unknown as Record<string, string | number>),
-			};
-			rec.fullName = [a.firstName, a.middleName, a.lastName]
-				.filter(Boolean)
-				.join(" ");
-			rec.maritalStatus = formatMaritalStatus(a.maritalStatus);
-			rec.digitalDevices = formatDigitalDevices(a.digitalDevices);
-			rec.educationalBackground = formatEducationalBackground(a.educationalBackground);
-			rec.employmentStatus = formatEmploymentStatus(a.employmentStatus);
-			rec.previousEmploymentStatus = formatEmploymentStatus(a.previousEmploymentStatus);
-			rec.city = a.city?.name ?? "";
-			rec.subcity = a.subcity?.name ?? "";
-			return rec;
-		});
-	}, [filteredApplicants]);
+	const previewRows = React.useMemo(
+		() => filteredApplicants.map(applicantToExportRow),
+		[filteredApplicants]
+	);
 
 	React.useEffect(() => {
 		if (paginationMeta.safePage !== page) {
@@ -437,13 +380,23 @@ export default function WaitListPage() {
 	}, [paginationMeta.safePage, page]);
 
 	React.useEffect(() => {
+		if (pagedApplicants.length === 0) {
+			setSelectedId(null);
+			return;
+		}
+		if (isMobile) return;
+		const inPage = pagedApplicants.some((a) => a._id === selectedId);
+		if (!inPage) setSelectedId(pagedApplicants[0]._id);
+	}, [pagedApplicants, selectedId, setSelectedId, isMobile]);
+
+	React.useEffect(() => {
 		setPage(1);
 	}, [searchQuery, batchFilter, stageFilter, bulkFilters]);
 
 	return (
-		<div className="space-y-0 bg-slate-50 pb-6">
+		<div className="flex flex-col h-full min-h-screen">
 			{/* Top: Analytics */}
-			<div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+			<div className="px-4 py-6">
 				<AnalyticsSection
 					analytics={analytics}
 					customReportOpen={customReportOpen}
@@ -458,7 +411,7 @@ export default function WaitListPage() {
 			</div>
 
 			{/* Search & filters */}
-			<header className="px-4 sm:px-6 lg:px-8 py-4 bg-white/70 backdrop-blur-sm border-b border-blue-50 mx-4 sm:mx-6 lg:mx-8 rounded-t-[1.5rem] sm:rounded-t-[2rem] lg:rounded-t-[2.5rem] mt-4 sm:mt-6">
+			<header className="top-0 z-10 mt-4 w-full min-w-0 rounded-t-[1.5rem] border border-b-0 border-blue-50 bg-white px-4 py-4 shadow-sm sm:mt-6 sm:rounded-t-[2rem] sm:px-6 lg:rounded-t-[2.5rem] lg:px-8">
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div className="text-sm font-bold text-gray-500">
 						{filteredApplicants.length} applicants found
@@ -547,7 +500,7 @@ export default function WaitListPage() {
 										</DropdownMenuContent>
 									</DropdownMenu>
 
-						<Button
+						{/* <Button
 							type="button"
 							variant="outline"
 							onClick={() => setServerFilterModalOpen(true)}
@@ -555,52 +508,48 @@ export default function WaitListPage() {
 						>
 							<SlidersHorizontal className="mr-2 h-4 w-4" />
 							BUlk Filters
-						</Button>
+						</Button> */}
 					</div>
 				</div>
 			</header>
 
-			<div className="px-4 sm:px-6 lg:px-8 pb-6">
-				<AdminCard className="rounded-b-[1.5rem] sm:rounded-b-[2rem] lg:rounded-b-[2.5rem] border border-t-0 border-slate-200/60 shadow-sm">
-					<ApplicantsTable
+			{/* Split view */}
+			<div className="flex min-w-0 flex-1">
+				<div className="flex w-full min-w-0 flex-col overflow-hidden rounded-b-[1.5rem] border border-t-0 border-blue-50 bg-white shadow-sm sm:rounded-b-[2rem] md:flex-row lg:rounded-b-[2.5rem]">
+					<ApplicantsList
 						isLoading={isLoading}
 						isError={isError}
 						error={error}
 						filteredMessages={pagedApplicants}
-						selectedId={selectedId}
-						onRowSelect={onSelectApplicant}
+						selectedMessage={selectedMessage}
+						handleMessageSelect={onSelectApplicant}
 						page={page}
 						onPageChange={setPage}
 						totalItems={filteredApplicants.length}
 						pageSize={pageSize}
-						stageLabels={stageLabels}
 					/>
-				</AdminCard>
-			</div>
 
-			<Sheet open={detailsOpen} onOpenChange={handleDetailsOpenChange}>
-				<SheetContent
-					side="right"
-					className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl"
-				>
-					<SheetHeader className="sr-only">
-						<SheetTitle>{applicantSheetTitle}</SheetTitle>
-					</SheetHeader>
-					<div className="flex h-full min-h-0 flex-col">
-						<ApplicantDetail
-							variant="sheet"
-							selectedMessage={deferredSelectedMessage}
+					{!isMobile && (
+						<div className={cn("flex-1", isLoading && "opacity-60")}>
+							<ApplicantDetail selectedMessage={deferredSelectedMessage} />
+						</div>
+					)}
+
+					{isMobile && selectedMessage && (
+						<MobileApplicantDetail
+							selectedMessage={selectedMessage}
+							setSelectedMessage={() => startTransition(() => setSelectedId(null))}
 						/>
-					</div>
-				</SheetContent>
-			</Sheet>
+					)}
+				</div>
+			</div>
 
 			<Dialog open={serverFilterModalOpen} onOpenChange={setServerFilterModalOpen}>
 				<DialogContent className="sm:max-w-xl">
 					<DialogHeader>
 						<DialogTitle>API Filters</DialogTitle>
 						<DialogDescription>
-							Filter applicants from backend by age, sex, and region.
+							Filter applicants from backend by age, gender, and region.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -613,9 +562,9 @@ export default function WaitListPage() {
 							onChange={(e) => setServerAge(e.target.value)}
 						/>
 						<Input
-							placeholder="Sex (male/female)"
-							value={serverSex}
-							onChange={(e) => setServerSex(e.target.value)}
+							placeholder="Gender (male/female)"
+							value={serverGender}
+							onChange={(e) => setServerGender(e.target.value)}
 						/>
 						<Input
 							placeholder="Region"
