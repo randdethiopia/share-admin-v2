@@ -4,6 +4,17 @@ import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import Cookies from "js-cookie";
 
 
+interface  User {
+  _id: string,
+  firstName: string,
+  lastName: string,
+  phoneNumber: string,
+  isActive: boolean;
+  email: string,
+  role: Roles,
+  firstTimeLogin?: boolean,
+  permissions?: string[],
+};
 interface State {
   _id: string | null;
   email: string | null;
@@ -11,6 +22,7 @@ interface State {
   isSuccess:boolean
   hasHydrated: boolean,
   permissions: string[] | null
+  user: User | null;
 }
 
 interface Action {
@@ -19,7 +31,8 @@ interface Action {
     token: string,
     role: Roles,
     email?: string,
-    permissions?: string[] | null
+    permissions?: string[] | null,
+    user?: User | null
   ) => void;
   logOut: () => void;
   setHasHydrated: () => void;
@@ -36,13 +49,15 @@ const useAuthStore = create<State & Action>()(
         isSuccess: true,
         hasHydrated: false,
         permissions: null,
+        user: null,
 
         setAccessToken(
           _id: string,
           accessToken: string,
           role: Roles,
           email?: string,
-          permissions?: string[] | null
+          permissions?: string[] | null,
+          user?: User | null
         ) {
           set(() => ({
             _id,
@@ -50,9 +65,11 @@ const useAuthStore = create<State & Action>()(
             role,
             email: email ?? null,
             permissions: permissions ?? null,
+            user: user ?? null,
           }));
         },
 
+       
         logOut() {
           set(() => ({
             _id: null,

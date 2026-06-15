@@ -83,8 +83,7 @@ export default function PaginationControls({
 								!canPrev && "pointer-events-none opacity-50"
 							)}
 						>
-							<ChevronLeft className="h-4 w-4" />
-							<span>Prev</span>
+							<ChevronLeft className="h-6 w-6" />
 						</PaginationLink>
 					</PaginationItem>
 
@@ -125,8 +124,7 @@ export default function PaginationControls({
 								!canNext && "pointer-events-none opacity-50"
 							)}
 						>
-							<span>Next</span>
-							<ChevronRight className="h-4 w-4" />
+							<ChevronRight className="h-6 w-6" />
 						</PaginationLink>
 					</PaginationItem>
 				</PaginationContent>

@@ -3,6 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 
 import type { ApplicantListItem } from "@/lib/api/waitlist";
+import { getApplicantFullName } from "@/lib/applicantName";
 
 type FilterValue = string;
 
@@ -10,13 +11,9 @@ type WaitListOptions = {
 	autoSelectFirst?: boolean;
 };
 
-/**
- * Minimal shape the hook needs. Accepting the full {@link ApplicantListItem}
- * works because it derives `fullName` from first/middle/last on the fly.
- */
 export type WaitlistApplicant = Pick<
 	ApplicantListItem,
-	"_id" | "firstName" | "middleName" | "lastName" | "email"
+	"_id" | "email" | "firstName" | "middleName" | "lastName"
 > & {
 	batch?: string | null;
 	stage?: string | null;
@@ -69,8 +66,7 @@ export function useWaitList<TApplicant extends WaitlistApplicant>(
 			? normalizeStageValue(deferredStage)
 			: "";
 		return (allApplicants ?? []).filter((item) => {
-			const name = `${item.firstName ?? ""} ${item.middleName ?? ""} ${item.lastName ?? ""}`
-				.toLowerCase();
+			const name = getApplicantFullName(item).toLowerCase();
 			const email = (item.email ?? "").toString().toLowerCase();
 			const phone = (item.phoneNumber ?? "").toString().toLowerCase();
 			const phoneDigits = phone.replace(/\D/g, "");

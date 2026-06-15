@@ -50,7 +50,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         className="hidden w-64 shrink-0 self-start overflow-hidden border-r bg-white md:sticky md:top-0 md:block md:h-dvh md:max-h-dvh"
         aria-label="Main navigation"
       >
-        <Sidebar className="h-full" />
+        <Sidebar />
       </aside>
 
       <div className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -81,7 +81,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </SheetContent>
           </Sheet>
 
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-sm font-semibold text-gray-900">
             {currentTitle}
           </span>
         </header>

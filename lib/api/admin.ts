@@ -18,6 +18,7 @@ export interface AdminLoginSuccessResType extends SuccessRes {
     isActive: boolean;
     email: string,
     role: Roles,
+    firstTimeLogin?: boolean,
     permissions?: string[],
     __v: number;
   };
@@ -194,7 +195,8 @@ const AdminAuth = {
             data.accessToken,
             data.user.role,
             data.user.email,
-            data.user.permissions ?? data.permissions ?? null
+            data.user.permissions ?? data.permissions ?? null,
+            data.user ?? null
           );
 
           // Needed for `middleware.ts` route protection.

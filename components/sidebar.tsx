@@ -30,7 +30,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -63,7 +63,6 @@ export const dashboardMenuItems: MenuItem[] = [
    { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job.read", "job.write", "job.delete"] },
   { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation.read", "invitation.write", "invitation.delete"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog.read", "blog.write", "blog.delete"] },
-  { id: "resource", icon: FolderOpen, label: "Resource", href: "/resource", permissions: ["resource.read", "resource.write", "resource.delete"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea.read", "idea.write", "idea.delete"] },
   { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity.read", "opportunity.write", "opportunity.delete"] },
   { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"], isCollapsable: true, items: [
@@ -114,14 +113,12 @@ export function Sidebar({
   className?: string;
   onNavigate?: () => void;
 }) {
-  const [activeId, setActiveId] = useState<string>();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const pathname = usePathname();
   const router = useRouter();
 
-  const { role, permissions, hasHydrated, logOut } = useAuthStore();
-
-  if (!hasHydrated) return null;
+  const { user, role, permissions, hasHydrated, logOut } = useAuthStore();
 
   const normalizedPermissions = permissions?.map((permission) =>
     permission.toLowerCase()
@@ -183,20 +180,43 @@ export function Sidebar({
     return items;
   }, []);
 
+  useEffect(() => {
+    const autoOpen: Record<string, boolean> = {};
+
+    filteredItems.forEach((item) => {
+      if (!item.isCollapsable || !item.items?.length) return;
+
+      const childActive = item.items.some(
+        (s) =>
+          pathname === s.href || pathname.startsWith(`${s.href}/`)
+      );
+
+      if (childActive) {
+        autoOpen[item.id] = true;
+      }
+    });
+
+    if (Object.keys(autoOpen).length > 0) {
+      setOpenSections((prev) => ({ ...prev, ...autoOpen }));
+    }
+  }, [pathname]);
+
   const handleLogout = () => {
     Cookies.remove("session_token");
     logOut();
     router.push("/login");
   };
 
+  if (!hasHydrated) return null;
+
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full flex-col bg-white",
+        "flex h-full w-full flex-col bg-white md:h-screen md:w-70 md:border-r",
         className,
       )}
     >
-      <div className="flex shrink-0 flex-col items-center gap-3 border-b px-6 py-6">
+      <div className="flex flex-col items-center gap-3 border-b px-6 py-6">
         <Avatar className="h-16 w-16">
           <AvatarFallback className="bg-gray-200 text-gray-600">
             <UserCog className="h-8 w-8" />
@@ -204,16 +224,14 @@ export function Sidebar({
         </Avatar>
         <div className="text-center">
           <h2 className="text-lg font-semibold capitalize">
-            {role || "Guest"}
+            {user?.firstName || "Guest"}
+            {user?.lastName || ""}
           </h2>
           <p className="text-xs">Portal Access</p>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600 text-white">
-          View Profile
-        </Button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref =
@@ -229,40 +247,39 @@ export function Sidebar({
                 (s) =>
                   pathname === s.href || pathname.startsWith(`${s.href}/`)
               );
-              const isOpen = childActive || activeId === item.id;
+              const isOpen = openSections[item.id] ?? childActive;
 
               return (
                 <Collapsible
                   key={item.id}
                   open={isOpen}
                   onOpenChange={(open) =>
-                    setActiveId(open ? item.id : undefined)
+                    setOpenSections((prev) => ({ ...prev, [item.id]: open }))
                   }
                   className="space-y-1"
                 >
-                  <div
-                    className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isOpen
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </div>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">Toggle {item.label}</span>
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        isOpen
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-gray-700 hover:bg-gray-50",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                      {isOpen ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Toggle {item.label}</span>
+                    </button>
+                  </CollapsibleTrigger>
 
                   <CollapsibleContent>
                     <div className="ml-6 flex flex-col gap-1">
@@ -315,7 +332,7 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="shrink-0 border-t px-3 py-4">
+      <div className="border-t px-3 py-4">
         <Button
           type="button"
           variant="ghost"

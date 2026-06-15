@@ -24,6 +24,7 @@ import {
 	formatEmploymentStatus,
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
+import { getApplicantFullName } from "@/lib/applicantName";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,13 +91,7 @@ export function MobileApplicantDetail({
 }: MobileApplicantDetailProps) {
 	if (!selectedMessage) return null;
 
-	const fullName = [
-		selectedMessage.firstName,
-		selectedMessage.middleName,
-		selectedMessage.lastName,
-	]
-		.filter(Boolean)
-		.join(" ");
+	const fullName = getApplicantFullName(selectedMessage);
 	const email = (selectedMessage.email ?? "").toString();
 	const age = selectedMessage.age;
 	const educationLabel = formatEducationalBackground(
@@ -126,7 +121,10 @@ export function MobileApplicantDetail({
 				>
 					<ChevronLeft className="h-6 w-6 text-slate-900" />
 				</Button>
-				<h2 className="font-bold text-lg text-slate-900 truncate">
+				<h2
+					className="font-bold text-lg text-slate-900 line-clamp-2 break-words min-w-0 flex-1"
+					title={fullName || undefined}
+				>
 					{fullName || "—"}
 				</h2>
 			</div>

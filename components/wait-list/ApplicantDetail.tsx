@@ -27,6 +27,7 @@ import {
 	formatEmploymentStatus,
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
+import { getApplicantFullName } from "@/lib/applicantName";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,13 +127,7 @@ export function ApplicantDetail({
 		);
 	}
 
-	const fullName = [
-		selectedMessage.firstName,
-		selectedMessage.middleName,
-		selectedMessage.lastName,
-	]
-		.filter(Boolean)
-		.join(" ");
+	const fullName = getApplicantFullName(selectedMessage);
 	const email = (selectedMessage.email ?? "").toString();
 	const phoneNumber = (selectedMessage.phoneNumber ?? "").toString();
 	const employmentLabel = formatEmploymentStatus(selectedMessage.employmentStatus);
@@ -168,7 +163,10 @@ export function ApplicantDetail({
 							</AvatarFallback>
 						</Avatar>
 						<div className="space-y-2 min-w-0">
-							<h2 className="text-xl font-black text-slate-700 tracking-tight truncate">
+							<h2
+								className="text-xl font-black text-slate-700 tracking-tight break-words line-clamp-2"
+								title={fullName || undefined}
+							>
 								{fullName || "—"}
 							</h2>
 							<div className="flex gap-2 flex-wrap">
@@ -215,28 +213,27 @@ export function ApplicantDetail({
 					</div>
 
 					<div className="flex gap-3">
-						<Button
-							onClick={() => createAccount(selectedMessage._id)}
-							disabled={isCreating || selectedMessage.alreadyOnEdge}
-							title={
-								selectedMessage.alreadyOnEdge
-									? "This applicant already has an account on Edge"
-									: undefined
-							}
-							className={cn(
-								"rounded-xl h-10 px-6 font-bold text-white shadow-md",
-								selectedMessage.alreadyOnEdge
-									? "bg-rose-600 hover:bg-rose-600 disabled:opacity-100 disabled:bg-rose-600"
-									: "bg-blue-600 hover:bg-blue-700"
-							)}
-						>
-							{isCreating ? (
-								<Loader2 className="animate-spin" />
-							) : (
-								<UserPlus size={16} className="mr-2" />
-							)}
-							{selectedMessage.alreadyOnEdge ? "Already on Edge" : "Create Account"}
-						</Button>
+						{selectedMessage.alreadyOnEdge ? (
+							<Badge
+								variant="outline"
+								className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase h-10 px-6"
+							>
+								Account Created
+							</Badge>
+						) : (
+							<Button
+								onClick={() => createAccount(selectedMessage._id)}
+								disabled={isCreating}
+								className="rounded-xl h-10 px-6 font-bold text-white shadow-md bg-blue-600 hover:bg-blue-700"
+							>
+								{isCreating ? (
+									<Loader2 className="animate-spin" />
+								) : (
+									<UserPlus size={16} className="mr-2" />
+								)}
+								Create Account
+							</Button>
+						)}
 						<Button
 							onClick={() => onDelete(selectedMessage._id)}
 							disabled={isDeleting}

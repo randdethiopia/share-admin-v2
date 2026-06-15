@@ -13,6 +13,7 @@ import {
 	formatEducationalBackground,
 	formatEmploymentStatus,
 } from "@/lib/api/applicantLabels";
+import { getApplicantFullName } from "@/lib/applicantName";
 import { cn } from "@/lib/utils";
 
 function defaultGetInitials(name: string) {
@@ -66,9 +67,7 @@ const ApplicantRow = React.memo(function ApplicantRow({
 	getInitials,
 	getStatusColor,
 }: ApplicantRowProps) {
-	const fullName = [message.firstName, message.middleName, message.lastName]
-		.filter(Boolean)
-		.join(" ");
+	const fullName = getApplicantFullName(message);
 	const email = (message.email ?? "").toString();
 	const employmentLabel = formatEmploymentStatus(message.employmentStatus);
 	const educationLabel = formatEducationalBackground(message.educationalBackground);
@@ -90,7 +89,10 @@ const ApplicantRow = React.memo(function ApplicantRow({
 					</AvatarFallback>
 				</Avatar>
 				<div className="min-w-0 flex-1">
-					<div className="font-semibold text-slate-900 text-sm truncate">
+					<div
+						className="font-semibold text-slate-900 text-sm line-clamp-2 break-words"
+						title={fullName || undefined}
+					>
 						{fullName || "—"}
 					</div>
 					<div className="text-[11px] text-slate-500 flex items-center gap-1">
