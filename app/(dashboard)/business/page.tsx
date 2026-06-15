@@ -202,10 +202,17 @@ export default function BusinessPage() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<PageHeader title="Business" description="See all your businesses" />
+			<div className="px-4">
+				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
+					Business
+				</h1>
+				<p className="text-zinc-600 text-sm font-medium">
+					See all your businesses
+				</p>
+			</div>
 
-			<AdminCard className="p-4 sm:p-6 md:p-8">
-				<div className="mb-8 flex flex-col justify-between gap-4 md:flex-row">
+			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
+				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 						<Input

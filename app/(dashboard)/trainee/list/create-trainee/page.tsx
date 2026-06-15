@@ -44,7 +44,7 @@ export default function CreateTraineePage() {
 	};
 
 	return (
-		<div className="bg-[#E2EDF8]">
+		<div className="min-h-screen bg-[#E2EDF8] p-4 sm:p-6 md:p-8">
 			<div className="max-w-4xl mx-auto space-y-6">
 				<div className="space-y-1">
 					<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">

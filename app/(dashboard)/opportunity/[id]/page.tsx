@@ -39,7 +39,7 @@ export default function OpportunityDetailPage() {
   }
 
   return (
-    <div className="bg-[#E2EDF8]">
+    <div className="min-h-screen bg-[#E2EDF8] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <div className="rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div className="p-6 sm:p-8">

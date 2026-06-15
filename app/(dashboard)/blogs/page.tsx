@@ -123,7 +123,7 @@ export default function BlogsPage() {
 	const isWorking = isApproving || isRejecting;
 
 	return (
-		<div className="bg-[#E2EDF8] space-y-6">
+		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
 			<div className="px-4">
 				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
 					Blog Requests

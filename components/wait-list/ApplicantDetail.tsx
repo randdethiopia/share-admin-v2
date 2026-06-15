@@ -80,7 +80,6 @@ function defaultGetStatusColor(status: string) {
 
 export type ApplicantDetailProps = {
 	selectedMessage: ApplicantListItem | null;
-	variant?: "split" | "sheet";
 	getInitials?: (name: string) => string;
 	getStatusColor?: (status: string) => string;
 	deleteMessage?: (id: string) => void;
@@ -88,7 +87,6 @@ export type ApplicantDetailProps = {
 
 export function ApplicantDetail({
 	selectedMessage,
-	variant = "split",
 	getInitials = defaultGetInitials,
 	getStatusColor = defaultGetStatusColor,
 	deleteMessage,
@@ -112,9 +110,8 @@ export function ApplicantDetail({
 	);
 
 	if (!selectedMessage) {
-		if (variant === "sheet") return null;
 		return (
-			<div className="hidden md:flex flex-1 min-h-0 items-center justify-center bg-white rounded-3xl m-4 border-2 border-dashed border-slate-200">
+			<div className="hidden md:flex flex-1 items-center justify-center bg-white rounded-3xl m-4 border-2 border-dashed border-slate-200">
 				<div className="text-center space-y-4">
 					<div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-slate-200">
 						<Inbox size={40} />
@@ -146,13 +143,7 @@ export function ApplicantDetail({
 				: "";
 
 	return (
-		<div
-			className={cn(
-				variant === "sheet"
-					? "flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white"
-					: "hidden md:flex flex-1 flex-col bg-white rounded-3xl m-4 shadow-sm overflow-hidden border border-slate-100 min-h-0"
-			)}
-		>
+		<div className="hidden md:flex flex-1 flex-col bg-white rounded-3xl m-4 shadow-sm overflow-hidden border border-slate-100">
 			{/* Header */}
 			<div className="p-10 pb-6 border-b border-slate-100">
 				<div className="flex justify-between items-start gap-6">
@@ -261,7 +252,7 @@ export function ApplicantDetail({
 			</div>
 
 			{/* Tabs */}
-			<div className="flex-1 min-h-0 overflow-y-auto p-10 pt-6">
+			<div className="flex-1 overflow-y-auto p-10 pt-6">
 				<Tabs defaultValue="personal" className="w-full">
 					<TabsList className="bg-slate-50 p-1 rounded-2xl mb-8">
 						<TabsTrigger
