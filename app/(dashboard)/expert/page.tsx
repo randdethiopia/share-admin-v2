@@ -6,9 +6,6 @@ import Link from "next/link";
 import api from "@/lib/api";
 import type { AdvisorProfileType } from "@/lib/api";
 import PaginationControls from "@/components/shared/PaginationControls";
-import { AdminCard } from "@/components/shared/admin/AdminCard";
-import { FilterField } from "@/components/shared/admin/FilterField";
-import { PageHeader } from "@/components/shared/admin/PageHeader";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,13 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -46,7 +36,7 @@ import {
 } from "@/components/ui/table";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, MoreHorizontal, Search, X } from "lucide-react";
+import { Check, Eye, Loader2, Search, X } from "lucide-react";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
 
@@ -75,62 +65,6 @@ function formatDate(value?: string) {
 	return d.toLocaleDateString();
 }
 
-function ExpertActionsMenu({
-	advisor,
-	onApprove,
-	onReject,
-	disabled,
-}: {
-	advisor: AdvisorProfileType;
-	onApprove: (id: string) => void;
-	onReject: (id: string) => void;
-	disabled?: boolean;
-}) {
-	const status = normalizeStatus(advisor.status);
-	const showApprove = status === "PENDING" || status === "REJECTED";
-	const showReject = status === "PENDING" || status === "APPROVED";
-	const showStatusActions = showApprove || showReject;
-
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					disabled={disabled}
-					className="h-9 w-9 rounded-lg border border-transparent text-slate-500 hover:bg-slate-100 hover:border-slate-200/80 hover:text-slate-700"
-				>
-					<MoreHorizontal className="h-4 w-4" />
-					<span className="sr-only">Open actions</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-48 rounded-xl">
-				<DropdownMenuItem asChild>
-					<Link href={`/expert/${advisor._id}`} className="flex items-center">
-						<Eye className="mr-2 h-4 w-4" />
-						View Details
-					</Link>
-				</DropdownMenuItem>
-
-				{showStatusActions && <DropdownMenuSeparator />}
-
-				{showApprove && (
-					<DropdownMenuItem onClick={() => onApprove(advisor._id)}>
-						<Check className="mr-2 h-4 w-4 text-emerald-600" />
-						Approve
-					</DropdownMenuItem>
-				)}
-				{showReject && (
-					<DropdownMenuItem onClick={() => onReject(advisor._id)}>
-						<X className="mr-2 h-4 w-4 text-red-600" />
-						Reject
-					</DropdownMenuItem>
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-}
-
 export default function ExpertPage() {
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>("all");
@@ -147,8 +81,19 @@ export default function ExpertPage() {
 		error,
 	} = api.AdvisorProfile.GetList.useQuery();
 
-	const approveMutation = api.AdvisorProfile.Approve.useMutation();
-	const rejectMutation = api.AdvisorProfile.Reject.useMutation();
+	const approveMutation = api.AdvisorProfile.Approve.useMutation({
+		onSuccess: () => {
+			setApproveOpen(false);
+			setSelectedId(null);
+		},
+	});
+
+	const rejectMutation = api.AdvisorProfile.Reject.useMutation({
+		onSuccess: () => {
+			setRejectOpen(false);
+			setSelectedId(null);
+		},
+	});
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -194,38 +139,13 @@ export default function ExpertPage() {
 
 	const confirmApprove = () => {
 		if (!selectedId) return;
-		approveMutation.mutate(selectedId, {
-			onSuccess: () => {
-				setApproveOpen(false);
-				setSelectedId(null);
-			},
-		});
+		approveMutation.mutate(selectedId);
 	};
 
 	const confirmReject = () => {
 		if (!selectedId) return;
-		rejectMutation.mutate(selectedId, {
-			onSuccess: () => {
-				setRejectOpen(false);
-				setSelectedId(null);
-			},
-		});
+		rejectMutation.mutate(selectedId);
 	};
-
-	const renderExpertActions = (advisor: AdvisorProfileType) => (
-		<ExpertActionsMenu
-			advisor={advisor}
-			onApprove={openApprove}
-			onReject={openReject}
-			disabled={isMutating}
-		/>
-	);
-
-	const tableHeadClass =
-		"h-11 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:px-8";
-
-	const inputSurfaceClass =
-		"bg-slate-50 border border-slate-200/80 h-11 rounded-lg text-sm placeholder:text-slate-400";
 
 	const emptyState = (
 		<div className="h-40 flex items-center justify-center text-sm text-gray-500">
@@ -234,7 +154,7 @@ export default function ExpertPage() {
 	);
 
 	return (
-		<div className="space-y-6">
+		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
 			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -287,15 +207,22 @@ export default function ExpertPage() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<PageHeader title="Expert" description="See all your experts" />
+			<div className="px-4">
+				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
+					Expert
+				</h1>
+				<p className="text-zinc-600 text-sm font-medium">
+					See all your experts
+				</p>
+			</div>
 
-			<AdminCard className="p-4 sm:p-6 md:p-10">
+			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
 				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
-						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 						<Input
 							placeholder="Search"
-							className={cn("pl-11", inputSurfaceClass)}
+							className="pl-11 bg-[#F3F8FF] border-none h-12 rounded-xl text-sm"
 							value={search}
 							onChange={(e) => {
 								setSearch(e.target.value);
@@ -304,7 +231,8 @@ export default function ExpertPage() {
 						/>
 					</div>
 
-					<FilterField label="Filter Status">
+					<div className="flex flex-col sm:flex-row sm:items-center gap-3">
+						<span className="text-xs font-bold text-gray-400">Status</span>
 						<Select
 							value={status}
 							onValueChange={(value) => {
@@ -320,12 +248,7 @@ export default function ExpertPage() {
 								}
 							}}
 						>
-							<SelectTrigger
-								className={cn(
-									"w-full sm:w-40 md:w-36 text-xs font-semibold",
-									inputSurfaceClass
-								)}
-							>
+							<SelectTrigger className="w-full sm:w-40 md:w-36 bg-[#F3F8FF] border-none h-12 rounded-xl text-xs font-bold">
 								<SelectValue placeholder="All" />
 							</SelectTrigger>
 							<SelectContent>
@@ -336,7 +259,7 @@ export default function ExpertPage() {
 								<SelectItem value="REJECTED">Rejected</SelectItem>
 							</SelectContent>
 						</Select>
-					</FilterField>
+					</div>
 				</div>
 
 				{/* Mobile: Card list */}
@@ -399,8 +322,43 @@ export default function ExpertPage() {
 									</div>
 								</div>
 
-								<div className="mt-4 flex items-center justify-end">
-									{renderExpertActions(advisor)}
+								<div className="mt-4 flex items-center gap-2">
+									<Button
+										asChild
+										variant="ghost"
+										size="icon"
+										title="View details"
+										className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
+									>
+										<Link href={`/expert/${advisor._id}`}>
+											<Eye size={16} />
+										</Link>
+									</Button>
+
+									{normalizeStatus(advisor.status) === "PENDING" && (
+										<>
+											<Button
+												variant="ghost"
+												size="icon"
+												title="Reject"
+												onClick={() => openReject(advisor._id)}
+												disabled={isMutating}
+												className="h-9 w-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100"
+											>
+												<X size={16} />
+											</Button>
+											<Button
+												variant="ghost"
+												size="icon"
+												title="Approve"
+												onClick={() => openApprove(advisor._id)}
+												disabled={isMutating}
+												className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+											>
+												<Check size={16} />
+											</Button>
+										</>
+									)}
 								</div>
 							</div>
 						))
@@ -411,12 +369,18 @@ export default function ExpertPage() {
 				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
 					<div className="overflow-x-auto">
 						<Table>
-							<TableHeader className="bg-slate-50 border-b border-slate-200/80">
+							<TableHeader className="bg-[#D6E6F2]">
 								<TableRow className="border-none hover:bg-transparent">
-									<TableHead className={tableHeadClass}>Expert</TableHead>
-									<TableHead className={tableHeadClass}>Approved Date</TableHead>
-									<TableHead className={tableHeadClass}>Status</TableHead>
-									<TableHead className={cn(tableHeadClass, "text-center")}>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Expert
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Approved Date
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
+										Status
+									</TableHead>
+									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
 										Actions
 									</TableHead>
 								</TableRow>
@@ -424,10 +388,7 @@ export default function ExpertPage() {
 							<TableBody>
 								{isLoading ? (
 									<TableRow>
-										<TableCell
-											colSpan={4}
-											className="h-40 text-center text-slate-500"
-										>
+										<TableCell colSpan={4} className="h-40 text-center">
 											<Loader2 className="animate-spin inline mr-2" /> Loading...
 										</TableCell>
 									</TableRow>
@@ -440,10 +401,7 @@ export default function ExpertPage() {
 									</TableRow>
 								) : filteredData.length === 0 ? (
 									<TableRow>
-										<TableCell
-											colSpan={4}
-											className="h-40 text-center text-sm text-slate-500"
-										>
+										<TableCell colSpan={4} className="h-40 text-center text-sm text-gray-500">
 											No advisors found.
 										</TableCell>
 									</TableRow>
@@ -453,12 +411,10 @@ export default function ExpertPage() {
 											key={advisor._id}
 											className="hover:bg-slate-50/50 border-gray-50"
 										>
-											<TableCell className="px-6 py-4">
+											<TableCell className="px-6 py-4 text-xs font-bold text-gray-600">
 												<div className="flex flex-col">
-													<span className="truncate text-slate-900 font-bold">
-														{advisor.fullName || "—"}
-													</span>
-													<span className="truncate text-slate-500 text-xs font-medium">
+													<span className="truncate">{advisor.fullName || "—"}</span>
+													<span className="text-[11px] text-gray-400 font-medium truncate">
 														{advisor.email || advisor.phoneNumber || "—"}
 													</span>
 												</div>
@@ -476,9 +432,43 @@ export default function ExpertPage() {
 													{normalizeStatus(advisor.status) || "PENDING"}
 												</Badge>
 											</TableCell>
-											<TableCell className="px-6 py-4">
-												<div className="flex justify-center">
-													{renderExpertActions(advisor)}
+											<TableCell className="px-6 py-4 text-center">
+												<div className="flex items-center justify-center gap-2">
+													<Button
+														asChild
+														variant="ghost"
+														size="icon"
+														title="View details"
+														className="h-8 w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
+													>
+														<Link href={`/expert/${advisor._id}`}>
+															<Eye size={16} />
+														</Link>
+													</Button>
+													{normalizeStatus(advisor.status) === "PENDING" && (
+														<>
+															<Button
+																variant="ghost"
+																size="icon"
+																title="Reject"
+																onClick={() => openReject(advisor._id)}
+																disabled={isMutating}
+																className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+															>
+																<X size={16} />
+															</Button>
+															<Button
+																variant="ghost"
+																size="icon"
+																title="Approve"
+																onClick={() => openApprove(advisor._id)}
+																disabled={isMutating}
+																className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+															>
+																<Check size={16} />
+															</Button>
+														</>
+													)}
 												</div>
 											</TableCell>
 										</TableRow>
@@ -518,7 +508,7 @@ export default function ExpertPage() {
 						disabled={isLoading || isError}
 					/>
 				</div>
-			</AdminCard>
+			</div>
 		</div>
 	);
 }

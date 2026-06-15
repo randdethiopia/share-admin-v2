@@ -111,7 +111,7 @@ export default function ExpertDetailPage() {
 
 	if (!id) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm text-gray-600">Missing expert id.</p>
 					<Button
@@ -128,7 +128,7 @@ export default function ExpertDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto h-64 flex items-center justify-center">
 					<Loader2 className="animate-spin text-blue-600" />
 				</div>
@@ -138,7 +138,7 @@ export default function ExpertDetailPage() {
 
 	if (isError) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm font-semibold text-red-600">Failed to load expert</p>
 					<p className="mt-1 text-sm text-gray-600">
@@ -159,7 +159,7 @@ export default function ExpertDetailPage() {
 
 	if (!advisor) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50 text-center">
 					<p className="text-sm text-gray-600">Expert not found.</p>
 					<Button
@@ -184,7 +184,7 @@ export default function ExpertDetailPage() {
 	const cvUrl = getFileUrl(advisor.cv);
 
 	return (
-		<div className="bg-white">
+		<div className="min-h-screen bg-white">
 			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<AlertDialogContent className="rounded-3xl sm:max-w-md">
 					<AlertDialogHeader>

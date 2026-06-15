@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronDown, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import api, { getWaitListServerSideFn } from "@/lib/api";
 import { formatEmploymentStatus } from "@/lib/api/applicantLabels";
-
+import { applicantToExportRow, exportApplicantsToDefaultCsv } from "@/lib/applicantExport";
 import { AnalyticsSection } from "@/components/wait-list/analyticsSection";
 import { ApplicantsList } from "@/components/wait-list/ApplicantsList";
 import { ApplicantDetail } from "@/components/wait-list/ApplicantDetail";
@@ -35,7 +35,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { ApplicantListItem } from "@/lib/api/waitlist";
 import { getApplicantFullName } from "@/lib/applicantName";
-
 
 type ReportFormat = React.ComponentProps<typeof AnalyticsSection>["reportFormat"];
 
@@ -369,7 +368,10 @@ export default function WaitListPage() {
 		);
 	}, [filteredApplicants, paginationMeta.startIndex, paginationMeta.endIndexExclusive]);
 
-	
+	const previewRows = React.useMemo(
+		() => filteredApplicants.map(applicantToExportRow),
+		[filteredApplicants]
+	);
 
 	React.useEffect(() => {
 		if (paginationMeta.safePage !== page) {
@@ -404,7 +406,7 @@ export default function WaitListPage() {
 					setReportFormat={setReportFormat}
 					selectedFields={selectedFields}
 					setSelectedFields={setSelectedFields}
-					
+					filteredMessages={previewRows}
 				/>
 			</div>
 

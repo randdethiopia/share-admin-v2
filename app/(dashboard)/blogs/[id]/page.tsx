@@ -40,7 +40,7 @@ export default function BlogDetailPage() {
 
 	if (!id) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-blue-50">
 					<div className="text-sm text-red-600 font-semibold">Missing blog id.</div>
 					<div className="mt-3">
@@ -55,7 +55,7 @@ export default function BlogDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="h-64 flex items-center justify-center">
 					<Loader2 className="animate-spin text-blue-600 w-10 h-10" />
 				</div>
@@ -69,7 +69,7 @@ export default function BlogDetailPage() {
 				?.message || "Blog not found.";
 
 		return (
-			<div className="bg-[#E2EDF8]">
+			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-blue-50">
 					<div className="text-center text-red-600 font-bold">{message}</div>
 					<div className="mt-4 flex justify-center">
@@ -85,7 +85,7 @@ export default function BlogDetailPage() {
 	const status = normalizeStatus(blog.status);
 
 	return (
-		<div className="bg-[#E2EDF8] space-y-6">
+		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
 			<div className="px-4 flex flex-col gap-2">
 				<div className="flex items-center justify-between gap-3">
 					<button

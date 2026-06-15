@@ -32,6 +32,7 @@ export interface MentorProfileType extends MentorProfileFormType {
 	approvedBy: string;
 	approvedAt?: string | null;
 	createdAt?: string;
+	consent: string;
 }
 
 function getApprovedAt(res: unknown) {
