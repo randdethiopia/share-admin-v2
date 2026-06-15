@@ -148,8 +148,8 @@ export function ApplicantsList({
 	const selectedId = selectedMessage?._id ?? null;
 
 	return (
-		<div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r bg-slate-50 flex flex-col h-full">
-			<ScrollArea className="flex-1">
+		<div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r bg-slate-50 flex flex-col h-full min-h-0">
+			<ScrollArea className="flex-1 min-h-0">
 				<div className="p-4 space-y-3">
 					{/* 1) LOADING STATE */}
 					{isLoading && (

@@ -91,7 +91,7 @@ export default function InvitationsPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
+		<div className="bg-[#E2EDF8] space-y-6">
 			<div className="px-4">
 				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
 					Job Invitations
@@ -99,7 +99,7 @@ export default function InvitationsPage() {
 				<p className="text-zinc-600 text-sm font-medium">See your Invitations</p>
 			</div>
 
-			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
+			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50">
 				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

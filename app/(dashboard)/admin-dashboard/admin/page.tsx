@@ -305,6 +305,75 @@ export default function AdminManagementPage() {
 			</AlertDialog>
 
 
+			<Sheet open={detailsOpen} onOpenChange={handleDetailsOpenChange}>
+				<SheetContent
+					side="right"
+					className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+				>
+					<div className="flex h-full min-h-0 flex-col">
+						<SheetHeader className="space-y-2 border-b border-slate-200/80 px-6 pb-5 pt-6 text-left">
+							<SheetTitle className="text-xl font-bold text-slate-900">
+								{viewingAdmin
+									? getAdminDisplayName(viewingAdmin)
+									: "Admin details"}
+							</SheetTitle>
+							{viewingAdmin ? (
+								<>
+									<SheetDescription className="text-sm text-slate-500">
+										{viewingAdmin.email || "-"}
+									</SheetDescription>
+									<Badge
+										className={cn(
+											"mt-1 w-fit rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
+											statusBadgeClass(viewingAdmin.status)
+										)}
+									>
+										{getStatusLabel(viewingAdmin.status)}
+									</Badge>
+								</>
+							) : null}
+						</SheetHeader>
+
+						{viewingAdmin ? (
+							<div className="flex-1 overflow-y-auto px-6 py-5">
+								<div className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-1">
+									<SheetDetailRow label="Phone">
+										{viewingAdmin.phoneNumber || "-"}
+									</SheetDetailRow>
+									<SheetDetailRow label="Created">
+										{formatDate(viewingAdmin.createdAt)}
+									</SheetDetailRow>
+									<SheetDetailRow label="Approved">
+										{formatDate(viewingAdmin.approvedAt)}
+									</SheetDetailRow>
+								</div>
+
+								<div className="mt-5 space-y-2">
+									<p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+										Roles
+									</p>
+									{viewingAdmin.roles?.length ? (
+										<div className="flex flex-wrap gap-2">
+											{viewingAdmin.roles.map((role) => (
+												<Badge
+													key={role._id}
+													variant="secondary"
+													className="rounded-md px-2.5 py-0.5 text-xs font-medium"
+												>
+													{role.name}
+												</Badge>
+											))}
+										</div>
+									) : (
+										<p className="text-sm text-slate-500">No roles assigned.</p>
+									)}
+								</div>
+							</div>
+						) : null}
+					</div>
+				</SheetContent>
+			</Sheet>
+
 			<AssignRoleModal
 				open={!!assignTarget}
 				admin={assignTarget}

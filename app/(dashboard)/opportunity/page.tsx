@@ -10,7 +10,7 @@ export default function OpportunitiesPage() {
   const { data, isLoading } = api.Opportunity.GetList.useQuery();
 
   return (
-    <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+    <div className="bg-[#E2EDF8]">
       
       <div className="flex justify-between items-center mb-6 px-4">
         <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
@@ -23,7 +23,7 @@ export default function OpportunitiesPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-[3rem] p-10 shadow-sm min-h-[80vh]">
+      <div className="bg-white rounded-[3rem] p-10 shadow-sm">
         {isLoading ? (
           <CardGridSkeleton count={10} />
         ) : (

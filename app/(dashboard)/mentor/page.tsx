@@ -169,8 +169,8 @@ export default function MentorProfilePage() {
 				</p>
 			</div>
 
-			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
-				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+			<AdminCard className="p-4 sm:p-6 md:p-8">
+				<div className="mb-8 flex flex-col justify-between gap-4 md:flex-row">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 						<Input
@@ -410,7 +410,112 @@ export default function MentorProfilePage() {
 						</Table>
 					</div>
 				</div>
-			</div>
+			</AdminCard>
+
+			<Sheet open={detailsOpen} onOpenChange={handleDetailsOpenChange}>
+				<SheetContent
+					side="right"
+					className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+				>
+					<div className="flex h-full min-h-0 flex-col">
+						<SheetHeader className="space-y-2 border-b border-slate-200/80 px-6 pb-5 pt-6 text-left">
+							<SheetTitle className="text-xl font-bold text-slate-900">
+								{viewingMentor?.fullName || "Mentor details"}
+							</SheetTitle>
+							{viewingMentor ? (
+								<>
+									<SheetDescription className="text-sm text-slate-500">
+										{viewingMentor.email || "-"}
+									</SheetDescription>
+									<Badge
+										className={cn(
+											"mt-1 w-fit rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
+											statusBadgeClass(viewingMentor.status)
+										)}
+									>
+										{viewingMentor.status || "-"}
+									</Badge>
+								</>
+							) : null}
+						</SheetHeader>
+
+						{viewingMentor ? (
+							<>
+							<div className="flex-1 overflow-y-auto px-6 py-5">
+								<div className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-1">
+									<SheetDetailRow label="Phone">
+										{viewingMentor.phoneNumber || "-"}
+									</SheetDetailRow>
+									{hasText(viewingMentor.gender) && (
+										<SheetDetailRow label="Gender">
+											{viewingMentor.gender!.trim()}
+										</SheetDetailRow>
+									)}
+									{hasText(viewingMentor.country) && (
+										<SheetDetailRow label="Country">
+											{viewingMentor.country!.trim()}
+										</SheetDetailRow>
+									)}
+									{hasText(viewingMentor.jobType) && (
+										<SheetDetailRow label="Job Type">
+											{viewingMentor.jobType!.trim()}
+										</SheetDetailRow>
+									)}
+									<SheetDetailRow label="Net Worth">
+										{formatNetWorth(viewingMentor.netWorth)}
+									</SheetDetailRow>
+									<SheetDetailRow label="Consent Status">
+										<Badge
+											className={cn(
+												"rounded-md border-none px-2.5 py-0.5 text-[10px] font-bold shadow-none",
+												hasConsent(viewingMentor)
+													? "bg-[#E6F4EA] text-[#1E8E3E]"
+													: "bg-[#FDECEC] text-[#B91C1C]"
+											)}
+										>
+											{hasConsent(viewingMentor)
+												? "Consented"
+												: "No Consent"}
+										</Badge>
+									</SheetDetailRow>
+								</div>
+							</div>
+
+							{(sheetActionVisibility.showApprove ||
+								sheetActionVisibility.showReject) && (
+								<SheetFooter className="mt-0 flex-row gap-3 border-t border-slate-200/80 px-6 pb-8 pt-5">
+									{sheetActionVisibility.showApprove && (
+										<Button
+											className="h-11 flex-1 bg-emerald-600 hover:bg-emerald-700"
+											disabled={isMutating}
+											onClick={() =>
+												openConfirm("approve", viewingMentor._id)
+											}
+										>
+											<Check className="mr-2 h-4 w-4" />
+											Approve
+										</Button>
+									)}
+									{sheetActionVisibility.showReject && (
+										<Button
+											variant="destructive"
+											className="h-11 flex-1"
+											disabled={isMutating}
+											onClick={() =>
+												openConfirm("reject", viewingMentor._id)
+											}
+										>
+											<X className="mr-2 h-4 w-4" />
+											Reject
+										</Button>
+									)}
+								</SheetFooter>
+							)}
+							</>
+						) : null}
+					</div>
+				</SheetContent>
+			</Sheet>
 		</div>
 	);
 }

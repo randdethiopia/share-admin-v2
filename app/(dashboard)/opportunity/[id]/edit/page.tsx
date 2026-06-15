@@ -103,7 +103,7 @@ export default function EditOpportunityPage() {
   const effectivePreviewUrl = previewUrl || item?.image?.url || "";
 
   return (
-    <div className="min-h-screen bg-[#E2EDF8]">
+    <div className="bg-[#E2EDF8]">
       <div className="py-10 px-8">
         <h1 className="text-[28px] font-bold text-black">Edit Opportunity</h1>
         <p className="text-zinc-500 text-sm">Update details for this opportunity</p>

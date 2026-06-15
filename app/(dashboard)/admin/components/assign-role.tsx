@@ -70,7 +70,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
           onOpenChange(false);
         },
         onError: () => {
-          toast.error("Failed to assign roles");
+          toast.error("Failed to update roles");
         },
       }
     );

@@ -39,25 +39,21 @@ function resolveDashboardTitle(pathname: string): string {
 export function DashboardShell({ children }: DashboardShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
   const pathname = usePathname();
-
-  const currentTitle = React.useMemo(
+   const currentTitle = React.useMemo(
     () => resolveDashboardTitle(pathname),
     [pathname]
   );
 
   return (
-    <div className="flex min-h-screen bg-[#E2EDF8]">
-      
+    <div className="h-dvh w-full overflow-hidden bg-slate-50 md:grid md:grid-cols-[16rem_minmax(0,1fr)]">
       <aside
-        className="fixed hidden h-full w-64 border-r bg-white md:block"
+        className="hidden w-64 shrink-0 self-start overflow-hidden border-r bg-white md:sticky md:top-0 md:block md:h-dvh md:max-h-dvh"
         aria-label="Main navigation"
       >
         <Sidebar />
       </aside>
 
-      
-      <div className="flex flex-1 flex-col md:ml-64">
-        
+      <div className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <Sheet
             open={isMobileNavOpen}
@@ -90,8 +86,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </span>
         </header>
 
-        <main className="min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden">
-          {children}
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
+          <div className="p-4 md:p-8">{children}</div>
         </main>
       </div>
     </div>

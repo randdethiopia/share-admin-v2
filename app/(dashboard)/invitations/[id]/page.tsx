@@ -79,7 +79,7 @@ export default function InvitationDetailPage() {
 
 	if (!id) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+			<div className="bg-[#E2EDF8]">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm text-gray-600">Missing invitation id.</p>
 				</div>
@@ -89,7 +89,7 @@ export default function InvitationDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+			<div className="bg-[#E2EDF8]">
 				<div className="max-w-5xl mx-auto h-64 flex items-center justify-center">
 					<Loader2 className="animate-spin text-blue-600" />
 				</div>
@@ -99,7 +99,7 @@ export default function InvitationDetailPage() {
 
 	if (isError) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+			<div className="bg-[#E2EDF8]">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm font-semibold text-red-600">Failed to load invitation</p>
 					<p className="mt-1 text-sm text-gray-600">
@@ -120,7 +120,7 @@ export default function InvitationDetailPage() {
 
 	if (!data) {
 		return (
-			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+			<div className="bg-[#E2EDF8]">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50 text-center">
 					<p className="text-sm text-gray-600">Invitation not found.</p>
 					<Button
@@ -144,7 +144,7 @@ export default function InvitationDetailPage() {
 	const canDecide = !isAccepted && !isRejected && !isHired;
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+		<div className="bg-[#E2EDF8]">
 			<div className="space-y-6 max-w-5xl mx-auto">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
 					<div className="space-y-1">
