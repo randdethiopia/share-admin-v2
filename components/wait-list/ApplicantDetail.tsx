@@ -28,6 +28,7 @@ import {
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
 import { getApplicantFullName } from "@/lib/applicantName";
+import { formatDisplayDate } from "@/lib/formatDate";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -299,7 +300,7 @@ export function ApplicantDetail({
 							<DetailRow
 								icon={Calendar}
 								label="Birth Date"
-								value={selectedMessage.birthDate}
+								value={formatDisplayDate(selectedMessage.birthDate)}
 							/>
 							<DetailRow
 								icon={Globe}
@@ -427,11 +428,7 @@ export function ApplicantDetail({
 						<DetailRow
 							icon={Calendar}
 							label="Applied On"
-							value={
-								selectedMessage.createdAt
-									? new Date(selectedMessage.createdAt).toLocaleDateString()
-									: undefined
-							}
+							value={formatDisplayDate(selectedMessage.createdAt)}
 						/>
 					</TabsContent>
 				</Tabs>

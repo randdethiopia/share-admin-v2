@@ -25,6 +25,7 @@ import {
 	formatMaritalStatus,
 } from "@/lib/api/applicantLabels";
 import { getApplicantFullName } from "@/lib/applicantName";
+import { formatDisplayDate } from "@/lib/formatDate";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -236,7 +237,7 @@ export function MobileApplicantDetail({
 								<DetailRow
 									icon={Calendar}
 									label="Birth Date"
-									value={selectedMessage.birthDate}
+									value={formatDisplayDate(selectedMessage.birthDate)}
 								/>
 								<DetailRow
 									icon={User}

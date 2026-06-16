@@ -1,6 +1,7 @@
 import { AVAILABLE_FIELDS } from "@/components/wait-list/constants";
 import type { ApplicantListItem } from "@/lib/api/waitlist";
 import { getApplicantFullName, getApplicantNameParts } from "@/lib/applicantName";
+import { formatDisplayDate } from "@/lib/formatDate";
 
 export const CSV_EXPORT_FIELDS = [
 	"firstName",
@@ -93,6 +94,8 @@ export function getApplicantExportValue(
 
 	if (key === "city") return applicant.city?.name ?? "";
 	if (key === "subcity") return applicant.subcity?.name ?? "";
+	if (key === "birthDate") return formatDisplayDate(applicant.birthDate) ?? "";
+	if (key === "createdAt") return formatDisplayDate(applicant.createdAt) ?? "";
 
 	return csvCell((applicant as unknown as Record<string, unknown>)[key]);
 }
