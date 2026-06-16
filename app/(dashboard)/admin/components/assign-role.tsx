@@ -15,11 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AssignTarget {
   id: string;
   name: string;
   phoneNumber: string;
+  roles?: { _id: string; name: string }[];
 };
 
 interface AssignRoleModalProps {
@@ -30,12 +32,24 @@ interface AssignRoleModalProps {
 
 const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenChange }) => {
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const queryClient = useQueryClient();
 
   const { mutate: assignRole, isPending: roleAssigning } =
     api.Access.assignRole.useMutation();
   const { data: rolesData, isLoading: isRolesLoading } =
     api.Access.getRoles.useQuery();
   const roles: Role[] = rolesData?.roles ?? [];
+
+   React.useEffect(() => {
+    if (open && admin) {
+      const existingIds = (admin.roles ?? []).map((role) => role._id);
+      setSelectedRoleIds(existingIds);
+      return;
+    }
+    if (!open) {
+      setSelectedRoleIds([]);
+    }
+  }, [open, admin]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -51,7 +65,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, admin, onOpenCh
     });
   };
 
-  const handleAssignRoleSubmit = () => {
+    const handleAssignRoleSubmit = () => {
     if (!admin) return;
     if (selectedRoleIds.length === 0) {
       toast.error("Please select at least one role");
