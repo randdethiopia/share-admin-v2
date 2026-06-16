@@ -71,14 +71,11 @@ const useAuthStore = create<State & Action>()(
 
        
         logOut() {
-          set(() => ({
-            _id: null,
-            email: null,
-            accessToken: null,
-            role: null,
-            permissions: null,
-          }));
-          Cookies.remove("session_token");  
+          Cookies.remove("session_token");
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("admin-auth-store");
+            window.location.replace("/login");
+          }
         },
 
         setHasHydrated: () => set({ hasHydrated: true }),

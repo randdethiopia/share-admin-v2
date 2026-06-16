@@ -2,7 +2,7 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import useAuthStore from '@/store/useAuthStore' // 1. Import your memory store
 
-export default function AxiosConfig(signOut: () => void) {
+export default function AxiosConfig(logOut: () => void) {
   const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et"
   axios.defaults.baseURL = url
 
@@ -68,7 +68,7 @@ export default function AxiosConfig(signOut: () => void) {
     (error) => {
       // 401: invalid/expired session — sign out. 403: forbidden resource — let callers show UI.
       if (error.response?.status === 401) {
-        signOut();
+        logOut();
       }
       return Promise.reject(error);
     }

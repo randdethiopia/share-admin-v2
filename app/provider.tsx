@@ -4,9 +4,7 @@ import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import AxiosConfig from "@/lib/axios";
-import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
-import Cookies from "js-cookie";
 
 export default function Providers({
   children,
@@ -29,22 +27,15 @@ export default function Providers({
         },
       })
   );
-  const router = useRouter();
-  const { logOut } = useAuthStore();
+  const logOut = useAuthStore((s) => s.logOut);
 
   React.useEffect(() => {
-    // Initialize Axios Interceptors
-    const cleanup = AxiosConfig(() => {
-      // SignOut Callback
-      logOut();
-      Cookies.remove("session_token");
-      router.push("/login"); // Redirect to login on 401
-    });
+    const cleanup = AxiosConfig(logOut);
 
     return () => {
       cleanup?.();
     };
-  }, [logOut, router]);
+  }, [logOut]);
 
   return (
     <QueryClientProvider client={queryClient}>

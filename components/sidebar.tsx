@@ -1,7 +1,6 @@
 "use client";
-import Cookies from "js-cookie";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
 import {
   LayoutDashboard,
@@ -116,7 +115,6 @@ export function Sidebar({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const pathname = usePathname();
-  const router = useRouter();
 
   const { user, role, permissions, hasHydrated, logOut } = useAuthStore();
 
@@ -202,9 +200,7 @@ export function Sidebar({
   }, [pathname]);
 
   const handleLogout = () => {
-    Cookies.remove("session_token");
     logOut();
-    router.push("/login");
   };
 
   if (!hasHydrated) return null;
