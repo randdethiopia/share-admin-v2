@@ -224,8 +224,7 @@ export function Sidebar({
         </Avatar>
         <div className="text-center">
           <h2 className="text-lg font-semibold capitalize">
-            {user?.firstName || "Guest"}
-            {user?.lastName || ""}
+            {user?.firstName && user?.lastName ? `${user?.firstName} ${user?.lastName}` : "Guest"}
           </h2>
           <p className="text-xs">Portal Access</p>
         </div>
