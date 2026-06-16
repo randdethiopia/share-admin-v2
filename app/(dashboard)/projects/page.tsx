@@ -9,8 +9,18 @@ import useAuthStore from "@/store/useAuthStore";
 import Cookies from "js-cookie";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/shared/PaginationControls";
+import { AdminCard } from "@/components/shared/admin/AdminCard";
+import { FilterField } from "@/components/shared/admin/FilterField";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -44,7 +54,7 @@ import {
 	Check,
 	Clock,
 	Eye,
-	Loader2,
+	MoreHorizontal,
 	Search,
 	Trash2,
 	X,
@@ -117,6 +127,77 @@ function truncateWords(text: string | undefined | null, maxWords: number) {
 	return `${words.slice(0, maxWords).join(" ")}...`;
 }
 
+function ProjectActionsMenu({
+	project,
+	onView,
+	onApprove,
+	onReject,
+	onDelete,
+	onPrefetch,
+	disabled,
+}: {
+	project: ProjectType;
+	onView: (project: ProjectType) => void;
+	onApprove: (id: string) => void;
+	onReject: (id: string) => void;
+	onDelete: (id: string) => void;
+	onPrefetch?: (id: string) => void;
+	disabled?: boolean;
+}) {
+	const status = normalizeProjectStatus(String(project.status ?? ""));
+	const showApprove =
+		status === "PENDING" || status === "REJECTED" || status === "TRASH";
+	const showReject = status === "PENDING" || status === "APPROVED";
+	const showStatusActions = showApprove || showReject;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={disabled}
+					className="h-9 w-9 rounded-lg border border-transparent text-slate-500 hover:bg-slate-100 hover:border-slate-200/80 hover:text-slate-700"
+				>
+					<MoreHorizontal className="h-4 w-4" />
+					<span className="sr-only">Open actions</span>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-48 rounded-xl">
+				<DropdownMenuItem
+					onClick={() => onView(project)}
+					onMouseEnter={() => onPrefetch?.(project._id)}
+				>
+					<Eye className="mr-2 h-4 w-4" />
+					View Details
+				</DropdownMenuItem>
+
+				{(showStatusActions || status === "TRASH") && <DropdownMenuSeparator />}
+
+				{showApprove && (
+					<DropdownMenuItem onClick={() => onApprove(project._id)}>
+						<Check className="mr-2 h-4 w-4 text-emerald-600" />
+						Approve
+					</DropdownMenuItem>
+				)}
+				{showReject && (
+					<DropdownMenuItem onClick={() => onReject(project._id)}>
+						<X className="mr-2 h-4 w-4 text-red-600" />
+						Reject
+					</DropdownMenuItem>
+				)}
+				<DropdownMenuItem
+					onClick={() => onDelete(project._id)}
+					className="text-red-600 focus:text-red-700"
+				>
+					<Trash2 className="mr-2 h-4 w-4" />
+					Delete
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export default function ProjectsPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -129,6 +210,8 @@ export default function ProjectsPage() {
 	const [search, setSearch] = React.useState("");
 	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
 	const [page, setPage] = React.useState(1);
+	const [approveId, setApproveId] = React.useState<string | null>(null);
+	const [approveOpen, setApproveOpen] = React.useState(false);
 	const [rejectId, setRejectId] = React.useState<string | null>(null);
 	const [rejectOpen, setRejectOpen] = React.useState(false);
 	const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -141,7 +224,6 @@ export default function ProjectsPage() {
 		isError,
 		error,
 		refetch,
-		isFetching,
 	} = api.Project.GetList.useQuery({
 		enabled: canFetchProjects,
 	});
@@ -199,15 +281,9 @@ export default function ProjectsPage() {
 	};
 
 	const onApprove = (id: string) => {
-		approveMutation.mutate(id, {
-			onSuccess: () => {
-				queryClient.setQueryData<ProjectType[]>(["Projects"], (old) =>
-					(old ?? []).map((p) =>
-						p._id === id ? ({ ...p, status: "APPROVED" } as ProjectType) : p
-					)
-				);
-			},
-		});
+		if (!id) return;
+		setApproveId(id);
+		setApproveOpen(true);
 	};
 
 	const onReject = (id: string) => {
@@ -220,18 +296,6 @@ export default function ProjectsPage() {
 		if (!id) return;
 		setDeleteId(id);
 		setDeleteOpen(true);
-	};
-
-	const getApproveTitle = (status: string) => {
-		if (!hasHydrated) return "Loading…";
-		if (!isAdmin) return "Admins only";
-		return status === "APPROVED" ? "Approve again" : "Approve";
-	};
-
-	const getRejectTitle = (status: string) => {
-		if (!hasHydrated) return "Loading…";
-		if (!isAdmin) return "Admins only";
-		return status === "REJECTED" ? "Reject again" : "Reject";
 	};
 
 	const confirmDelete = () => {
@@ -251,6 +315,21 @@ export default function ProjectsPage() {
 		});
 	};
 
+	const confirmApprove = () => {
+		if (!approveId) return;
+		approveMutation.mutate(approveId, {
+			onSuccess: () => {
+				queryClient.setQueryData<ProjectType[]>(["Projects"], (old) =>
+					(old ?? []).map((p) =>
+						p._id === approveId ? ({ ...p, status: "APPROVED" } as ProjectType) : p
+					)
+				);
+				setApproveOpen(false);
+				setApproveId(null);
+			},
+		});
+	};
+
 	const confirmReject = () => {
 		if (!rejectId) return;
 		rejectMutation.mutate(rejectId, {
@@ -266,8 +345,52 @@ export default function ProjectsPage() {
 		});
 	};
 
+	const tableHeadClass =
+		"h-11 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:px-8";
+
+	const inputSurfaceClass =
+		"bg-slate-50 border border-slate-200/80 h-11 rounded-lg text-sm placeholder:text-slate-400";
+
+	const renderProjectActions = (project: ProjectType) => (
+		<ProjectActionsMenu
+			project={project}
+			onView={onView}
+			onApprove={onApprove}
+			onReject={onReject}
+			onDelete={onDelete}
+			onPrefetch={prefetchProjectDetails}
+			disabled={!canMutateProjects || isMutating}
+		/>
+	);
+
 	return (
 		<div className="space-y-6">
+			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Approve project?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will mark the project as approved. This action can’t be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={approveMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(e) => {
+								e.preventDefault();
+								confirmApprove();
+							}}
+							disabled={approveMutation.isPending}
+							className="bg-emerald-600 hover:bg-emerald-700"
+						>
+							{approveMutation.isPending ? "Approving…" : "Approve"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
 			<AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -317,18 +440,15 @@ export default function ProjectsPage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-			<div className="px-4">
-				<h1 className="text-[28px] font-bold text-black">Projects</h1>
-				<p className="text-zinc-600 text-lg">See all projects</p>
-			</div>
+			<PageHeader title="Projects" description="See all projects" />
 
-			<div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-blue-50 max-w-full">
+			<AdminCard className="p-4 sm:p-6 lg:p-8">
 				<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 sm:mb-8">
 					<div className="relative w-full lg:max-w-sm">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
 						<Input
 							placeholder="Search projects..."
-							className="pl-10 bg-[#F3F8FF] border-none h-12 rounded-xl"
+							className={cn("pl-11", inputSurfaceClass)}
 							value={search}
 							onChange={(e) => {
 								setSearch(e.target.value);
@@ -338,35 +458,31 @@ export default function ProjectsPage() {
 					</div>
 
 					<div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
-						<span className="text-sm font-bold text-gray-500">Filter</span>
-						<Select
-							onValueChange={(v) => {
-								setStatusFilter(v as StatusFilter);
-								setPage(1);
-							}}
-							defaultValue="all"
-						>
-							<SelectTrigger className="w-full sm:w-40 bg-[#F3F8FF] border-none h-12 rounded-xl">
-								<SelectValue placeholder="All" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All</SelectItem>
-								<SelectItem value="PENDING">Pending</SelectItem>
-								<SelectItem value="APPROVED">Approved</SelectItem>
-								<SelectItem value="REJECTED">Rejected</SelectItem>
-								<SelectItem value="DRAFT">Draft</SelectItem>
-							</SelectContent>
-						</Select>
-
-						<Button
-							variant="outline"
-							className="h-12 rounded-xl"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
-							{isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-							Refresh
-						</Button>
+						<FilterField label="Filter Status">
+							<Select
+								onValueChange={(v) => {
+									setStatusFilter(v as StatusFilter);
+									setPage(1);
+								}}
+								defaultValue="all"
+							>
+								<SelectTrigger
+									className={cn(
+										"w-full sm:w-40 text-xs font-semibold",
+										inputSurfaceClass
+									)}
+								>
+									<SelectValue placeholder="All" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">All</SelectItem>
+									<SelectItem value="PENDING">Pending</SelectItem>
+									<SelectItem value="APPROVED">Approved</SelectItem>
+									<SelectItem value="REJECTED">Rejected</SelectItem>
+									<SelectItem value="DRAFT">Draft</SelectItem>
+								</SelectContent>
+							</Select>
+						</FilterField>
 					</div>
 				</div>
 
@@ -461,54 +577,8 @@ export default function ProjectsPage() {
 										</span>
 									</div>
 
-										<div className="mt-4 flex items-center gap-2">
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-												onClick={() => onView(project)}
-												onMouseEnter={() => prefetchProjectDetails(project._id)}
-												aria-label="View project"
-												title="View"
-											>
-												<Eye size={16} />
-											</Button>
-
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
-												onClick={() => onApprove(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Approve project"
-												title={getApproveTitle(status)}
-											>
-												<Check size={18} />
-											</Button>
-
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
-												onClick={() => onReject(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Reject project"
-												title={getRejectTitle(status)}
-											>
-												<X size={18} />
-											</Button>
-
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-9 w-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
-												onClick={() => onDelete(project._id)}
-												disabled={!canMutateProjects || isMutating}
-												aria-label="Delete project"
-												title="Delete"
-											>
-													<Trash2 size={18} />
-											</Button>
+										<div className="mt-4 flex items-center justify-end">
+											{renderProjectActions(project)}
 										</div>
 									</div>
 								);
@@ -527,12 +597,16 @@ export default function ProjectsPage() {
 
 					<div className="hidden md:block w-full overflow-x-auto">
 						<Table className="w-full min-w-190 md:min-w-0">
-						<TableHeader className="bg-[#D6E6F2]">
-							<TableRow className="hover:bg-transparent border-none">
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6">Info</TableHead>
-									<TableHead className="hidden md:table-cell font-bold text-slate-700 h-14 px-3 sm:px-6">Due Date</TableHead>
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6">Status</TableHead>
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6 text-center">Actions</TableHead>
+						<TableHeader className="bg-slate-50 border-b border-slate-200/80">
+							<TableRow className="border-none hover:bg-transparent">
+									<TableHead className={tableHeadClass}>Info</TableHead>
+									<TableHead className={cn(tableHeadClass, "hidden md:table-cell")}>
+										Due Date
+									</TableHead>
+									<TableHead className={tableHeadClass}>Status</TableHead>
+									<TableHead className={cn(tableHeadClass, "text-center")}>
+										Actions
+									</TableHead>
 							</TableRow>
 						</TableHeader>
 
@@ -577,7 +651,10 @@ export default function ProjectsPage() {
 								</TableRow>
 							) : filteredData.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={4} className="h-40 text-center text-sm text-slate-600">
+									<TableCell
+										colSpan={4}
+										className="h-40 text-center text-sm text-slate-500"
+									>
 										No projects found.
 									</TableCell>
 								</TableRow>
@@ -627,51 +704,8 @@ export default function ProjectsPage() {
 										</TableCell>
 
 										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
-											<div className="flex justify-center gap-1 sm:gap-2 flex-wrap">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-													onClick={() => onView(project)}
-													onMouseEnter={() => prefetchProjectDetails(project._id)}
-													aria-label="View project"
-												>
-													<Eye size={16} />
-												</Button>
-
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
-															onClick={() => onApprove(project._id)}
-															disabled={!canMutateProjects || isMutating}
-															aria-label="Approve project"
-															title={getApproveTitle(status)}
-														>
-															<Check size={16} />
-														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
-															onClick={() => onReject(project._id)}
-															disabled={!canMutateProjects || isMutating}
-															aria-label="Reject project"
-															title={getRejectTitle(status)}
-														>
-															<X size={16} />
-														</Button>
-
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
-													onClick={() => onDelete(project._id)}
-															disabled={!canMutateProjects || isMutating}
-													aria-label="Delete project"
-												>
-															<Trash2 size={16} />
-												</Button>
+											<div className="flex justify-center">
+												{renderProjectActions(project)}
 											</div>
 										</TableCell>
 									</TableRow>
@@ -694,7 +728,7 @@ export default function ProjectsPage() {
 						</div>
 					</div>
 				</div>
-			</div>
+			</AdminCard>
 		</div>
 	);
 }
