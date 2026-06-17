@@ -46,17 +46,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#E2EDF8]">
+    <div className="flex min-h-screen overflow-x-hidden bg-[#E2EDF8]">
       
       <aside
-        className="fixed hidden h-full w-64 border-r bg-white md:block"
+        className="fixed z-30 hidden h-full w-64 border-r bg-white md:block"
         aria-label="Main navigation"
       >
         <Sidebar />
       </aside>
 
       
-      <div className="flex flex-1 flex-col md:ml-64">
+      <div className="relative z-0 flex min-w-0 w-full flex-1 flex-col md:ml-64">
         
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <Sheet
