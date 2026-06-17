@@ -45,7 +45,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import {
+	buildDetailHref,
+	useCorrectPaginationPage,
+	useUrlPagination,
+} from "@/hooks/use-url-pagination";
+import { getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
@@ -131,8 +136,12 @@ function isUpdateRequestPending(updateStatus?: string) {
 	return normalized === "REQUEST_UPDATE" || normalized === "PENDING";
 }
 
+const BUSINESS_LIST_PATH = "/business";
+
 function BusinessActionsMenu({
 	business,
+	page,
+	pageSize,
 	onApprove,
 	onReject,
 	onUpdateApprove,
@@ -140,6 +149,8 @@ function BusinessActionsMenu({
 	disabled,
 }: {
 	business: BusinessProfileType;
+	page: number;
+	pageSize: number;
 	onApprove: (id: string) => void;
 	onReject: (id: string) => void;
 	onUpdateApprove: (id: string) => void;
@@ -167,7 +178,12 @@ function BusinessActionsMenu({
 			<DropdownMenuContent align="end" className="w-52 rounded-xl">
 				<DropdownMenuItem asChild>
 					<Link
-						href={`/business/${business._id}`}
+						href={buildDetailHref(
+							BUSINESS_LIST_PATH,
+							business._id,
+							page,
+							pageSize
+						)}
 						className="flex cursor-pointer items-center"
 					>
 						<Eye className="mr-2 h-4 w-4" />
@@ -209,11 +225,12 @@ function BusinessActionsMenu({
 	);
 }
 
-export default function BusinessPage() {
+function BusinessPageInner() {
+	
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>("all");
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
+	const { page, pageSize, setPage, setPageSize, resetPagination } =
+		useUrlPagination();
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
 	const [confirmAction, setConfirmAction] =
 		React.useState<ConfirmAction>("approve");
@@ -254,9 +271,13 @@ export default function BusinessPage() {
 		[filteredData.length, page, pageSize]
 	);
 
-	React.useEffect(() => {
-		if (page !== pagination.safePage) setPage(pagination.safePage);
-	}, [page, pagination.safePage]);
+	useCorrectPaginationPage({
+		isLoading,
+		totalItems: filteredData.length,
+		page,
+		safePage: pagination.safePage,
+		setPage,
+	});
 
 	const pageData = React.useMemo(() => {
 		return filteredData.slice(
@@ -289,6 +310,8 @@ export default function BusinessPage() {
 	const renderActionsMenu = (business: BusinessProfileType) => (
 		<BusinessActionsMenu
 			business={business}
+			page={page}
+			pageSize={pageSize}
 			onApprove={(id) => openConfirm("approve", id)}
 			onReject={(id) => openConfirm("reject", id)}
 			onUpdateApprove={(id) => openConfirm("update-approve", id)}
@@ -363,7 +386,7 @@ export default function BusinessPage() {
 							value={search}
 							onChange={(e) => {
 								setSearch(e.target.value);
-								setPage(1);
+								resetPagination();
 							}}
 						/>
 					</div>
@@ -380,7 +403,7 @@ export default function BusinessPage() {
 									value === "DRAFT"
 								) {
 									setStatus(value);
-									setPage(1);
+									resetPagination();
 								}
 							}}
 						>
@@ -532,7 +555,6 @@ export default function BusinessPage() {
 							value={String(pageSize)}
 							onValueChange={(value) => {
 								setPageSize(Number(value));
-								setPage(1);
 							}}
 						>
 							<SelectTrigger className="h-10 w-24 rounded-lg border border-slate-200/80 bg-slate-50 text-xs font-semibold">
@@ -556,5 +578,19 @@ export default function BusinessPage() {
 				</div>
 			</AdminCard>
 		</div>
+	);
+}
+
+export default function BusinessPage() {
+	return (
+		<React.Suspense
+			fallback={
+				<div className="flex h-[60vh] items-center justify-center">
+					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<BusinessPageInner />
+		</React.Suspense>
 	);
 }
