@@ -23,6 +23,7 @@ import {
   List,
   LogOut,
   Calendar,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,6 +49,7 @@ type MenuItem = {
 
 export const dashboardMenuItems: MenuItem[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard.read", "dashboard.write", "dashboard.delete"] },
+  { id: "agar-waitlist", icon: ClipboardList, label: "AGAR Waitlist", href: "/agar-waitlist", permissions: ["all_access"] },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor.read", "investor.write", "investor.delete"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business.read", "business.write", "business.delete"] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor.read", "advisor.write", "advisor.delete"] },
@@ -93,8 +95,6 @@ export const dashboardMenuItems: MenuItem[] = [
       },
     ],
   },
-  
-  
   { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user.read", "user.write", "user.delete"] },
  
  
@@ -141,7 +141,6 @@ export function Sidebar({
   const isCoordinatorLike = normalizedRole === "COORDINATOR" || isTrainingOnlyAdmin;
 
   const canViewItem = (item: MenuItem) => {
-   
     if (hasAllAccess) return true;
     if (normalizedPermissions.length === 0) return false;
 
@@ -234,7 +233,9 @@ export function Sidebar({
                 ? "/business"
                 : item.href;
 
-            const isActive = pathname === resolvedHref;
+            const isActive =
+              pathname === resolvedHref ||
+              pathname.startsWith(`${resolvedHref}/`);
             const Icon = item.icon;
 
             if (item.isCollapsable && item.items?.length) {
