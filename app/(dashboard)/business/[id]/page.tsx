@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
 	ArrowLeft,
 	Calendar,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import api from "@/lib/api";
+import { useListReturnHref } from "@/hooks/use-url-pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,9 @@ function getAvatarFallback(name?: string) {
 		.toUpperCase();
 }
 
-export default function BusinessDetailPage() {
+function BusinessDetailPageInner() {
 	const params = useParams();
-	const router = useRouter();
+	const listHref = useListReturnHref("/business");
 	const id = useMemo(() => {
 		const raw = (params as { id?: string | string[] })?.id;
 		return Array.isArray(raw) ? raw[0] : raw;
@@ -97,7 +98,7 @@ export default function BusinessDetailPage() {
 				<div className="mx-auto max-w-6xl rounded-3xl border border-blue-50 bg-white p-6 shadow-sm">
 					<p className="text-sm font-semibold text-red-600">Missing business id.</p>
 					<Button variant="outline" className="mt-4 rounded-xl" asChild>
-						<Link href="/business">Back to list</Link>
+						<Link href={listHref}>Back to list</Link>
 					</Button>
 				</div>
 			</div>
@@ -125,7 +126,7 @@ export default function BusinessDetailPage() {
 					<p className="text-center text-sm font-semibold text-red-600">{message}</p>
 					<div className="mt-4 flex justify-center">
 						<Button variant="outline" className="rounded-xl" asChild>
-							<Link href="/business">Back to list</Link>
+							<Link href={listHref}>Back to list</Link>
 						</Button>
 					</div>
 				</div>
@@ -147,13 +148,12 @@ export default function BusinessDetailPage() {
 			<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
 				<div className="flex flex-col gap-3 rounded-3xl border border-blue-50 bg-white p-6 shadow-sm">
 					<div className="flex flex-wrap items-center justify-between gap-3">
-						<button
-							onClick={() => router.back()}
-							type="button"
+						<Link
+							href={listHref}
 							className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline"
 						>
 							<ArrowLeft size={14} /> Back to list
-						</button>
+						</Link>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge
 								className={cn(
@@ -401,5 +401,21 @@ function DocumentLink({ label, url }: { label: string; url: string }) {
 				<p className="mt-2 text-sm text-slate-500">Not provided.</p>
 			)}
 		</div>
+	);
+}
+
+export default function BusinessDetailPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+					<div className="mx-auto flex h-64 max-w-6xl items-center justify-center">
+						<Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+					</div>
+				</div>
+			}
+		>
+			<BusinessDetailPageInner />
+		</Suspense>
 	);
 }
