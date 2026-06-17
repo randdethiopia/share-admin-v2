@@ -44,7 +44,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import {
+	buildDetailHref,
+	useCorrectPaginationPage,
+	useUrlPagination,
+} from "@/hooks/use-url-pagination";
+import { getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, MoreHorizontal, Search, X } from "lucide-react";
 
@@ -75,13 +80,19 @@ function formatDate(value?: string) {
 	return d.toLocaleDateString();
 }
 
+const EXPERT_LIST_PATH = "/expert";
+
 function ExpertActionsMenu({
 	advisor,
+	page,
+	pageSize,
 	onApprove,
 	onReject,
 	disabled,
 }: {
 	advisor: AdvisorProfileType;
+	page: number;
+	pageSize: number;
 	onApprove: (id: string) => void;
 	onReject: (id: string) => void;
 	disabled?: boolean;
@@ -106,7 +117,10 @@ function ExpertActionsMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48 rounded-xl">
 				<DropdownMenuItem asChild>
-					<Link href={`/expert/${advisor._id}`} className="flex items-center">
+					<Link
+						href={buildDetailHref(EXPERT_LIST_PATH, advisor._id, page, pageSize)}
+						className="flex items-center"
+					>
 						<Eye className="mr-2 h-4 w-4" />
 						View Details
 					</Link>
@@ -131,11 +145,11 @@ function ExpertActionsMenu({
 	);
 }
 
-export default function ExpertPage() {
+function ExpertPageInner() {
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>("all");
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
+	const { page, pageSize, setPage, setPageSize, resetPagination } =
+		useUrlPagination();
 	const [approveOpen, setApproveOpen] = React.useState(false);
 	const [rejectOpen, setRejectOpen] = React.useState(false);
 	const [selectedId, setSelectedId] = React.useState<string | null>(null);
@@ -169,9 +183,13 @@ export default function ExpertPage() {
 		[filteredData.length, page, pageSize]
 	);
 
-	React.useEffect(() => {
-		if (page !== pagination.safePage) setPage(pagination.safePage);
-	}, [page, pagination.safePage]);
+	useCorrectPaginationPage({
+		isLoading,
+		totalItems: filteredData.length,
+		page,
+		safePage: pagination.safePage,
+		setPage,
+	});
 
 	const pageData = React.useMemo(() => {
 		return filteredData.slice(
@@ -215,6 +233,8 @@ export default function ExpertPage() {
 	const renderExpertActions = (advisor: AdvisorProfileType) => (
 		<ExpertActionsMenu
 			advisor={advisor}
+			page={page}
+			pageSize={pageSize}
 			onApprove={openApprove}
 			onReject={openReject}
 			disabled={isMutating}
@@ -299,7 +319,7 @@ export default function ExpertPage() {
 							value={search}
 							onChange={(e) => {
 								setSearch(e.target.value);
-								setPage(1);
+								resetPagination();
 							}}
 						/>
 					</div>
@@ -316,7 +336,7 @@ export default function ExpertPage() {
 									value === "DRAFT"
 								) {
 									setStatus(value);
-									setPage(1);
+									resetPagination();
 								}
 							}}
 						>
@@ -496,7 +516,6 @@ export default function ExpertPage() {
 							value={String(pageSize)}
 							onValueChange={(value) => {
 								setPageSize(Number(value));
-								setPage(1);
 							}}
 						>
 							<SelectTrigger className="w-24 bg-[#F3F8FF] border-none h-10 rounded-xl text-xs font-bold">
@@ -520,5 +539,19 @@ export default function ExpertPage() {
 				</div>
 			</AdminCard>
 		</div>
+	);
+}
+
+export default function ExpertPage() {
+	return (
+		<React.Suspense
+			fallback={
+				<div className="flex h-[60vh] items-center justify-center">
+					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<ExpertPageInner />
+		</React.Suspense>
 	);
 }
