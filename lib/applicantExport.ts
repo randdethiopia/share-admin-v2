@@ -1,4 +1,11 @@
 import { AVAILABLE_FIELDS } from "@/components/wait-list/constants";
+import {
+	formatDigitalDevices,
+	formatDisabilityType,
+	formatEducationalBackground,
+	formatEmploymentStatus,
+	formatMaritalStatus,
+} from "@/lib/api/applicantLabels";
 import type { ApplicantListItem } from "@/lib/api/waitlist";
 import { getApplicantFullName, getApplicantNameParts } from "@/lib/applicantName";
 import { formatDisplayDate } from "@/lib/formatDate";
@@ -70,6 +77,7 @@ const EXCLUDED_KEYS = new Set(["_id", "__v", "alreadyOnEdge", "id"]);
 
 function csvCell(value: unknown): string {
 	if (value === null || value === undefined) return "";
+	if (typeof value === "boolean") return value ? "yes" : "no";
 	if (Array.isArray(value)) return value.map(String).join(", ");
 	if (typeof value === "object") {
 		const o = value as Record<string, unknown>;
@@ -96,6 +104,16 @@ export function getApplicantExportValue(
 	if (key === "subcity") return applicant.subcity?.name ?? "";
 	if (key === "birthDate") return formatDisplayDate(applicant.birthDate) ?? "";
 	if (key === "createdAt") return formatDisplayDate(applicant.createdAt) ?? "";
+	if (key === "maritalStatus") return formatMaritalStatus(applicant.maritalStatus);
+	if (key === "disabilityType") return formatDisabilityType(applicant.disabilityType);
+	if (key === "digitalDevices") return formatDigitalDevices(applicant.digitalDevices);
+	if (key === "educationalBackground") {
+		return formatEducationalBackground(applicant.educationalBackground);
+	}
+	if (key === "employmentStatus") return formatEmploymentStatus(applicant.employmentStatus);
+	if (key === "previousEmploymentStatus") {
+		return formatEmploymentStatus(applicant.previousEmploymentStatus);
+	}
 
 	return csvCell((applicant as unknown as Record<string, unknown>)[key]);
 }
