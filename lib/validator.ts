@@ -116,6 +116,9 @@ export type AdminFormData = z.infer<typeof adminSchema>;
 export type changePasswordData = z.infer<typeof changePasswordSchema>;
 export type TraineeFormData = z.infer<typeof traineeSchema>;
 export type IdeaBankFormData = z.infer<typeof ideaBankSchema>;
+
+export const skillSchema = ideaBankSchema;
+export type SkillFormData = z.infer<typeof skillSchema>;
 export type OpportunityFormData = z.infer<typeof opportunitySchema>;
 export type ReinvestData = z.infer<typeof reinvestSchema>;
 export type SignUpData = z.infer<typeof signUpSchema>;

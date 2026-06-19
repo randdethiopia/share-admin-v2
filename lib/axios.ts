@@ -57,8 +57,14 @@ export default function AxiosConfig(logOut: () => void) {
     }
 
     config.headers['ngrok-skip-browser-warning'] = 'true';
-    config.headers['Content-Type'] = 'application/json';
-    
+
+    // FormData must keep the browser-set multipart boundary; forcing JSON empties files as `{}`.
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    } else {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
     return config;
   });
 

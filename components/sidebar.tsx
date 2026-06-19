@@ -24,6 +24,7 @@ import {
   LogOut,
   Calendar,
   ClipboardList,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,6 +66,7 @@ export const dashboardMenuItems: MenuItem[] = [
   { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation.read", "invitation.write", "invitation.delete"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog.read", "blog.write", "blog.delete"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea.read", "idea.write", "idea.delete"] },
+  { id: "skills", icon: Sparkles, label: "Skills", href: "/skills", permissions: ["skill.read", "skill.write", "skill.delete"] },
   { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity.read", "opportunity.write", "opportunity.delete"] },
   { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"], isCollapsable: true, items: [
     { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"] },
