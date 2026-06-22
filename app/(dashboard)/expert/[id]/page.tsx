@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Suspense, useMemo, useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
 	ArrowLeft,
 	Banknote,
@@ -20,7 +19,6 @@ import {
 } from "lucide-react";
 
 import api from "@/lib/api";
-import { useListReturnHref } from "@/hooks/use-url-pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,9 +77,9 @@ function getFileUrl(file: unknown) {
 	return (file as { url?: string }).url ?? "";
 }
 
-function ExpertDetailPageInner() {
+export default function ExpertDetailPage() {
 	const params = useParams();
-	const listHref = useListReturnHref("/expert");
+	const router = useRouter();
 	const id = useMemo(() => {
 		const raw = (params as { id?: string | string[] })?.id;
 		return Array.isArray(raw) ? raw[0] : raw;
@@ -116,8 +114,12 @@ function ExpertDetailPageInner() {
 			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50">
 					<p className="text-sm text-gray-600">Missing expert id.</p>
-					<Button variant="outline" className="mt-4 rounded-xl" asChild>
-						<Link href={listHref}>Back to list</Link>
+					<Button
+						variant="outline"
+						className="mt-4 rounded-xl"
+						onClick={() => router.push("/expert")}
+					>
+						Back to list
 					</Button>
 				</div>
 			</div>
@@ -143,8 +145,12 @@ function ExpertDetailPageInner() {
 						{(error as { response?: { data?: { message?: string } } })?.response
 							?.data?.message || "Please try again."}
 					</p>
-					<Button variant="outline" className="mt-4 rounded-xl" asChild>
-						<Link href={listHref}>Back to list</Link>
+					<Button
+						variant="outline"
+						className="mt-4 rounded-xl"
+						onClick={() => router.push("/expert")}
+					>
+						Back to list
 					</Button>
 				</div>
 			</div>
@@ -156,8 +162,12 @@ function ExpertDetailPageInner() {
 			<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
 				<div className="max-w-5xl mx-auto bg-white rounded-3xl p-6 shadow-sm border border-blue-50 text-center">
 					<p className="text-sm text-gray-600">Expert not found.</p>
-					<Button variant="outline" className="mt-4 rounded-xl" asChild>
-						<Link href={listHref}>Back to list</Link>
+					<Button
+						variant="outline"
+						className="mt-4 rounded-xl"
+						onClick={() => router.push("/expert")}
+					>
+						Back to list
 					</Button>
 				</div>
 			</div>
@@ -233,12 +243,12 @@ function ExpertDetailPageInner() {
 
 			<div className="w-full bg-[#E2EDF8] py-10 sm:py-16 px-4 sm:px-6">
 				<div className="max-w-6xl mx-auto flex flex-col gap-6">
-					<Link
-						href={listHref}
+					<button
+						onClick={() => router.back()}
 						className="text-blue-600 text-sm font-bold inline-flex items-center gap-1 hover:underline w-fit"
 					>
 						<ArrowLeft size={14} /> Back to list
-					</Link>
+					</button>
 
 					<div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
 						<Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-xl">
@@ -493,40 +503,43 @@ function ExpertDetailPageInner() {
 							<p className="text-[10px] font-bold text-gray-400 uppercase mb-4">
 								Attachment
 							</p>
-							<a
-								href={cvUrl || "#"}
-								target="_blank"
-								rel="noreferrer"
-								download={Boolean(cvUrl)}
-								className={cn(
-									"flex items-center justify-between w-full p-4 rounded-2xl font-bold transition-all shadow-sm",
-									cvUrl
-										? "bg-white text-blue-600 hover:bg-blue-50"
-										: "bg-slate-100 text-slate-400 pointer-events-none"
-								)}
-							>
-								Download CV <Download size={18} />
-							</a>
+							{cvUrl ? (
+								<Button
+									onClick={() => {
+										try {
+											// Create a temporary anchor element
+											const link = document.createElement('a');
+											
+											// If it's a full URL (starts with http), open in new tab
+											if (cvUrl.startsWith('http://') || cvUrl.startsWith('https://')) {
+												window.open(cvUrl, '_blank', 'noopener,noreferrer');
+											} else {
+												// For relative URLs or blob URLs, use download
+												link.href = cvUrl;
+												link.download = `cv_${advisor.fullName?.replace(/\s/g, '_') || 'document'}.pdf`;
+												document.body.appendChild(link);
+												link.click();
+												document.body.removeChild(link);
+											}
+										} catch (error) {
+											console.error('Download failed:', error);
+											
+											window.open(cvUrl, '_blank', 'noopener,noreferrer');
+										}
+									}}
+									className="flex items-center justify-between w-full p-4 rounded-2xl font-bold transition-all shadow-sm bg-white text-blue-600 hover:bg-blue-50"
+								>
+									Download CV <Download size={18} />
+								</Button>
+							) : (
+								<div className="flex items-center justify-between w-full p-4 rounded-2xl font-bold shadow-sm bg-slate-100 text-slate-400 cursor-not-allowed">
+									No CV Available <Download size={18} />
+								</div>
+							)}
 						</div>
 					</div>
 				</aside>
 			</div>
 		</div>
-	);
-}
-
-export default function ExpertDetailPage() {
-	return (
-		<Suspense
-			fallback={
-				<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
-					<div className="max-w-5xl mx-auto h-64 flex items-center justify-center">
-						<Loader2 className="animate-spin text-blue-600" />
-					</div>
-				</div>
-			}
-		>
-			<ExpertDetailPageInner />
-		</Suspense>
 	);
 }
