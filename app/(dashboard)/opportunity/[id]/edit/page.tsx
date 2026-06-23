@@ -6,12 +6,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
 import OpportunityApi from "@/lib/api/opportunity";
+import Link from "next/link";
 import { uploadFileFn } from "@/lib/api/upload";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Editor from "@/components/shared/Editor";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
@@ -183,6 +185,13 @@ export default function EditOpportunityPage() {
   return (
     <div className="min-h-screen bg-[#E2EDF8]">
       <div className="py-10 px-8">
+        <Link
+          href={`/opportunity/${id}`}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:underline"
+        >
+          <ArrowLeft size={16} /> Back
+        </Link>
+
         <h1 className="text-[28px] font-bold text-black">Edit Opportunity</h1>
         <p className="text-zinc-500 text-sm">Update details for this opportunity</p>
       </div>
