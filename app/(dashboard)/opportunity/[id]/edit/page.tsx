@@ -13,8 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Editor from "@/components/shared/Editor";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { Loader2, X } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
