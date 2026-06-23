@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
 import api from "@/lib/api";
+import { uploadFileFn } from "@/lib/api/upload";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,9 @@ type OpportunityFormValues = z.input<typeof opportunitySchema>;
 export default function NewOpportunityPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { mutate: createOp, isPending } = api.Opportunity.Create.useMutation({
     onSuccess: () => {
@@ -56,6 +59,8 @@ export default function NewOpportunityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    pendingFileRef.current = file;
+
     const nextUrl = URL.createObjectURL(file);
     if (lastObjectUrlRef.current?.startsWith("blob:")) {
       URL.revokeObjectURL(lastObjectUrlRef.current);
@@ -69,13 +74,48 @@ export default function NewOpportunityPage() {
     );
   };
 
-  const onSubmit = (data: OpportunityFormValues) => {
-    createOp({
-      ...(data as OpportunityFormData),
-      deadlineDate: data.deadlineDate ?? "",
-      isPublic: data.isPublic ?? false,
-    });
+  const handleRemoveImage = () => {
+    pendingFileRef.current = null;
+    if (lastObjectUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+    }
+    lastObjectUrlRef.current = null;
+    form.setValue(
+      "image",
+      { url: "", id: "" },
+      { shouldDirty: true, shouldValidate: true }
+    );
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const onSubmit = async (data: OpportunityFormValues) => {
+    const file = pendingFileRef.current;
+    let image = data.image ?? { url: "", id: "" };
+
+    if (file) {
+      setIsSubmitting(true);
+      try {
+        image = await uploadFileFn(file);
+      } catch (err) {
+        setIsSubmitting(false);
+        const message = err instanceof Error ? err.message : "Failed to upload image";
+        toast.error(message);
+        return;
+      }
+    }
+
+    createOp(
+      {
+        ...(data as OpportunityFormData),
+        image,
+        deadlineDate: data.deadlineDate ?? "",
+        isPublic: data.isPublic ?? false,
+      },
+      { onSettled: () => setIsSubmitting(false) }
+    );
+  };
+
+  const isWorking = isSubmitting || isPending;
 
   return (
     <div className="min-h-screen bg-[#E2EDF8] px-4 py-6 sm:px-6 lg:px-8">
@@ -178,18 +218,9 @@ export default function NewOpportunityPage() {
                 {imageUrl ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (lastObjectUrlRef.current?.startsWith("blob:")) {
-                        URL.revokeObjectURL(lastObjectUrlRef.current);
-                      }
-                      lastObjectUrlRef.current = null;
-                      form.setValue(
-                        "image",
-                        { url: "", id: "" },
-                        { shouldDirty: true, shouldValidate: true }
-                      );
-                    }}
-                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1"
+                    onClick={handleRemoveImage}
+                    disabled={isWorking}
+                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1 disabled:opacity-60"
                     aria-label="Remove image"
                   >
                     <X size={14} className="text-red-500" />
@@ -206,15 +237,16 @@ export default function NewOpportunityPage() {
               <Button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isWorking}
                 className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl h-10 px-8 shadow-md"
               >
                 Browse
               </Button>
             </div>
 
-            <Button type="submit" className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-12 h-12 font-bold shadow-md" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit for review
+            <Button type="submit" className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-12 h-12 font-bold shadow-md" disabled={isWorking}>
+              {isWorking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Uploading image..." : isPending ? "Submitting..." : "Submit for review"}
             </Button>
 
               </form>

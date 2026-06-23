@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunitySchema, type OpportunityFormData } from "@/lib/validator";
 import OpportunityApi from "@/lib/api/opportunity";
 import Link from "next/link";
+import { uploadFileFn } from "@/lib/api/upload";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Editor from "@/components/shared/Editor";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
@@ -42,9 +44,11 @@ export default function EditOpportunityPage() {
 
   const updateToastIdRef = useRef<string | number | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
+  const lastObjectUrlRef = useRef<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: opportunities, isLoading } = OpportunityApi.GetList.useQuery();
   const item = opportunities?.find((op) => op._id === id);
@@ -71,6 +75,9 @@ export default function EditOpportunityPage() {
   useEffect(() => {
     return () => {
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+      if (lastObjectUrlRef.current?.startsWith("blob:")) {
+        URL.revokeObjectURL(lastObjectUrlRef.current);
+      }
     };
   }, []);
 
@@ -84,12 +91,20 @@ export default function EditOpportunityPage() {
       externalLink: "",
       tags: "",
       deadlineDate: "",
-      image: { url: "", id: "temp" },
+      image: { url: "", id: "" },
     },
   });
 
+  const image = useWatch({ control: form.control, name: "image" });
+  const imageUrl = image?.url;
+
   useEffect(() => {
     if (item) {
+      pendingFileRef.current = null;
+      if (lastObjectUrlRef.current?.startsWith("blob:")) {
+        URL.revokeObjectURL(lastObjectUrlRef.current);
+      }
+      lastObjectUrlRef.current = null;
       const formattedDate = item.deadlineDate
         ? new Date(item.deadlineDate).toISOString().split("T")[0]
         : "";
@@ -101,25 +116,71 @@ export default function EditOpportunityPage() {
         externalLink: safeUrl(item.externalLink),
         tags: coerceTags(item.tags),
         deadlineDate: formattedDate,
-        image: item.image || { url: "", id: "temp" },
+        image: item.image || { url: "", id: "" },
       });
     }
   }, [item, form]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPreviewUrl(URL.createObjectURL(file));
+
+    pendingFileRef.current = file;
+
+    const nextUrl = URL.createObjectURL(file);
+    if (lastObjectUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+    }
+    lastObjectUrlRef.current = nextUrl;
+
+    form.setValue(
+      "image",
+      { url: nextUrl, id: file.name },
+      { shouldDirty: true, shouldValidate: true }
+    );
   };
 
-  const onSubmit = (data: OpportunityFormData) => {
-    if (isUpdating || isRedirecting) return;
-    updateOp(data);
+  const handleRemoveImage = () => {
+    pendingFileRef.current = null;
+    if (lastObjectUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+    }
+    lastObjectUrlRef.current = null;
+    form.setValue(
+      "image",
+      { url: "", id: "" },
+      { shouldDirty: true, shouldValidate: true }
+    );
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const onSubmit = async (data: OpportunityFormData) => {
+    if (isUpdating || isRedirecting || isSubmitting) return;
+
+    const file = pendingFileRef.current;
+    let imageData = data.image ?? { url: "", id: "" };
+
+    if (file) {
+      setIsSubmitting(true);
+      try {
+        imageData = await uploadFileFn(file);
+      } catch (err) {
+        setIsSubmitting(false);
+        const message = err instanceof Error ? err.message : "Failed to upload image";
+        toast.error(message);
+        return;
+      }
+    }
+
+    updateOp(
+      { ...data, image: imageData },
+      { onSettled: () => setIsSubmitting(false) }
+    );
+  };
+
+  const isWorking = isSubmitting || isUpdating || isRedirecting;
 
   if (isLoading) return <DetailPageSkeleton />;
-
-  const effectivePreviewUrl = previewUrl || item?.image?.url || "";
 
   return (
     <div className="min-h-screen bg-[#E2EDF8]">
@@ -164,17 +225,29 @@ export default function EditOpportunityPage() {
             )} />
 
             <div className="flex items-center gap-6">
-              <div className="w-40 aspect-video rounded-2xl bg-gray-100 overflow-hidden relative border-2 border-dashed border-gray-200 flex items-center justify-center">
-                {effectivePreviewUrl ? (
-                  <img src={effectivePreviewUrl} className="object-cover w-full h-full" alt="" />
+              <div className="relative w-40 aspect-video rounded-2xl bg-gray-100 overflow-hidden border-2 border-dashed border-gray-200 flex items-center justify-center">
+                {imageUrl ? (
+                  <img src={imageUrl} className="object-cover w-full h-full" alt="Preview" />
                 ) : (
                   <span className="text-gray-400 text-xs text-center p-2">No Image Selected</span>
                 )}
+                {imageUrl ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={isWorking}
+                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1 disabled:opacity-60"
+                    aria-label="Remove image"
+                  >
+                    <X size={14} className="text-red-500" />
+                  </button>
+                ) : null}
               </div>
               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
               <Button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isWorking}
                 className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl h-10 px-8 shadow-md"
               >
                 Browse
@@ -184,10 +257,10 @@ export default function EditOpportunityPage() {
             <Button
               type="submit"
               className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-12 h-12 font-bold shadow-lg"
-              disabled={isUpdating || isRedirecting}
+              disabled={isWorking}
             >
-              {(isUpdating || isRedirecting) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isUpdating ? "Updating..." : isRedirecting ? "Updated — redirecting..." : "Save Opportunity"}
+              {isWorking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSubmitting ? "Uploading image..." : isUpdating ? "Updating..." : isRedirecting ? "Updated — redirecting..." : "Save Opportunity"}
             </Button>
 
           </form>
