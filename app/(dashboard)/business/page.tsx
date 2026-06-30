@@ -66,6 +66,13 @@ const inputSurfaceClass =
 const tableHeadClass =
 	"h-11 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500";
 
+const businessTableCol = {
+	name: "w-[40%]",
+	approvedAt: "w-[20%]",
+	status: "w-[20%]",
+	actions: "w-[20%]",
+} as const;
+
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
 }
@@ -473,13 +480,27 @@ function BusinessPageInner() {
 
 				<div className="hidden border-t border-slate-200/80 md:block">
 					<div className="overflow-x-auto">
-						<Table>
+						<Table className="table-fixed">
 							<TableHeader className="bg-slate-50 border-b border-slate-200/80">
 								<TableRow className="border-none hover:bg-transparent">
-									<TableHead className={tableHeadClass}>Name</TableHead>
-									<TableHead className={tableHeadClass}>Approved at</TableHead>
-									<TableHead className={tableHeadClass}>Status</TableHead>
-									<TableHead className={cn(tableHeadClass, "text-center")}>
+									<TableHead className={cn(tableHeadClass, businessTableCol.name)}>
+										Name
+									</TableHead>
+									<TableHead
+										className={cn(tableHeadClass, businessTableCol.approvedAt)}
+									>
+										Approved at
+									</TableHead>
+									<TableHead className={cn(tableHeadClass, businessTableCol.status)}>
+										Status
+									</TableHead>
+									<TableHead
+										className={cn(
+											tableHeadClass,
+											businessTableCol.actions,
+											"text-center"
+										)}
+									>
 										Actions
 									</TableHead>
 								</TableRow>
@@ -517,13 +538,25 @@ function BusinessPageInner() {
 											key={business._id}
 											className="border-slate-50 hover:bg-slate-50/50"
 										>
-											<TableCell className="whitespace-normal px-6 py-4">
+											<TableCell
+												className={cn(
+													"whitespace-normal px-6 py-4",
+													businessTableCol.name
+												)}
+											>
 												<BusinessNameCell business={business} />
 											</TableCell>
-											<TableCell className="px-6 py-4 text-xs font-medium text-slate-500">
+											<TableCell
+												className={cn(
+													"whitespace-nowrap px-6 py-4 text-xs font-medium text-slate-500",
+													businessTableCol.approvedAt
+												)}
+											>
 												{getBusinessApprovalDisplay(business)}
 											</TableCell>
-											<TableCell className="px-6 py-4">
+											<TableCell
+												className={cn("px-6 py-4", businessTableCol.status)}
+											>
 												<Badge
 													className={cn(
 														"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
@@ -533,7 +566,9 @@ function BusinessPageInner() {
 													{normalizeStatus(business.status) || "PENDING"}
 												</Badge>
 											</TableCell>
-											<TableCell className="px-6 py-4">
+											<TableCell
+												className={cn("px-6 py-4", businessTableCol.actions)}
+											>
 												<div className="flex justify-center">
 													{renderActionsMenu(business)}
 												</div>
