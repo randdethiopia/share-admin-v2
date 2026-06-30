@@ -1,4 +1,5 @@
 import AdminAuth from "./admin";
+import AdminDashboardApi from "./admin-dashboard";
 import AdminProfileApi from "./admin-profile";
 import Access from "./access";
 import AdvisorProfileApi from "./advisor-profile";
@@ -29,6 +30,7 @@ export type { SkillType } from "./skills";
 export type { TraineeType } from "./trainee";
 export type { ApplicantCreateRequest } from "./waitlist";
 export type { InvitationType } from "./invitation";
+export type { AdminDashboardStats } from "./admin-dashboard";
 export { getProjectByIdFn } from "./project";
 export { getWaitListServerSideFn } from "./waitlist";
 export { uploadFileFn } from "./upload";
@@ -36,6 +38,7 @@ export type { UploadImageRes } from "./upload";
 
 const api = {
     AdminAuth,
+    AdminDashboard: AdminDashboardApi,
     AdminProfile: AdminProfileApi,
     Access,
     AdvisorProfile: AdvisorProfileApi,
