@@ -21,7 +21,7 @@ export function DashboardMetricCard({
 			<p className="m-0 mb-1 text-[13px] text-slate-500">{label}</p>
 			<p
 				className={cn(
-					"font-exo2 m-0 text-[26px] font-medium text-slate-900",
+					"m-0 text-[26px] font-semibold text-slate-900",
 					valueClassName
 				)}
 			>

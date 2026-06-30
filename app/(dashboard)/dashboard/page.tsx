@@ -77,7 +77,7 @@ export default function DashboardPage() {
 		<div className="flex flex-col gap-6 py-1">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div className="space-y-1">
-					<h1 className="font-orbitron text-2xl font-medium text-slate-900 sm:text-3xl">
+					<h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
 						Overview
 					</h1>
 					<p className="text-sm text-slate-500">

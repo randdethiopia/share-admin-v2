@@ -21,7 +21,7 @@ export function ChartPanel({
 }: ChartPanelProps) {
 	return (
 		<div className={cn("rounded-lg p-5", DASHBOARD_PANEL_CLASS, className)}>
-			<p className="font-orbitron text-sm font-medium text-slate-900">{title}</p>
+			<p className="text-sm font-semibold text-slate-900">{title}</p>
 			{subtitle ? (
 				<p className="mt-1 text-xs text-slate-500">{subtitle}</p>
 			) : null}
