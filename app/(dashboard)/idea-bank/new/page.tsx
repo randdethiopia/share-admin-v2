@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ideaBankSchema, type IdeaBankFormData } from "@/lib/validator";
-import api from "@/lib/api";
+import api, { uploadFileFn } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import Editor from "@/components/shared/Editor"; 
-import { Loader2, X } from "lucide-react";
+import Editor from "@/components/shared/Editor";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { z } from "zod";
 
 type IdeaBankFormValues = z.input<typeof ideaBankSchema>;
@@ -21,7 +21,10 @@ type IdeaBankFormValues = z.input<typeof ideaBankSchema>;
 export default function NewIdeaPage() {
   const { mutate: createIdea, isPending } = api.IdeaBank.Create.useMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isWorking = isSubmitting || isPending;
 
   const form = useForm<IdeaBankFormValues>({
     resolver: zodResolver(ideaBankSchema),
@@ -46,11 +49,24 @@ export default function NewIdeaPage() {
     };
   }, []);
 
-  const onSubmit = (data: IdeaBankFormValues) => {
-    createIdea({
-      ...(data as IdeaBankFormData),
-      isPublic: data.isPublic ?? false,
-    });
+  const onSubmit = async (data: IdeaBankFormValues) => {
+    const file = pendingFileRef.current;
+    if (!file) {
+      form.setError("image", { message: "Please select an image" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const image = await uploadFileFn(file);
+      createIdea(
+        { ...(data as IdeaBankFormData), image, isPublic: data.isPublic ?? false },
+        { onSettled: () => setIsSubmitting(false) }
+      );
+    } catch (err) {
+      setIsSubmitting(false);
+      toast.error(err instanceof Error ? err.message : "Failed to upload image");
+    }
   };
 
   const handleBrowseClick = () => {
@@ -61,12 +77,28 @@ export default function NewIdeaPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    pendingFileRef.current = file;
+
     const nextUrl = URL.createObjectURL(file);
     if (lastObjectUrlRef.current?.startsWith("blob:")) {
       URL.revokeObjectURL(lastObjectUrlRef.current);
     }
     lastObjectUrlRef.current = nextUrl;
     form.setValue("image", { url: nextUrl, id: file.name }, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const handleRemoveImage = () => {
+    pendingFileRef.current = null;
+    if (lastObjectUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+    }
+    lastObjectUrlRef.current = null;
+    form.setValue(
+      "image",
+      { url: "", id: "" },
+      { shouldDirty: true, shouldValidate: true }
+    );
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -167,18 +199,9 @@ export default function NewIdeaPage() {
                 {imageUrl ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (lastObjectUrlRef.current?.startsWith("blob:")) {
-                        URL.revokeObjectURL(lastObjectUrlRef.current);
-                      }
-                      lastObjectUrlRef.current = null;
-                      form.setValue(
-                        "image",
-                        { url: "", id: "" },
-                        { shouldDirty: true, shouldValidate: true }
-                      );
-                    }}
-                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1"
+                    onClick={handleRemoveImage}
+                    disabled={isWorking}
+                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1 disabled:opacity-60"
                     aria-label="Remove image"
                   >
                     <X size={14} className="text-red-500" />
@@ -195,6 +218,7 @@ export default function NewIdeaPage() {
               <Button
                 type="button"
                 onClick={handleBrowseClick}
+                disabled={isWorking}
                 className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-8 h-10 shadow-md"
               >
                 Browse
@@ -203,9 +227,9 @@ export default function NewIdeaPage() {
 
             {/* Submit Button */}
             <div className="pt-6">
-              <Button type="submit" className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-10 h-12 font-bold shadow-md" disabled={isPending}>
-                {isPending ? <Loader2 className="mr-2 animate-spin" /> : null}
-                Submit for review
+              <Button type="submit" className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-10 h-12 font-bold shadow-md" disabled={isWorking}>
+                {isWorking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting ? "Uploading image..." : isPending ? "Submitting..." : "Submit for review"}
               </Button>
             </div>
 
