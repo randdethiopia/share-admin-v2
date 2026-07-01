@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import { ideaBankSchema } from "@/lib/validator";
-import api from "@/lib/api";
+import api, { uploadFileFn } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import Editor from "@/components/shared/Editor"; 
+import Editor from "@/components/shared/Editor";
 import { toast } from "sonner";
 import { DetailPageSkeleton } from "@/components/shared/page-skeletons";
 
@@ -39,6 +39,11 @@ export default function EditIdeaPage() {
 
   const updateToastIdRef = useRef<string | number | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
+  const lastObjectUrlRef = useRef<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { data: idea, isLoading, isError } = api.IdeaBank.GetById.useQuery(id ?? "");
   const { mutate: updateIdea, isPending } = api.IdeaBank.Update.useMutation(id ?? "", {
     onMutate: () => {
@@ -57,9 +62,14 @@ export default function EditIdeaPage() {
     },
   });
 
+  const isWorking = isSubmitting || isPending;
+
   useEffect(() => {
     return () => {
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+      if (lastObjectUrlRef.current?.startsWith("blob:")) {
+        URL.revokeObjectURL(lastObjectUrlRef.current);
+      }
     };
   }, []);
 
@@ -77,28 +87,24 @@ export default function EditIdeaPage() {
 
   const image = useWatch({ control: form.control, name: "image" });
   const imageUrl = image?.url;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const lastObjectUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (idea) {
+      pendingFileRef.current = null;
+      if (lastObjectUrlRef.current?.startsWith("blob:")) {
+        URL.revokeObjectURL(lastObjectUrlRef.current);
+      }
+      lastObjectUrlRef.current = null;
       form.reset({
         title: idea.title,
         description: idea.description,
         source: idea.source,
         tags: idea.tags,
         isPublic: idea.isPublic,
-        image: idea.image
+        image: idea.image,
       });
     }
   }, [idea, form]);
-
-  useEffect(() => {
-    return () => {
-      if (lastObjectUrlRef.current?.startsWith("blob:")) {
-        URL.revokeObjectURL(lastObjectUrlRef.current);
-      }
-    };
-  }, []);
 
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
@@ -107,6 +113,8 @@ export default function EditIdeaPage() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    pendingFileRef.current = file;
 
     const nextUrl = URL.createObjectURL(file);
 
@@ -123,19 +131,46 @@ export default function EditIdeaPage() {
     );
   };
 
-  const handleSubmit = (data: IdeaBankFormValues) => {
+  const handleRemoveImage = () => {
+    pendingFileRef.current = null;
+    if (lastObjectUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+    }
+    lastObjectUrlRef.current = null;
+    if (idea) {
+      form.setValue(
+        "image",
+        idea.image,
+        { shouldDirty: true, shouldValidate: true }
+      );
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSubmit = async (data: IdeaBankFormValues) => {
     if (!id || !idea) {
       toast.error("Idea not loaded");
       return;
     }
 
-    const nextImage = data.image?.url?.startsWith("blob:") ? idea.image : data.image;
+    const file = pendingFileRef.current;
+    let image = data.image ?? idea.image;
 
-    updateIdea({
-      ...data,
-      image: nextImage,
-      isPublic: data.isPublic ?? false,
-    });
+    if (file) {
+      setIsSubmitting(true);
+      try {
+        image = await uploadFileFn(file);
+      } catch (err) {
+        setIsSubmitting(false);
+        toast.error(err instanceof Error ? err.message : "Failed to upload image");
+        return;
+      }
+    }
+
+    updateIdea(
+      { ...data, image, isPublic: data.isPublic ?? false },
+      { onSettled: () => setIsSubmitting(false) }
+    );
   };
 
   if (isLoading) return <DetailPageSkeleton />;
@@ -206,6 +241,17 @@ export default function EditIdeaPage() {
             <div className="flex items-center gap-4">
                <div className="w-40 aspect-video rounded-lg bg-gray-100 overflow-hidden relative">
                 <img src={imageUrl || "/placeholder.png"} className="object-cover w-full h-full" alt="" />
+                {imageUrl ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={isWorking}
+                    className="absolute top-2 left-2 bg-white rounded-lg shadow-sm p-1 disabled:opacity-60"
+                    aria-label="Remove image"
+                  >
+                    <X size={14} className="text-red-500" />
+                  </button>
+                ) : null}
                </div>
                <input
                  ref={fileInputRef}
@@ -219,13 +265,15 @@ export default function EditIdeaPage() {
                  variant="secondary"
                  className="bg-blue-500 text-white hover:bg-blue-600"
                  onClick={handleBrowseClick}
+                 disabled={isWorking}
                >
                  Browse
                </Button>
             </div>
 
-            <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-10 h-12" disabled={isPending}>
-              {isPending ? "Saving..." : "Submit For a review"}
+            <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-10 h-12" disabled={isWorking}>
+              {isWorking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Uploading image..." : isPending ? "Saving..." : "Submit For a review"}
             </Button>
           </form>
         </Form>
