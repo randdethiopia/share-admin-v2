@@ -65,40 +65,43 @@ export function DetailPageSkeleton(props: { className?: string }) {
 
 export function DashboardSkeleton() {
 	return (
-		<div className="space-y-8">
-			<div className="space-y-2">
-				<Skeleton className="h-9 w-48" />
-				<Skeleton className="h-4 w-56" />
+		<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+				<div className="space-y-2">
+					<Skeleton className="h-9 w-48" />
+					<Skeleton className="h-4 w-56" />
+				</div>
+				<Skeleton className="h-10 w-40 rounded-xl" />
 			</div>
 
-			<div className="w-full max-w-md rounded-2xl border border-blue-100 bg-white p-1 shadow-sm">
-				<Skeleton className="h-9 w-full rounded-xl" />
-			</div>
-
-			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-				{Array.from({ length: 3 }).map((_, index) => (
-					<div key={`dash-stat-skeleton-${index}`} className="rounded-2xl border bg-white p-5 shadow-sm">
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+				{Array.from({ length: 4 }).map((_, index) => (
+					<div
+						key={`dash-stat-skeleton-${index}`}
+						className="rounded-md border border-slate-200/80 bg-white/90 p-4"
+					>
 						<Skeleton className="h-4 w-28" />
-						<Skeleton className="mt-3 h-9 w-20" />
-						<Skeleton className="mt-4 h-4 w-16" />
+						<Skeleton className="mt-3 h-8 w-16" />
+						<Skeleton className="mt-2 h-3 w-24" />
 					</div>
 				))}
 			</div>
 
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-				<div className="space-y-4">
-					<Skeleton className="h-6 w-28" />
-					<Skeleton className="h-72 w-full rounded-2xl" />
-				</div>
-				<div className="space-y-4">
-					<Skeleton className="h-6 w-28" />
-					<Skeleton className="h-72 w-full rounded-2xl" />
-				</div>
-				<div className="space-y-4 lg:col-span-2">
-					<Skeleton className="h-6 w-28" />
-					<Skeleton className="h-80 w-full rounded-2xl" />
-				</div>
+			<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+				{Array.from({ length: 2 }).map((_, index) => (
+					<Skeleton key={`chart-row1-${index}`} className="h-[280px] w-full rounded-lg" />
+				))}
 			</div>
+
+			<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+				{Array.from({ length: 2 }).map((_, index) => (
+					<Skeleton key={`chart-row2-${index}`} className="h-[280px] w-full rounded-lg" />
+				))}
+			</div>
+
+			{Array.from({ length: 2 }).map((_, index) => (
+				<Skeleton key={`chart-full-${index}`} className="h-[280px] w-full rounded-lg" />
+			))}
 		</div>
 	);
 }

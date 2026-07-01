@@ -129,3 +129,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+.dashboard-analytics {
+  --dash-bg-primary: #ffffff;
+  --dash-bg-secondary: #f1f5f9;
+  --dash-border: rgba(0, 0, 0, 0.08);
+  --dash-text-primary: #0f172a;
+  --dash-text-secondary: #64748b;
+}
+
+.font-orbitron {
+  font-family: var(--font-orbitron), sans-serif;
+}
+
+.font-exo2 {
+  font-family: var(--font-exo2), sans-serif;
+}
