@@ -2,9 +2,14 @@
 
 import * as React from "react";
 import { Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Sidebar, dashboardMenuItems } from "@/components/sidebar";
+import {
+  getFirstAccessibleHref,
+  isPathAccessible,
+} from "@/lib/access";
+import useAuthStore from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -66,6 +71,24 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
   const [userRole, setUserRole] = React.useState<string>('business');
   const pathname = usePathname();
+  const router = useRouter();
+
+  const { permissions, hasHydrated } = useAuthStore();
+
+  // Gate every dashboard route on the user's permissions. On first entry (or any
+  // link they aren't allowed to open) send them to the first route they can access.
+  const canViewCurrentPath =
+    !hasHydrated || isPathAccessible(pathname, permissions);
+
+  React.useEffect(() => {
+    if (!hasHydrated) return;
+    if (isPathAccessible(pathname, permissions)) return;
+
+    const target = getFirstAccessibleHref(permissions) ?? "/change-password";
+    if (target !== pathname) {
+      router.replace(target);
+    }
+  }, [hasHydrated, pathname, permissions, router]);
 
   // Get user role on mount
   React.useEffect(() => {
@@ -178,7 +201,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </header>
 
         <main className="min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden">
-          {children}
+          {canViewCurrentPath ? children : null}
         </main>
       </div>
     </div>

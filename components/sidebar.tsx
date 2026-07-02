@@ -3,33 +3,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
 import {
-  LayoutDashboard,
-  Users,
-  Mail,
-  Briefcase,
-  BookOpen,
-  Lightbulb,
-  TrendingUp,
-  GraduationCap,
-  FolderOpen,
   UserCog,
-  UserCheck,
-  Building2,
-  UsersRound,
-  Key,
   ChevronRight,
   ChevronDown,
-  ListPlus,
-  List,
   LogOut,
-  Calendar,
-  ClipboardList,
-  Sparkles,
-  type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
+import {
+  type MenuItem,
+  canAccessMenuItem,
+  dashboardMenuItems,
+} from "@/lib/access";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
@@ -38,74 +23,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
-type MenuItem = {
-  id: string;
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  permissions: string[];
-  isCollapsable?: boolean;
-  items?: MenuItem[];
-};
-
-export const dashboardMenuItems: MenuItem[] = [
-  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard.read", "dashboard.write", "dashboard.delete"] },
-  { id: "agar-waitlist", icon: ClipboardList, label: "AGAR Waitlist", href: "/agar-waitlist", permissions: ["agar.waitlist.read", "agar.waitlist.write", "agar.waitlist.delete"] },
-  { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor.read", "investor.write", "investor.delete"] },
-  { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business.read", "business.write", "business.delete"] },
-  { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor.read", "advisor.write", "advisor.delete"] },
-   {
-    id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee.read", "trainee.write", "trainee.delete"], isCollapsable: true, items: [
-      { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
-      { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
-      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] }
-    ]
-  },
-  { id: "projects", icon: Users, label: "Projects", href: "/projects", permissions: ["project.read", "project.write", "project.delete"] },
-   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job.read", "job.write", "job.delete"] },
-  { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation.read", "invitation.write", "invitation.delete"] },
-  { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog.read", "blog.write", "blog.delete"] },
-  { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea.read", "idea.write", "idea.delete"] },
-  { id: "skills", icon: Sparkles, label: "Skills", href: "/skills", permissions: ["skill.read", "skill.write", "skill.delete"] },
-  { id: "opportunity", icon: TrendingUp, label: "Opportunity", href: "/opportunity", permissions: ["opportunity.read", "opportunity.write", "opportunity.delete"] },
-  { id: "admin-management", icon: UserCog, label: "Admin Management", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"], isCollapsable: true, items: [
-    { id: "admins", icon: Users, label: "Users", href: "/admin", permissions: ["admin.read", "admin.write", "admin.delete"] },
-    { id: "roles", icon: Users, label: "Roles", href: "/admin/roles", permissions: ["admin.read", "admin.write", "admin.delete"] },
-  ] },
-  
-  {
-    id: "training-manage",
-    icon: UserCog,
-    label: "Training manage",
-    href: "/coordinator",
-    permissions: [...TRAINING_MENU_PERMISSIONS],
-    isCollapsable: true,
-    items: [
-      {
-        id: "training-manage-my-trainees",
-        icon: Users,
-        label: "My trainees",
-        href: "/coordinator/my-trainees",
-        permissions: [...TRAINING_MENU_PERMISSIONS],
-      },
-      {
-        id: "training-manage-sessions",
-        icon: Calendar,
-        label: "Training sessions",
-        href: "/coordinator/sessions",
-        permissions: [...TRAINING_MENU_PERMISSIONS],
-      },
-    ],
-  },
-  { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password", permissions: ["user.read", "user.write", "user.delete"] },
- 
- 
-  
- 
-
-  
-];
-
+export { dashboardMenuItems } from "@/lib/access";
 
 export function Sidebar({
   className,
@@ -118,47 +36,9 @@ export function Sidebar({
 
   const pathname = usePathname();
 
-  const { user, role, permissions, hasHydrated, logOut } = useAuthStore();
+  const { user, permissions, hasHydrated, logOut } = useAuthStore();
 
-  const normalizedPermissions = permissions?.map((permission) =>
-    permission.toLowerCase()
-  ) ?? [];
-  const hasAllAccess = normalizedPermissions.includes("all_access");
-
-  const normalizedRole = role?.trim().toUpperCase() ?? "";
-  const isTrainingOnlyAdmin =
-    normalizedRole === "ADMIN" &&
-    !hasAllAccess &&
-    !normalizedPermissions.some((p) => p.startsWith("admin.")) &&
-    !normalizedPermissions.some((p) => p.startsWith("admin:")) &&
-    normalizedPermissions.some(
-      (p) =>
-        p.startsWith("trainee.") ||
-        p.startsWith("trainee:") ||
-        p.startsWith("training.") ||
-        p.startsWith("training:") ||
-        p.startsWith("coordinator.") ||
-        p.startsWith("coordinator:")
-    );
-  const isCoordinatorLike = normalizedRole === "COORDINATOR" || isTrainingOnlyAdmin;
-
-  const canViewItem = (item: MenuItem) => {
-    if (hasAllAccess) return true;
-    if (normalizedPermissions.length === 0) return false;
-
-    // Coordinators (and training-only admins acting as coordinators) only see Training manage (+ change password)
-    if (isCoordinatorLike) {
-      return (
-        item.id === "change-password" ||
-        item.id.startsWith("training-manage") ||
-        item.href.startsWith("/coordinator")
-      );
-    }
-
-    return item.permissions.some((permission) =>
-      normalizedPermissions.includes(permission.toLowerCase())
-    );
-  };
+  const canViewItem = (item: MenuItem) => canAccessMenuItem(item, permissions);
 
   const filteredItems = dashboardMenuItems.reduce<MenuItem[]>((items, item) => {
     if (!canViewItem(item)) return items;
@@ -230,10 +110,7 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
-            const resolvedHref =
-              item.label === "Business" && role?.toLowerCase() === "admin"
-                ? "/business"
-                : item.href;
+            const resolvedHref = item.href;
 
             const isActive =
               pathname === resolvedHref ||
