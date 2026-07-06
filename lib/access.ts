@@ -36,7 +36,30 @@ export const ALWAYS_ACCESSIBLE_ITEM_IDS = new Set<string>(["change-password"]);
 
 export const dashboardMenuItems: MenuItem[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", permissions: ["dashboard.read", "dashboard.write", "dashboard.delete"] },
-  { id: "agar-waitlist", icon: ClipboardList, label: "AGAR Waitlist", href: "/agar-waitlist", permissions: ["agar.waitlist.read", "agar.waitlist.write", "agar.waitlist.delete"] },
+  {
+    id: "agar-waitlist",
+    icon: ClipboardList,
+    label: "AGAR Waitlist",
+    href: "/agar-waitlist",
+    permissions: ["agar.waitlist.read", "agar.waitlist.write", "agar.waitlist.delete"],
+    isCollapsable: true,
+    items: [
+      {
+        id: "agar-waitlist-business",
+        icon: Building2,
+        label: "Business",
+        href: "/agar-waitlist",
+        permissions: ["agar.waitlist.read", "agar.waitlist.write", "agar.waitlist.delete"],
+      },
+      {
+        id: "agar-waitlist-mentor",
+        icon: UsersRound,
+        label: "Mentor",
+        href: "/agar-mentor-waitlist",
+        permissions: ["agar.waitlist.read", "agar.waitlist.write", "agar.waitlist.delete"],
+      },
+    ],
+  },
   { id: "mentor", icon: UsersRound, label: "Mentor", href: "/mentor", permissions: ["investor.read", "investor.write", "investor.delete"] },
   { id: "business", icon: Building2, label: "Business", href: "/business", permissions: ["business.read", "business.write", "business.delete"] },
   { id: "expert", icon: UserCheck, label: "Expert", href: "/expert", permissions: ["advisor.read", "advisor.write", "advisor.delete"] },
