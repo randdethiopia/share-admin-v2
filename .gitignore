@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 debug-*.log
+training_dashboard_examples.html
+.cursor/
+.design-system/

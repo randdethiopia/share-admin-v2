@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getInvestmentByProjectIdFn } from "@/lib/api/investment";
 import useAuthStore from "@/store/useAuthStore";
 import Cookies from "js-cookie";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -44,6 +52,7 @@ import {
 	Check,
 	Clock,
 	Eye,
+	MoreHorizontal,
 	Search,
 	Trash2,
 	X,
@@ -51,6 +60,12 @@ import {
 } from "lucide-react";
 
 type StatusFilter = "all" | ProjectStatus;
+const projectTableCol = {
+	info: "w-[40%]",
+	dueDate: "w-[25%]",
+	status: "w-[15%]",
+	actions: "w-[20%]",
+} as const;
 
 function normalizeProjectStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -136,6 +151,8 @@ export default function ProjectsPage() {
 	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
 	const [dueDateFilter, setDueDateFilter] = React.useState("");
 	const [page, setPage] = React.useState(1);
+	const [approveId, setApproveId] = React.useState<string | null>(null);
+	const [approveOpen, setApproveOpen] = React.useState(false);
 	const [rejectId, setRejectId] = React.useState<string | null>(null);
 	const [rejectOpen, setRejectOpen] = React.useState(false);
 	const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -223,6 +240,12 @@ export default function ProjectsPage() {
 		});
 	};
 
+	const onOpenApprove = (id: string) => {
+		if (!id) return;
+		setApproveId(id);
+		setApproveOpen(true);
+	};
+
 	const onReject = (id: string) => {
 		if (!id) return;
 		setRejectId(id);
@@ -245,6 +268,13 @@ export default function ProjectsPage() {
 		if (!hasHydrated) return "Loading…";
 		if (!isAdmin) return "Admins only";
 		return status === "REJECTED" ? "Reject again" : "Reject";
+	};
+
+	const confirmApprove = () => {
+		if (!approveId) return;
+		onApprove(approveId);
+		setApproveOpen(false);
+		setApproveId(null);
 	};
 
 	const confirmDelete = () => {
@@ -281,6 +311,32 @@ export default function ProjectsPage() {
 
 	return (
 		<div className="space-y-6">
+			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Approve Project?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to approve this project? This will change the status to Approved and notify the SME.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={approveMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(e) => {
+								e.preventDefault();
+								confirmApprove();
+							}}
+							disabled={approveMutation.isPending}
+							className="bg-emerald-600 hover:bg-emerald-700"
+						>
+							{approveMutation.isPending ? "Approving…" : "Approve"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
 			<AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -505,7 +561,7 @@ export default function ProjectsPage() {
 												variant="ghost"
 												size="icon"
 												className="h-9 w-9 rounded-xl bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
-												onClick={() => onApprove(project._id)}
+												onClick={() => onOpenApprove(project._id)}
 												disabled={!canMutateProjects || isMutating}
 												aria-label="Approve project"
 												title={getApproveTitle(status)}
@@ -553,13 +609,13 @@ export default function ProjectsPage() {
 					</div>
 
 					<div className="hidden md:block w-full overflow-x-auto">
-						<Table className="w-full min-w-190 md:min-w-0">
+						<Table className="w-full min-w-190 md:min-w-0 table-fixed">
 						<TableHeader className="bg-[#D6E6F2]">
 							<TableRow className="hover:bg-transparent border-none">
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6">Info</TableHead>
-									<TableHead className="hidden md:table-cell font-bold text-slate-700 h-14 px-3 sm:px-6">Due Date</TableHead>
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6">Status</TableHead>
-									<TableHead className="font-bold text-slate-700 h-14 px-3 sm:px-6 text-center">Actions</TableHead>
+									<TableHead className={cn(projectTableCol.info, "font-bold text-slate-700 h-14 px-3 sm:px-6")}>Info</TableHead>
+									<TableHead className={cn(projectTableCol.dueDate, "hidden md:table-cell font-bold text-slate-700 h-14 px-3 sm:px-6")}>Due Date</TableHead>
+									<TableHead className={cn(projectTableCol.status, "font-bold text-slate-700 h-14 px-3 sm:px-6")}>Status</TableHead>
+									<TableHead className={cn(projectTableCol.actions, "font-bold text-slate-700 h-14 px-3 sm:px-6 text-center")}>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
 
@@ -567,22 +623,22 @@ export default function ProjectsPage() {
 							{isLoading ? (
 								Array.from({ length: 8 }).map((_, idx) => (
 									<TableRow key={idx}>
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.info, "px-3 sm:px-6 py-4 sm:py-5")}>
 											<div className="space-y-2">
 												<Skeleton className="h-4 w-2/3" />
 												<Skeleton className="h-3 w-full" />
 											</div>
 										</TableCell>
-										<TableCell className="hidden md:table-cell px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.dueDate, "hidden md:table-cell px-3 sm:px-6 py-4 sm:py-5")}>
 											<div className="space-y-2">
 												<Skeleton className="h-3 w-24" />
 												<Skeleton className="h-3 w-24" />
 											</div>
 										</TableCell>
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.status, "px-3 sm:px-6 py-4 sm:py-5")}>
 											<Skeleton className="h-6 w-20 rounded-full" />
 										</TableCell>
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.actions, "px-3 sm:px-6 py-4 sm:py-5")}>
 											<div className="flex justify-center gap-2">
 												<Skeleton className="h-8 w-8 rounded-lg" />
 												<Skeleton className="h-8 w-8 rounded-lg" />
@@ -616,7 +672,7 @@ export default function ProjectsPage() {
 											key={project._id}
 											className="hover:bg-slate-50/50 border-gray-50"
 										>
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.info, "px-3 sm:px-6 py-4 sm:py-5")}>
 											<div className="font-bold text-slate-900">{project.projectName}</div>
 											<div
 												className="text-xs text-slate-400"
@@ -631,7 +687,7 @@ export default function ProjectsPage() {
 											</div>
 										</TableCell>
 
-										<TableCell className="hidden md:table-cell px-3 sm:px-6 py-4 sm:py-5 text-xs whitespace-nowrap">
+										<TableCell className={cn(projectTableCol.dueDate, "hidden md:table-cell px-3 sm:px-6 py-4 sm:py-5 text-xs whitespace-nowrap")}>
 											<div className="mb-1">
 												<span className="text-slate-400 font-bold mr-2">from:</span>
 												{formatDate(project.startDate)}
@@ -642,7 +698,7 @@ export default function ProjectsPage() {
 											</div>
 										</TableCell>
 
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
+										<TableCell className={cn(projectTableCol.status, "px-3 sm:px-6 py-4 sm:py-5")}>
 											<Badge
 												className={cn(
 													"rounded-full px-3 py-1 text-[10px] font-bold border-none",
@@ -653,52 +709,64 @@ export default function ProjectsPage() {
 											</Badge>
 										</TableCell>
 
-										<TableCell className="px-3 sm:px-6 py-4 sm:py-5">
-											<div className="flex justify-center gap-1 sm:gap-2 flex-wrap">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
-													onClick={() => onView(project)}
-													onMouseEnter={() => prefetchProjectDetails(project._id)}
-													aria-label="View project"
-												>
-													<Eye size={16} />
-												</Button>
-
+										<TableCell className={cn(projectTableCol.actions, "px-3 sm:px-6 py-4 sm:py-5")}>
+											<div className="flex justify-center">
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
 														<Button
 															variant="ghost"
 															size="icon"
-															className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-[#E6F4EA] text-[#1E8E3E] hover:bg-emerald-100"
-															onClick={() => onApprove(project._id)}
-															disabled={!canMutateProjects || isMutating}
-															aria-label="Approve project"
-															title={getApproveTitle(status)}
+															disabled={isMutating}
+															className="h-9 w-9 rounded-lg border border-transparent text-slate-500 hover:bg-slate-100 hover:border-slate-200/80 hover:text-slate-700"
 														>
-															<Check size={16} />
+															<MoreHorizontal className="h-4 w-4" />
+															<span className="sr-only">Open project actions</span>
 														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
-															onClick={() => onReject(project._id)}
-															disabled={!canMutateProjects || isMutating}
-															aria-label="Reject project"
-															title={getRejectTitle(status)}
-														>
-															<X size={16} />
-														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end" className="w-52 rounded-xl">
+														<DropdownMenuItem asChild>
+															<Link
+																href={`/projects/${project._id}`}
+																className="flex cursor-pointer items-center"
+																onMouseEnter={() => prefetchProjectDetails(project._id)}
+															>
+																<Eye className="mr-2 h-4 w-4" />
+																View Details
+															</Link>
+														</DropdownMenuItem>
 
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
-													onClick={() => onDelete(project._id)}
+														<DropdownMenuSeparator />
+
+														{status !== "APPROVED" ? (
+															<DropdownMenuItem
+																onClick={() => onOpenApprove(project._id)}
+																disabled={!canMutateProjects || isMutating}
+															>
+																<Check className="mr-2 h-4 w-4 text-emerald-600" />
+																Approve Project
+															</DropdownMenuItem>
+														) : null}
+
+														{status !== "REJECTED" ? (
+															<DropdownMenuItem
+																onClick={() => onReject(project._id)}
+																disabled={!canMutateProjects || isMutating}
+															>
+																<X className="mr-2 h-4 w-4 text-red-600" />
+																Reject Project
+															</DropdownMenuItem>
+														) : null}
+
+														<DropdownMenuItem
+															onClick={() => onDelete(project._id)}
 															disabled={!canMutateProjects || isMutating}
-													aria-label="Delete project"
-												>
-															<Trash2 size={16} />
-												</Button>
+															className="text-red-600 focus:text-red-700"
+														>
+															<Trash2 className="mr-2 h-4 w-4" />
+															Delete Project
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
 											</div>
 										</TableCell>
 									</TableRow>
