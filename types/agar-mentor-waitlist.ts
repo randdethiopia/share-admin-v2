@@ -1,5 +1,7 @@
 export type AgarMentorWaitlistSortMode = "newest" | "oldest";
 
+export type AgarMentorWaitlistGenderSortMode = "none" | "asc" | "desc";
+
 export type AgarMentorWaitlistApplication = {
 	_id: string;
 	fullName: string;

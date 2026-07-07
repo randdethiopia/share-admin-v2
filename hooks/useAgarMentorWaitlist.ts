@@ -2,12 +2,17 @@
 
 import { useMemo, useState } from "react";
 import AgarMentorWaitlistApi from "@/lib/api/agar-mentor-waitlist";
-import type { AgarMentorWaitlistSortMode } from "@/types/agar-mentor-waitlist";
+import type {
+	AgarMentorWaitlistGenderSortMode,
+	AgarMentorWaitlistSortMode,
+} from "@/types/agar-mentor-waitlist";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import { getGenderBreakdown } from "@/lib/waitlist-stats";
 
 export function useAgarMentorWaitlist() {
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState<AgarMentorWaitlistSortMode>("newest");
+	const [genderSort, setGenderSort] = useState<AgarMentorWaitlistGenderSortMode>("none");
 	const [page, setPage] = useState(1);
 	const pageSize = DEFAULT_PAGE_SIZE;
 
@@ -37,11 +42,18 @@ export function useAgarMentorWaitlist() {
 			: applications;
 
 		return [...filtered].sort((a, b) => {
+			if (genderSort !== "none") {
+				const cmp = (a.gender ?? "").localeCompare(b.gender ?? "", undefined, {
+					sensitivity: "base",
+				});
+				if (cmp !== 0) return genderSort === "asc" ? cmp : -cmp;
+			}
+
 			const aTime = new Date(a.createdAt ?? 0).getTime();
 			const bTime = new Date(b.createdAt ?? 0).getTime();
 			return sort === "newest" ? bTime - aTime : aTime - bTime;
 		});
-	}, [applications, search, sort]);
+	}, [applications, search, sort, genderSort]);
 
 	const pagination = useMemo(
 		() => getPaginationMeta(filteredData.length, page, pageSize),
@@ -51,6 +63,14 @@ export function useAgarMentorWaitlist() {
 	const pageData = useMemo(() => {
 		return filteredData.slice(pagination.startIndex, pagination.endIndexExclusive);
 	}, [filteredData, pagination.startIndex, pagination.endIndexExclusive]);
+
+	const stats = useMemo(
+		() => ({
+			total: applications.length,
+			genderBreakdown: getGenderBreakdown(applications, (item) => item.gender),
+		}),
+		[applications],
+	);
 
 	const errorMessage =
 		(error as { response?: { data?: { message?: string } } })?.response?.data
@@ -66,18 +86,26 @@ export function useAgarMentorWaitlist() {
 		setPage(1);
 	};
 
+	const handleGenderSortChange = (value: AgarMentorWaitlistGenderSortMode) => {
+		setGenderSort(value);
+		setPage(1);
+	};
+
 	return {
 		search,
 		sort,
+		genderSort,
 		page,
 		pageSize,
 		pageData,
 		filteredData,
+		stats,
 		isLoading,
 		isError,
 		errorMessage,
 		setPage,
 		handleSearchChange,
 		handleSortChange,
+		handleGenderSortChange,
 	};
 }

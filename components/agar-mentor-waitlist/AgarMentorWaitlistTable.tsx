@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { Eye, Loader2, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, FileText, Linkedin, Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { AgarMentorWaitlistApplication } from "@/types/agar-mentor-waitlist";
+import type {
+	AgarMentorWaitlistApplication,
+	AgarMentorWaitlistGenderSortMode,
+} from "@/types/agar-mentor-waitlist";
 import AgarMentorWaitlistApi from "@/lib/api/agar-mentor-waitlist";
 import { AgarWaitlistConfirmationModal } from "@/components/agar-waitlist/AgarWaitlistConfirmationModal";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,8 @@ import {
 
 type Props = {
 	items: AgarMentorWaitlistApplication[];
+	genderSort: AgarMentorWaitlistGenderSortMode;
+	onGenderSortChange: (value: AgarMentorWaitlistGenderSortMode) => void;
 	isLoading: boolean;
 	isError: boolean;
 	isEmpty: boolean;
@@ -27,6 +31,8 @@ type Props = {
 
 export function AgarMentorWaitlistTable({
 	items,
+	genderSort,
+	onGenderSortChange,
 	isLoading,
 	isError,
 	isEmpty,
@@ -45,20 +51,49 @@ export function AgarMentorWaitlistTable({
 			<Table>
 				<TableHeader className="bg-[#D6E6F2]">
 					<TableRow className="border-none hover:bg-transparent">
-						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-normal">
-							Applicant
+						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-nowrap">
+							Full name
 						</TableHead>
 						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-normal">
-							Organization
+							Email
 						</TableHead>
 						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-normal">
-							Mentor type
+							Mobile / WhatsApp
 						</TableHead>
-						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-normal">
-							Location
+						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider text-center whitespace-nowrap w-16">
+							LinkedIn
 						</TableHead>
-						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider whitespace-normal">
-							Submitted
+						<TableHead className="font-bold text-[#4A5568] h-12 px-3 text-[11px] uppercase tracking-wider text-center whitespace-nowrap w-24">
+							<div className="inline-flex items-center justify-center gap-1">
+								<span>Gender</span>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									title={
+										genderSort === "asc"
+											? "Sorted ascending"
+											: genderSort === "desc"
+												? "Sorted descending"
+												: "Sort by gender"
+									}
+									onClick={() => {
+										if (genderSort === "none") onGenderSortChange("asc");
+										else if (genderSort === "asc") onGenderSortChange("desc");
+										else onGenderSortChange("none");
+									}}
+									className={`h-6 w-6 shrink-0 rounded-md hover:bg-white/60 ${
+										genderSort === "none"
+											? "text-[#4A5568]/60"
+											: "text-[#3B82F6]"
+									}`}
+								>
+									<ArrowUpDown className="h-3.5 w-3.5" />
+								</Button>
+							</div>
+						</TableHead>
+						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider text-center whitespace-nowrap w-16">
+							CV
 						</TableHead>
 						<TableHead className="font-bold text-[#4A5568] h-12 px-4 text-[11px] uppercase tracking-wider text-center whitespace-normal">
 							Action
@@ -68,20 +103,20 @@ export function AgarMentorWaitlistTable({
 				<TableBody>
 					{isLoading ? (
 						<TableRow>
-							<TableCell colSpan={6} className="h-40 text-center">
+							<TableCell colSpan={7} className="h-40 text-center">
 								<Loader2 className="animate-spin inline mr-2" />
 								Loading...
 							</TableCell>
 						</TableRow>
 					) : isError ? (
 						<TableRow>
-							<TableCell colSpan={6} className="h-40 text-center text-sm text-red-600">
+							<TableCell colSpan={7} className="h-40 text-center text-sm text-red-600">
 								{errorMessage}
 							</TableCell>
 						</TableRow>
 					) : isEmpty ? (
 						<TableRow>
-							<TableCell colSpan={6} className="h-40 text-center text-sm text-gray-500">
+							<TableCell colSpan={7} className="h-40 text-center text-sm text-gray-500">
 								No applications found.
 							</TableCell>
 						</TableRow>
@@ -91,22 +126,47 @@ export function AgarMentorWaitlistTable({
 								key={item._id}
 								className="hover:bg-slate-50/50 border-gray-50"
 							>
-								<TableCell className="px-4 py-4 text-xs font-bold text-gray-700 whitespace-normal">
+								<TableCell className="px-4 py-4 text-xs font-bold text-gray-700 whitespace-nowrap">
 									{item.fullName}
 								</TableCell>
-								<TableCell className="px-4 py-4 text-xs font-bold text-gray-600 whitespace-normal">
-									{item.currentOrganization}
+								<TableCell className="px-4 py-4 text-xs text-gray-500 font-medium whitespace-normal">
+									{item.email}
 								</TableCell>
 								<TableCell className="px-4 py-4 text-xs text-gray-500 font-medium whitespace-normal">
-									{item.mentorType}
+									{item.mobileWhatsApp}
 								</TableCell>
-								<TableCell className="px-4 py-4 text-xs text-gray-500 font-medium whitespace-normal">
-									{item.currentCityAndCountry}
+								<TableCell className="px-4 py-4 text-center whitespace-nowrap w-16">
+									{item.linkedInProfileUrl?.trim() ? (
+										<a
+											href={item.linkedInProfileUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											title="Open LinkedIn profile"
+											className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#EBF5FF] text-[#0A66C2] hover:bg-blue-100"
+										>
+											<Linkedin size={16} />
+										</a>
+									) : (
+										<span className="text-xs text-gray-400">-</span>
+									)}
 								</TableCell>
-								<TableCell className="px-4 py-4 text-xs text-gray-500 font-medium whitespace-normal">
-									{item.createdAt
-										? format(new Date(item.createdAt), "MMM d, yyyy")
-										: "-"}
+								<TableCell className="px-3 py-4 text-xs text-gray-500 font-medium text-center whitespace-nowrap w-24">
+									{item.gender}
+								</TableCell>
+								<TableCell className="px-4 py-4 text-center whitespace-nowrap w-16">
+									{item.cvResumeUrl?.trim() ? (
+										<a
+											href={item.cvResumeUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											title="Open CV / Resume"
+											className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#EBF5FF] text-[#3B82F6] hover:bg-blue-100"
+										>
+											<FileText size={16} />
+										</a>
+									) : (
+										<span className="text-xs text-gray-400">-</span>
+									)}
 								</TableCell>
 								<TableCell className="px-4 py-4 text-center whitespace-normal">
 									<div className="flex items-center justify-center gap-1">

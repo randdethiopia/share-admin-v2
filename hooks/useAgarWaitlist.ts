@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import AgarWaitlistApi from "@/lib/api/agar-waitlist";
 import type { AgarWaitlistSortMode } from "@/types/agar-waitlist";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import { getGenderBreakdown } from "@/lib/waitlist-stats";
 
 export function useAgarWaitlist() {
 	const [search, setSearch] = useState("");
@@ -51,6 +52,17 @@ export function useAgarWaitlist() {
 		return filteredData.slice(pagination.startIndex, pagination.endIndexExclusive);
 	}, [filteredData, pagination.startIndex, pagination.endIndexExclusive]);
 
+	const stats = useMemo(
+		() => ({
+			total: applications.length,
+			genderBreakdown: getGenderBreakdown(
+				applications,
+				(item) => item.founderGender,
+			),
+		}),
+		[applications],
+	);
+
 	const errorMessage =
 		(error as { response?: { data?: { message?: string } } })?.response?.data
 			?.message || "Failed to load AGAR waitlist applications";
@@ -72,6 +84,7 @@ export function useAgarWaitlist() {
 		pageSize,
 		pageData,
 		filteredData,
+		stats,
 		isLoading,
 		isError,
 		errorMessage,

@@ -1,6 +1,7 @@
 "use client";
 
 import { AgarWaitlistHeader } from "@/components/agar-waitlist/AgarWaitlistHeader";
+import { AgarWaitlistStats } from "@/components/agar-waitlist/AgarWaitlistStats";
 import { AgarWaitlistTable } from "@/components/agar-waitlist/AgarWaitlistTable";
 import { AgarWaitlistToolbar } from "@/components/agar-waitlist/AgarWaitlistToolbar";
 import PaginationControls from "@/components/shared/PaginationControls";
@@ -14,6 +15,7 @@ export default function AgarWaitlistPage() {
 		pageSize,
 		pageData,
 		filteredData,
+		stats,
 		isLoading,
 		isError,
 		errorMessage,
@@ -27,6 +29,12 @@ export default function AgarWaitlistPage() {
 			<AgarWaitlistHeader />
 
 			<div className="w-full min-w-0 rounded-3xl md:rounded-[2.5rem] border border-blue-50 bg-white p-4 shadow-sm sm:p-6 md:p-10 min-h-[70vh]">
+				<AgarWaitlistStats
+					total={stats.total}
+					genderBreakdown={stats.genderBreakdown}
+					isLoading={isLoading}
+				/>
+
 				<AgarWaitlistToolbar
 					search={search}
 					sort={sort}

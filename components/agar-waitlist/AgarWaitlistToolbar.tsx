@@ -25,7 +25,7 @@ export function AgarWaitlistToolbar({
 	onSortChange,
 }: Props) {
 	return (
-		<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+		<div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
 			<div className="relative w-full max-w-sm">
 				<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 				<Input
