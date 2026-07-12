@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Eye, Loader2, MoreHorizontal, Search, X } from "lucide-react";
 
 import api from "@/lib/api";
@@ -47,6 +48,9 @@ import {
 } from "@/components/ui/table";
 import {
 	buildDetailHref,
+	buildUrlWithStatus,
+	parseStatusParam,
+	STATUS_URL_PARAM,
 	useCorrectPaginationPage,
 	useUrlPagination,
 } from "@/hooks/use-url-pagination";
@@ -54,6 +58,12 @@ import { getPaginationMeta } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
+const BUSINESS_STATUS_VALUES = [
+	"PENDING",
+	"APPROVED",
+	"REJECTED",
+	"DRAFT",
+] as const satisfies readonly StatusFilter[];
 type ConfirmAction =
 	| "approve"
 	| "reject"
@@ -80,14 +90,14 @@ function normalizeStatus(status?: string) {
 function statusBadgeClass(status: string) {
 	switch (normalizeStatus(status)) {
 		case "APPROVED":
-			return "bg-[#E6F4EA] text-[#1E8E3E]";
+			return "bg-brand-success/15 text-brand-success";
 		case "REJECTED":
-			return "bg-[#FDECEC] text-[#B91C1C]";
+			return "bg-brand-danger/15 text-brand-danger";
 		case "DRAFT":
 			return "bg-slate-100 text-slate-600";
 		case "PENDING":
 		default:
-			return "bg-[#FFF7E6] text-[#B45309]";
+			return "bg-brand-pending/15 text-brand-pending";
 	}
 }
 
@@ -233,9 +243,21 @@ function BusinessActionsMenu({
 }
 
 function BusinessPageInner() {
-	
+	const pathname = usePathname();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const statusFromUrl = React.useMemo(
+		() =>
+			parseStatusParam(
+				searchParams.get(STATUS_URL_PARAM),
+				BUSINESS_STATUS_VALUES
+			) as StatusFilter,
+		[searchParams]
+	);
+
 	const [search, setSearch] = React.useState("");
-	const [status, setStatus] = React.useState<StatusFilter>("all");
+	const [status, setStatus] = React.useState<StatusFilter>(statusFromUrl);
 	const { page, pageSize, setPage, setPageSize, resetPagination } =
 		useUrlPagination();
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -258,6 +280,21 @@ function BusinessPageInner() {
 		api.BusinessProfile.UpdateApprove.useMutation();
 	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
 		api.BusinessProfile.UpdateReject.useMutation();
+
+	React.useEffect(() => {
+		setStatus(statusFromUrl);
+	}, [statusFromUrl]);
+
+	const setStatusFilter = React.useCallback(
+		(value: StatusFilter) => {
+			setStatus(value);
+			router.replace(
+				buildUrlWithStatus(pathname, searchParams, value),
+				{ scroll: false }
+			);
+		},
+		[pathname, router, searchParams]
+	);
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -409,8 +446,7 @@ function BusinessPageInner() {
 									value === "REJECTED" ||
 									value === "DRAFT"
 								) {
-									setStatus(value);
-									resetPagination();
+									setStatusFilter(value);
 								}
 							}}
 						>

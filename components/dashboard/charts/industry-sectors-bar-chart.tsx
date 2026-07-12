@@ -32,7 +32,7 @@ export function IndustrySectorsBarChart({ industrySectors }: Props) {
 			subtitle="Grouped bar — business industries vs expert categories"
 			legend={[
 				<ChartLegendItem key="sme" color={LINE_COLORS.sme} label="Business" />,
-				<ChartLegendItem key="advisor" color="#7F77DD" label="Expert" />,
+				<ChartLegendItem key="advisor" color={LINE_COLORS.advisor} label="Expert" />,
 			]}
 		>
 			{data.length === 0 ? (
@@ -54,7 +54,7 @@ export function IndustrySectorsBarChart({ industrySectors }: Props) {
 						<YAxis tick={{ fill: theme.label, fontSize: 11 }} />
 						<Tooltip />
 						<Bar dataKey="sme" name="Business" fill={LINE_COLORS.sme} radius={[4, 4, 0, 0]} />
-						<Bar dataKey="advisor" name="Expert" fill="#7F77DD" radius={[4, 4, 0, 0]} />
+						<Bar dataKey="advisor" name="Expert" fill={LINE_COLORS.advisor} radius={[4, 4, 0, 0]} />
 					</BarChart>
 				</ResponsiveContainer>
 			)}

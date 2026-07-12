@@ -79,9 +79,9 @@ function JobDetailContent({
                     <div className="space-y-1">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Current Status</p>
                         <div>
-                            {job.status === "PENDING" && <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>}
-                            {job.status === "APPROVED" && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>}
-                            {job.status === "REJECTED" && <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>}
+                            {job.status === "PENDING" && <Badge className="bg-brand-pending/15 text-brand-pending hover:bg-brand-pending/15">Pending</Badge>}
+                            {job.status === "APPROVED" && <Badge className="bg-brand-success/15 text-brand-success hover:bg-brand-success/15">Approved</Badge>}
+                            {job.status === "REJECTED" && <Badge className="bg-brand-danger/15 text-brand-danger hover:bg-brand-danger/15">Rejected</Badge>}
                         </div>
                     </div>
                 </div>
@@ -227,9 +227,9 @@ export default function JobsPage() {
                                                 <h3 className="text-lg font-semibold text-slate-900">
                                                     {job.jobTitle || job.title || "Untitled Job"}
                                                 </h3>
-                                                {job.status === "PENDING" && <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>}
-                                                {job.status === "APPROVED" && <Badge variant="secondary" className="bg-green-100 text-green-800">Approved</Badge>}
-                                                {job.status === "REJECTED" && <Badge variant="secondary" className="bg-red-100 text-red-800">Rejected</Badge>}
+                                                {job.status === "PENDING" && <Badge variant="secondary" className="bg-brand-pending/15 text-brand-pending">Pending</Badge>}
+                                                {job.status === "APPROVED" && <Badge variant="secondary" className="bg-brand-success/15 text-brand-success">Approved</Badge>}
+                                                {job.status === "REJECTED" && <Badge variant="secondary" className="bg-brand-danger/15 text-brand-danger">Rejected</Badge>}
                                             </div>
                                             <div className="text-sm text-slate-600">
                                                 <span className="font-medium text-slate-800">{job.companyName || "Unknown Company"}</span> • {job.jobType || job.employmentType || "Job"}
