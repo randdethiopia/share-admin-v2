@@ -89,11 +89,11 @@ function formatDate(value?: string) {
 function statusBadgeClass(status: string) {
 	switch (normalizeProjectStatus(status)) {
 		case "APPROVED":
-			return "bg-[#E6F4EA] text-[#1E8E3E]";
+			return "bg-brand-success/15 text-brand-success";
 		case "PENDING":
-			return "bg-[#FFF7E6] text-[#B45309]";
+			return "bg-brand-pending/15 text-brand-pending";
 		case "REJECTED":
-			return "bg-[#FDECEC] text-[#B91C1C]";
+			return "bg-brand-danger/15 text-brand-danger";
 		case "DRAFT":
 			return "bg-slate-100 text-slate-600";
 		default:

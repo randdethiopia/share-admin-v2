@@ -19,6 +19,11 @@ export interface CountBucket {
 	count: number;
 }
 
+export interface LabelCountBucket {
+	label: string;
+	count: number;
+}
+
 export interface AdminDashboardStats {
 	meta: {
 		year: number | "all";
@@ -52,8 +57,8 @@ export interface AdminDashboardStats {
 		investor: { average: number; buckets: CountBucket[] };
 	};
 	sizeDistribution: {
-		advisors: CountBucket[];
-		smes: CountBucket[];
+		advisors: LabelCountBucket[];
+		smes: LabelCountBucket[];
 	};
 }
 

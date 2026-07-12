@@ -4,16 +4,16 @@ export const DASHBOARD_PANEL_CLASS =
 	"bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm text-slate-900";
 
 export const STATUS_COLORS: Record<ProfileStatusKey, string> = {
-	APPROVED: "#1D9E75",
-	PENDING: "#EF9F27",
-	REJECTED: "#E24B4A",
+	APPROVED: "#69B34C",
+	PENDING: "#FAB733",
+	REJECTED: "#FF0D0D",
 	DRAFT: "#888780",
 };
 
 export const LINE_COLORS = {
-	sme: "#378ADD",
-	advisor: "#1D9E75",
-	investor: "#7F77DD",
+	sme: "#FF4E11",
+	advisor: "#69B34C",
+	investor: "#ACB334",
 } as const;
 
 export const COMPLETION_THRESHOLD = 70;
@@ -154,14 +154,14 @@ export function mapSizeDistributionGrouped(
 			profile: ROLE_LABELS.advisor,
 			profileKey: "advisor" as const,
 			...Object.fromEntries(
-				sizeDistribution.advisors.map((item) => [item._id, item.count])
+				sizeDistribution.advisors.map((item) => [item.label, item.count])
 			),
 		},
 		{
 			profile: ROLE_LABELS.sme,
 			profileKey: "sme" as const,
 			...Object.fromEntries(
-				sizeDistribution.smes.map((item) => [item._id, item.count])
+				sizeDistribution.smes.map((item) => [item.label, item.count])
 			),
 		},
 	];
@@ -172,12 +172,12 @@ export function mapSizeDistributionData(
 ) {
 	return [
 		...sizeDistribution.advisors.map((item) => ({
-			bucket: item._id,
+			bucket: item.label,
 			count: item.count,
 			profile: "Expert" as const,
 		})),
 		...sizeDistribution.smes.map((item) => ({
-			bucket: item._id,
+			bucket: item.label,
 			count: item.count,
 			profile: "Business" as const,
 		})),

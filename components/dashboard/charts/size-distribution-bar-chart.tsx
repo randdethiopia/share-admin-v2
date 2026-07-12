@@ -32,7 +32,7 @@ export function SizeDistributionBarChart({ sizeDistribution }: Props) {
 			title="Size & experience distribution"
 			subtitle="Vertical bar — staff size and experience brackets"
 			legend={[
-				<ChartLegendItem key="expert" color="#7F77DD" label="Expert experience" />,
+				<ChartLegendItem key="expert" color={LINE_COLORS.advisor} label="Expert experience" />,
 				<ChartLegendItem key="business" color={LINE_COLORS.sme} label="Business staff size" />,
 			]}
 		>
@@ -42,7 +42,7 @@ export function SizeDistributionBarChart({ sizeDistribution }: Props) {
 				</div>
 			) : (
 				<ResponsiveContainer width="100%" height="100%">
-					<BarChart data={data} margin={{ left: 0, right: 8 }}>
+					<BarChart data={data} margin={{ left: 0, right: 8, bottom: 24 }}>
 						<CartesianGrid stroke={theme.grid} vertical={false} />
 						<XAxis
 							dataKey="bucket"
@@ -58,7 +58,7 @@ export function SizeDistributionBarChart({ sizeDistribution }: Props) {
 							{data.map((entry, index) => (
 								<Cell
 									key={`${entry.profile}-${entry.bucket}-${index}`}
-									fill={entry.profile === "Expert" ? "#7F77DD" : LINE_COLORS.sme}
+									fill={entry.profile === "Expert" ? LINE_COLORS.advisor : LINE_COLORS.sme}
 								/>
 							))}
 						</Bar>
