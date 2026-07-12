@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import api from "@/lib/api";
 import type { AdvisorProfileType } from "@/lib/api";
@@ -41,10 +42,21 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
+import {
+	buildUrlWithStatus,
+	parseStatusParam,
+	STATUS_URL_PARAM,
+} from "@/hooks/use-url-pagination";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Search, X, MoreHorizontal } from "lucide-react";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
+const EXPERT_STATUS_VALUES = [
+	"PENDING",
+	"APPROVED",
+	"REJECTED",
+	"DRAFT",
+] as const satisfies readonly StatusFilter[];
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -71,9 +83,22 @@ function formatDate(value?: string) {
 	return d.toLocaleDateString();
 }
 
-export default function ExpertPage() {
+function ExpertPageInner() {
+	const pathname = usePathname();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const statusFromUrl = React.useMemo(
+		() =>
+			parseStatusParam(
+				searchParams.get(STATUS_URL_PARAM),
+				EXPERT_STATUS_VALUES
+			) as StatusFilter,
+		[searchParams]
+	);
+
 	const [search, setSearch] = React.useState("");
-	const [status, setStatus] = React.useState<StatusFilter>("all");
+	const [status, setStatus] = React.useState<StatusFilter>(statusFromUrl);
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
 	const [approveOpen, setApproveOpen] = React.useState(false);
@@ -100,6 +125,22 @@ export default function ExpertPage() {
 			setSelectedId(null);
 		},
 	});
+
+	React.useEffect(() => {
+		setStatus(statusFromUrl);
+	}, [statusFromUrl]);
+
+	const setStatusFilter = React.useCallback(
+		(value: StatusFilter) => {
+			setStatus(value);
+			setPage(1);
+			router.replace(
+				buildUrlWithStatus(pathname, searchParams, value),
+				{ scroll: false }
+			);
+		},
+		[pathname, router, searchParams]
+	);
 
 	const filteredData = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -249,8 +290,7 @@ export default function ExpertPage() {
 									value === "REJECTED" ||
 									value === "DRAFT"
 								) {
-									setStatus(value);
-									setPage(1);
+									setStatusFilter(value);
 								}
 							}}
 						>
@@ -521,5 +561,19 @@ export default function ExpertPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function ExpertPage() {
+	return (
+		<React.Suspense
+			fallback={
+				<div className="flex h-[60vh] items-center justify-center">
+					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<ExpertPageInner />
+		</React.Suspense>
 	);
 }

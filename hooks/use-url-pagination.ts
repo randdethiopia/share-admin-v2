@@ -7,6 +7,38 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 export const PAGE_URL_PARAM = "page";
 export const PAGE_SIZE_URL_PARAM = "pageSize";
+export const STATUS_URL_PARAM = "status";
+
+export function parseStatusParam<T extends string>(
+	value: string | null,
+	allowed: readonly T[]
+): T | "all" {
+	const upper = (value ?? "").trim().toUpperCase();
+	return (allowed as readonly string[]).includes(upper) ? (upper as T) : "all";
+}
+
+function applyStatusParam(params: URLSearchParams, status: string) {
+	if (status === "all") {
+		params.delete(STATUS_URL_PARAM);
+	} else {
+		params.set(STATUS_URL_PARAM, status);
+	}
+}
+
+export function buildUrlWithStatus(
+	pathname: string,
+	searchParams: URLSearchParams,
+	status: string,
+	resetPage = true
+): string {
+	const params = new URLSearchParams(searchParams.toString());
+	applyStatusParam(params, status);
+	if (resetPage) {
+		params.delete(PAGE_URL_PARAM);
+	}
+	const qs = params.toString();
+	return qs ? `${pathname}?${qs}` : pathname;
+}
 
 const ALLOWED_PAGE_SIZES = [10, 20, 50] as const;
 

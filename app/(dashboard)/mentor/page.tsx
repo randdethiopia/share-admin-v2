@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
 	Briefcase,
 	Check,
@@ -62,8 +63,18 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import {
+	buildUrlWithStatus,
+	parseStatusParam,
+	STATUS_URL_PARAM,
+} from "@/hooks/use-url-pagination";
 
 type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED";
+const MENTOR_STATUS_VALUES = [
+	"PENDING",
+	"APPROVED",
+	"REJECTED",
+] as const satisfies readonly StatusFilter[];
 type ConfirmAction = "approve" | "reject";
 
 function normalizeStatus(status?: string) {
@@ -215,9 +226,23 @@ function SheetDetailRow({
 	);
 }
 
-export default function MentorProfilePage() {
+function MentorProfilePageInner() {
+	const pathname = usePathname();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const statusFromUrl = React.useMemo(
+		() =>
+			parseStatusParam(
+				searchParams.get(STATUS_URL_PARAM),
+				MENTOR_STATUS_VALUES
+			) as StatusFilter,
+		[searchParams]
+	);
+
 	const [search, setSearch] = React.useState("");
-	const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
+	const [statusFilter, setStatusFilter] =
+		React.useState<StatusFilter>(statusFromUrl);
 	const [confirmOpen, setConfirmOpen] = React.useState(false);
 	const [selectedId, setSelectedId] = React.useState<string | null>(null);
 	const [actionType, setActionType] =
@@ -239,6 +264,21 @@ export default function MentorProfilePage() {
 		api.MentorProfile.Reject.useMutation();
 
 	const isMutating = isApproving || isRejecting;
+
+	React.useEffect(() => {
+		setStatusFilter(statusFromUrl);
+	}, [statusFromUrl]);
+
+	const setStatusFilterValue = React.useCallback(
+		(value: StatusFilter) => {
+			setStatusFilter(value);
+			router.replace(
+				buildUrlWithStatus(pathname, searchParams, value),
+				{ scroll: false }
+			);
+		},
+		[pathname, router, searchParams]
+	);
 
 	const filteredMentors = React.useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -353,9 +393,16 @@ export default function MentorProfilePage() {
 					<FilterField label="Filter Status">
 						<Select
 							value={statusFilter}
-							onValueChange={(value) =>
-								setStatusFilter(value as StatusFilter)
-							}
+							onValueChange={(value) => {
+								if (
+									value === "all" ||
+									value === "PENDING" ||
+									value === "APPROVED" ||
+									value === "REJECTED"
+								) {
+									setStatusFilterValue(value);
+								}
+							}}
 						>
 							<SelectTrigger
 								className={cn(
@@ -658,5 +705,19 @@ export default function MentorProfilePage() {
 				</SheetContent>
 			</Sheet>
 		</div>
+	);
+}
+
+export default function MentorProfilePage() {
+	return (
+		<React.Suspense
+			fallback={
+				<div className="flex h-[60vh] items-center justify-center">
+					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<MentorProfilePageInner />
+		</React.Suspense>
 	);
 }
