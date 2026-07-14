@@ -16,12 +16,11 @@ import { ChartLegend } from "./chart-legend";
 import { ChartPanel } from "./chart-panel";
 
 const DATA = [
-	{ month: "Jan", enrolled: 180, completed: 110 },
-	{ month: "Feb", enrolled: 210, completed: 140 },
-	{ month: "Mar", enrolled: 195, completed: 130 },
-	{ month: "Apr", enrolled: 240, completed: 165 },
-	{ month: "May", enrolled: 260, completed: 180 },
-	{ month: "Jun", enrolled: 280, completed: 200 },
+	{ month: "Feb", enrolled: 14462, completed: 1637 },
+	{ month: "Mar", enrolled: 14462, completed: 1637 },
+	{ month: "Apr", enrolled: 16660, completed: 3500},
+	{ month: "May", enrolled: 17255, completed: 11476 },
+	{ month: "Jun", enrolled: 20823, completed: 27265 },
 ];
 
 const LEGEND = [
@@ -33,13 +32,12 @@ export function MonthlyEnrolmentChart() {
 	return (
 		<ChartPanel
 			title="Monthly enrolment vs completions"
-			subtitle="Line chart — trend over 6 months"
 			legend={<ChartLegend items={LEGEND} />}
 		>
 			<ResponsiveContainer width="100%" height="100%">
 				<ComposedChart
 					data={DATA}
-					margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+					margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
 					role="img"
 					aria-label="Line chart showing enrolled vs completed participants from January to June"
 				>

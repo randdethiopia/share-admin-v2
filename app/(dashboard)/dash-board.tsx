@@ -69,6 +69,7 @@ function resolveDashboardTitle(pathname: string): string {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [userRole, setUserRole] = React.useState<string>('business');
   const pathname = usePathname();
   const router = useRouter();
@@ -161,13 +162,22 @@ export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen bg-[#E2EDF8]">
       <aside
-        className="fixed hidden h-full w-64 border-r bg-white md:block"
+        className={`fixed hidden h-full border-r bg-white transition-[width] duration-200 md:block ${
+          isSidebarCollapsed ? "w-14" : "w-64"
+        }`}
         aria-label="Main navigation"
       >
-        <Sidebar />
+        <Sidebar
+          collapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        />
       </aside>
 
-      <div className="flex flex-1 flex-col md:ml-64">
+      <div
+        className={`flex flex-1 flex-col transition-[margin] duration-200 ${
+          isSidebarCollapsed ? "md:ml-14" : "md:ml-64"
+        }`}
+      >
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <Sheet
             open={isMobileNavOpen}

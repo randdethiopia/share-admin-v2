@@ -77,6 +77,44 @@ export interface AssignCoordinatorPayload {
 	traineeIds: string[];
 }
 
+export interface TraineeReportTrainees {
+	total: number;
+	completed: number;
+	inProgress: number;
+	accessedNotStarted: number;
+}
+
+export interface TraineeReportRegion {
+	region: string;
+	total: number;
+	completed: number;
+	inProgress: number;
+	accessedNotStarted: number;
+}
+
+export interface TraineeReportGender {
+	gender: string;
+	total: number;
+	completed: number;
+	inProgress: number;
+	accessedNotStarted: number;
+}
+
+export interface TraineeReportAgeGroup {
+	ageGroup: string;
+	total: number;
+	completed: number;
+	inProgress: number;
+	accessedNotStarted: number;
+}
+
+export interface TraineeReport {
+	trainees: TraineeReportTrainees;
+	regions: TraineeReportRegion[];
+	gender: TraineeReportGender[];
+	ageGroups: TraineeReportAgeGroup[];
+}
+
 export interface TraineeRegistrationType {
 	firstname: string;
 	lastname: string;
@@ -271,6 +309,10 @@ export async function assignCoordinatorFn(payload: AssignCoordinatorPayload) {
 	return (
 		await axios.post(`${API_URL}/api/trannie/assign-coordinator`, payload)
 	).data as SuccessRes;
+}
+
+export async function getTraineeReportFn() {
+	return (await axios.get(`${API_URL}/api/trainee-report`)).data as TraineeReport;
 }
 
 const TraineeAuth = {
@@ -601,6 +643,20 @@ const TraineeAuth = {
 				...options,
 			});
 		},
+	},
+
+	GetReport: {
+		useQuery: (
+			options?: Omit<
+				UseQueryOptions<TraineeReport, AxiosError<ErrorRes>>,
+				"queryKey" | "queryFn"
+			>
+		) =>
+			useQuery({
+				queryKey: ["Trainee", "report"],
+				queryFn: getTraineeReportFn,
+				...options,
+			}),
 	},
 };
 

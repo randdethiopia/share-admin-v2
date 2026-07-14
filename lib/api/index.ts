@@ -27,7 +27,7 @@ export type { InvestorProfileType } from "./mentor";
 export type { OpportunityType } from "./opportunity";
 export type { ProjectGallery, ProjectStatus, ProjectType, ProjectUpdate } from "./project";
 export type { SkillType } from "./skills";
-export type { TraineeType } from "./trainee";
+export type { TraineeType, TraineeReport } from "./trainee";
 export type { ApplicantCreateRequest } from "./waitlist";
 export type { InvitationType } from "./invitation";
 export type { AdminDashboardStats } from "./admin-dashboard";

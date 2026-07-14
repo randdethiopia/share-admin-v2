@@ -1,5 +1,6 @@
 "use client";
 
+import type { TraineeReportGender } from "@/lib/api/trainee";
 import {
 	Bar,
 	BarChart,
@@ -10,40 +11,50 @@ import {
 	YAxis,
 } from "recharts";
 
-import { CHART_COLORS } from "./chart-colors";
 import { ChartLegend } from "./chart-legend";
 import { ChartPanel } from "./chart-panel";
+import { TRAINING_STATUS_DEFINITIONS } from "./training-status-definitions";
 
-const DATA = [
-	{ course: "Course A", female: 120, male: 100 },
-	{ course: "Course B", female: 95, male: 80 },
-	{ course: "Course C", female: 140, male: 95 },
-	{ course: "Course D", female: 80, male: 70 },
-	{ course: "Course E", female: 110, male: 90 },
-];
+const LEGEND = TRAINING_STATUS_DEFINITIONS.map((item) => ({
+	color: item.color,
+	label: item.shortLabel,
+}));
 
-const LEGEND = [
-	{ color: CHART_COLORS.purple, label: "Female" },
-	{ color: CHART_COLORS.blue, label: "Male" },
-];
+function formatGenderLabel(gender: string) {
+	return gender.charAt(0).toUpperCase() + gender.slice(1);
+}
 
-export function ParticipantsByGenderChart() {
+type ParticipantsByGenderChartProps = {
+	gender: TraineeReportGender[];
+};
+
+export function ParticipantsByGenderChart({ gender }: ParticipantsByGenderChartProps) {
+	const data = [...gender]
+		.sort((a, b) => b.total - a.total)
+		.map((entry) => ({
+			gender: formatGenderLabel(entry.gender),
+			completed: entry.completed,
+			inProgress: entry.inProgress,
+			accessedNotStarted: entry.accessedNotStarted,
+		}));
+
+	const [completedDef, inProgressDef, accessedDef] = TRAINING_STATUS_DEFINITIONS;
+
 	return (
 		<ChartPanel
 			title="Participants by gender"
-			subtitle="Bar chart — demographic breakdown"
 			legend={<ChartLegend items={LEGEND} />}
 		>
 			<ResponsiveContainer width="100%" height="100%">
 				<BarChart
-					data={DATA}
+					data={data}
 					margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
 					role="img"
-					aria-label="Grouped bar chart showing female and male participants across five courses"
+					aria-label="Grouped bar chart showing completed, in-progress, and accessed-not-started participants by gender"
 				>
 					<CartesianGrid vertical={false} className="stroke-border/40" />
 					<XAxis
-						dataKey="course"
+						dataKey="gender"
 						tick={{ fontSize: 11 }}
 						className="text-muted-foreground"
 						axisLine={false}
@@ -51,8 +62,21 @@ export function ParticipantsByGenderChart() {
 					/>
 					<YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
 					<Tooltip />
-					<Bar dataKey="female" fill={CHART_COLORS.purple} name="Female" />
-					<Bar dataKey="male" fill={CHART_COLORS.blue} name="Male" />
+					<Bar
+						dataKey="completed"
+						fill={completedDef.color}
+						name={completedDef.shortLabel}
+					/>
+					<Bar
+						dataKey="inProgress"
+						fill={inProgressDef.color}
+						name={inProgressDef.shortLabel}
+					/>
+					<Bar
+						dataKey="accessedNotStarted"
+						fill={accessedDef.color}
+						name={accessedDef.shortLabel}
+					/>
 				</BarChart>
 			</ResponsiveContainer>
 		</ChartPanel>

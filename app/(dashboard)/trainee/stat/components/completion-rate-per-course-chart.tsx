@@ -33,7 +33,6 @@ export function CompletionRatePerCourseChart() {
 	return (
 		<ChartPanel
 			title="Completion rate per course"
-			subtitle="Vertical bar chart — compare performance across all courses"
 			legend={<ChartLegend items={LEGEND} />}
 		>
 			<ResponsiveContainer width="100%" height="100%">

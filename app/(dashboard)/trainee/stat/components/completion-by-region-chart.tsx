@@ -1,5 +1,6 @@
 "use client";
 
+import type { TraineeReportRegion } from "@/lib/api/trainee";
 import {
 	Bar,
 	BarChart,
@@ -10,54 +11,73 @@ import {
 	YAxis,
 } from "recharts";
 
-import { CHART_COLORS } from "./chart-colors";
 import { ChartLegend } from "./chart-legend";
 import { ChartPanel } from "./chart-panel";
+import { TRAINING_STATUS_DEFINITIONS } from "./training-status-definitions";
 
-const DATA = [
-	{ region: "North", completed: 180, inProgress: 65, pending: 20 },
-	{ region: "South", completed: 145, inProgress: 80, pending: 35 },
-	{ region: "East", completed: 210, inProgress: 55, pending: 15 },
-	{ region: "West", completed: 95, inProgress: 40, pending: 18 },
-	{ region: "Central", completed: 156, inProgress: 72, pending: 27 },
-];
+const LEGEND = TRAINING_STATUS_DEFINITIONS.map((item) => ({
+	color: item.color,
+	label: item.shortLabel,
+}));
 
-const LEGEND = [
-	{ color: CHART_COLORS.success, label: "Completed" },
-	{ color: CHART_COLORS.warning, label: "In progress" },
-	{ color: CHART_COLORS.danger, label: "Pending" },
-];
+type CompletionByRegionChartProps = {
+	regions: TraineeReportRegion[];
+};
 
-export function CompletionByRegionChart() {
+export function CompletionByRegionChart({ regions }: CompletionByRegionChartProps) {
+	const data = [...regions]
+		.sort((a, b) => b.total - a.total)
+		.map((region) => ({
+			region: region.region,
+			completed: region.completed,
+			inProgress: region.inProgress,
+			accessedNotStarted: region.accessedNotStarted,
+		}));
+
+	const [completedDef, inProgressDef, accessedDef] = TRAINING_STATUS_DEFINITIONS;
+
 	return (
 		<ChartPanel
 			title="Completion by region"
-			subtitle="Horizontal bar — participants per region"
 			legend={<ChartLegend items={LEGEND} />}
+			chartHeightClassName="h-[280px]"
 		>
 			<ResponsiveContainer width="100%" height="100%">
 				<BarChart
-					layout="vertical"
-					data={DATA}
-					margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+					data={data}
+					margin={{ top: 4, right: 8, left: 0, bottom: 48 }}
 					role="img"
-					aria-label="Stacked horizontal bar chart showing completed, in-progress, and pending participants per region"
+					aria-label="Grouped vertical bar chart showing completed, in-progress, and accessed-not-started participants per region"
 				>
-					<CartesianGrid horizontal={false} className="stroke-border/40" />
-					<XAxis type="number" tick={{ fontSize: 11 }} className="text-muted-foreground" />
-					<YAxis
-						type="category"
+					<CartesianGrid vertical={false} className="stroke-border/40" />
+					<XAxis
 						dataKey="region"
-						width={56}
-						tick={{ fontSize: 11 }}
+						angle={-35}
+						textAnchor="end"
+						tick={{ fontSize: 10 }}
+						interval={0}
+						height={56}
 						className="text-muted-foreground"
 						axisLine={false}
 						tickLine={false}
 					/>
+					<YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
 					<Tooltip />
-					<Bar dataKey="completed" stackId="status" fill={CHART_COLORS.success} name="Completed" />
-					<Bar dataKey="inProgress" stackId="status" fill={CHART_COLORS.warning} name="In progress" />
-					<Bar dataKey="pending" stackId="status" fill={CHART_COLORS.danger} name="Pending" />
+					<Bar
+						dataKey="completed"
+						fill={completedDef.color}
+						name={completedDef.shortLabel}
+					/>
+					<Bar
+						dataKey="inProgress"
+						fill={inProgressDef.color}
+						name={inProgressDef.shortLabel}
+					/>
+					<Bar
+						dataKey="accessedNotStarted"
+						fill={accessedDef.color}
+						name={accessedDef.shortLabel}
+					/>
 				</BarChart>
 			</ResponsiveContainer>
 		</ChartPanel>
