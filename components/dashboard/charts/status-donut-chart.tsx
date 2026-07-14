@@ -11,8 +11,8 @@ import {
 } from "recharts";
 
 import type { AdminDashboardStats, ProfileStatusKey } from "@/lib/api/admin-dashboard";
-import { ChartLegendItem, ChartPanel } from "@/components/dashboard/chart-panel";
-import { mapStatusDonutData, STATUS_COLORS } from "@/components/dashboard/chart-utils";
+import { ChartPanel } from "@/components/dashboard/chart-panel";
+import { mapStatusDonutData } from "@/components/dashboard/chart-utils";
 
 type Props = {
 	statusDistribution: AdminDashboardStats["statusDistribution"];
@@ -38,27 +38,41 @@ export function StatusDonutChart({ statusDistribution }: Props) {
 			title="Profile status overview"
 			subtitle="Donut chart — proportion by status across all profiles"
 			contentClassName="min-h-[220px] h-auto"
-			legend={data.map((item) => (
-				<button
-					key={item.status}
-					type="button"
-					onClick={() => setSelectedStatus(item.status)}
-					className={`flex items-center gap-2 rounded-lg border px-2 py-1 text-left transition-all ${
-						selectedStatus === item.status
-							? "border-slate-200/60 bg-slate-100 font-semibold"
-							: "border-transparent hover:bg-slate-50/50"
-					}`}
-				>
-					<ChartLegendItem
-						color={item.fill}
-						label={`${item.name} ${total > 0 ? Math.round((item.value / total) * 100) : 0}%`}
-					/>
-				</button>
-			))}
+			legend={data.map((item) => {
+				const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+				return (
+					<button
+						key={item.status}
+						type="button"
+						onClick={() => setSelectedStatus(item.status)}
+						className={`flex items-center gap-2 rounded-md border px-2 py-1 text-left transition-colors ${
+							selectedStatus === item.status
+								? "border-border bg-secondary font-medium"
+								: "border-transparent hover:bg-muted/50"
+						}`}
+					>
+						<span
+							className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+							style={{ backgroundColor: item.fill }}
+							aria-hidden
+						/>
+						<span className="text-sm text-foreground">
+							{item.name}
+								<span className="ml-1.5 font-semibold tabular-nums">
+								{item.value.toLocaleString()}
+								<span className="font-normal text-muted-foreground">
+									{" "}
+									({percent} %)
+								</span>
+							</span>
+						</span>
+					</button>
+				);
+			})}
 		>
 			<div className="flex h-full flex-col justify-between">
 				{data.length === 0 ? (
-					<div className="flex h-full items-center justify-center text-sm text-slate-500">
+					<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
 						No status data for the selected year
 					</div>
 				) : (
@@ -73,6 +87,7 @@ export function StatusDonutChart({ statusDistribution }: Props) {
 									outerRadius="90%"
 									paddingAngle={2}
 									strokeWidth={2}
+									stroke="hsl(var(--background))"
 									style={{ cursor: "pointer" }}
 									onClick={(_, index) => {
 										const clickedStatus = data[index]?.status;
@@ -92,39 +107,39 @@ export function StatusDonutChart({ statusDistribution }: Props) {
 				)}
 
 				{selectedStatus && (
-					<div className="mt-4 rounded-xl border border-slate-100/60 bg-slate-50/80 p-4 backdrop-blur-sm">
-						<h4 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-							{selectedStatus.toLowerCase()} Profiles Composition
+					<div className="mt-4 rounded-md border border-border/50 bg-secondary/60 p-4">
+						<h4 className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+							{selectedStatus.toLowerCase()} profiles composition
 						</h4>
 						<div className="grid grid-cols-3 gap-3">
 							<Link
 								href={`/business?status=${selectedStatus}`}
-								className="group rounded-lg border border-slate-100 bg-white p-3 text-left transition-all hover:border-brand-primary/40 hover:shadow-sm"
+								className="group rounded-md border border-border/50 bg-card p-3 text-left transition-colors hover:border-border"
 							>
-								<p className="text-[8px] font-bold text-slate-400 transition-colors group-hover:text-brand-primary">
-									BUSINESSES
+								<p className="text-[8px] font-medium uppercase text-muted-foreground">
+									Businesses
 								</p>
-								<p className="text-lg font-black text-slate-800">{getRoleCount("sme")}</p>
+								<p className="text-lg font-semibold text-foreground">{getRoleCount("sme")}</p>
 							</Link>
 
 							<Link
 								href={`/expert?status=${selectedStatus}`}
-								className="group rounded-lg border border-slate-100 bg-white p-3 text-left transition-all hover:border-brand-success/40 hover:shadow-sm"
+								className="group rounded-md border border-border/50 bg-card p-3 text-left transition-colors hover:border-border"
 							>
-								<p className="text-[8px] font-bold text-slate-400 transition-colors group-hover:text-brand-success">
-									EXPERTS
+								<p className="text-[8px] font-medium uppercase text-muted-foreground">
+									Experts
 								</p>
-								<p className="text-lg font-black text-slate-800">{getRoleCount("advisor")}</p>
+								<p className="text-lg font-semibold text-foreground">{getRoleCount("advisor")}</p>
 							</Link>
 
 							<Link
 								href={`/mentor?status=${selectedStatus}`}
-								className="group rounded-lg border border-slate-100 bg-white p-3 text-left transition-all hover:border-brand-accent/40 hover:shadow-sm"
+								className="group rounded-md border border-border/50 bg-card p-3 text-left transition-colors hover:border-border"
 							>
-								<p className="text-[8px] font-bold text-slate-400 transition-colors group-hover:text-brand-accent">
-									MENTORS
+								<p className="text-[8px] font-medium uppercase text-muted-foreground">
+									Mentors
 								</p>
-								<p className="text-lg font-black text-slate-800">{getRoleCount("investor")}</p>
+								<p className="text-lg font-semibold text-foreground">{getRoleCount("investor")}</p>
 							</Link>
 						</div>
 					</div>
@@ -133,5 +148,3 @@ export function StatusDonutChart({ statusDistribution }: Props) {
 		</ChartPanel>
 	);
 }
-
-export { STATUS_COLORS };

@@ -54,15 +54,15 @@ function MonthlyTrendsTooltip({
 	});
 
 	return (
-		<div className="rounded-md border border-slate-200/80 bg-white/95 px-3 py-2 text-xs shadow-sm">
-			<p className="mb-1 font-medium text-slate-900">{label}</p>
+		<div className="rounded-md border border-border/60 bg-card px-3 py-2 text-xs shadow-sm">
+			<p className="mb-1 font-medium text-foreground">{label}</p>
 			<ul className="space-y-1">
 				{items.map((item) => {
 					const dataKey = String(item.dataKey ?? "");
 					const displayName =
 						ROLE_TOOLTIP_LABELS[dataKey] || item.name || dataKey;
 					return (
-						<li key={dataKey} className="flex items-center gap-2 text-slate-700">
+						<li key={dataKey} className="flex items-center gap-2 text-muted-foreground">
 							<span
 								className="inline-block h-2 w-2 rounded-full"
 								style={{ backgroundColor: item.color }}

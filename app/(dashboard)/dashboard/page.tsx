@@ -11,10 +11,8 @@ import { SizeDistributionBarChart } from "@/components/dashboard/charts/size-dis
 import { StatusByRoleBarChart } from "@/components/dashboard/charts/status-by-role-bar-chart";
 import { StatusDonutChart } from "@/components/dashboard/charts/status-donut-chart";
 import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
-import { DASHBOARD_PANEL_CLASS } from "@/components/dashboard/chart-utils";
 import { DashboardSkeleton } from "@/components/shared/page-skeletons";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
 	Select,
 	SelectContent,
@@ -59,9 +57,9 @@ export default function DashboardPage() {
 				?.message ?? "Failed to load dashboard statistics.";
 
 		return (
-			<div className={cn("rounded-lg p-8 text-center", DASHBOARD_PANEL_CLASS)}>
-				<p className="text-sm font-medium text-red-600">{message}</p>
-				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
+			<div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 py-4">
+				<p className="text-sm text-destructive">{message}</p>
+				<Button variant="outline" onClick={() => refetch()}>
 					Try again
 				</Button>
 			</div>
@@ -74,13 +72,13 @@ export default function DashboardPage() {
 	const yearLabel = selectedYear === "all" ? "All Time" : selectedYear;
 
 	return (
-		<div className="flex flex-col gap-6 py-1">
+		<div className="flex flex-col gap-6 py-4">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
+					<h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
 						Overview
 					</h1>
-					<p className="text-sm text-slate-500">
+					<p className="text-sm text-muted-foreground">
 						Platform analytics for {yearLabel}
 					</p>
 				</div>
@@ -90,7 +88,7 @@ export default function DashboardPage() {
 						type="button"
 						variant="outline"
 						size="icon"
-						className="h-10 w-10 rounded-xl"
+						className="h-10 w-10"
 						disabled={isAllTime}
 						onClick={() =>
 							setSelectedYear((year) => (year === "all" ? year : year - 1))
@@ -107,7 +105,7 @@ export default function DashboardPage() {
 					>
 						<SelectTrigger
 							aria-label="Selected year"
-							className="h-10 min-w-[7rem] w-auto rounded-xl bg-white/90 border-slate-200/80 text-slate-900"
+							className="h-10 min-w-[7rem] w-auto bg-card"
 						>
 							<SelectValue placeholder="Year">{yearLabel}</SelectValue>
 						</SelectTrigger>
@@ -124,7 +122,7 @@ export default function DashboardPage() {
 						type="button"
 						variant="outline"
 						size="icon"
-						className="h-10 w-10 rounded-xl"
+						className="h-10 w-10"
 						onClick={() =>
 							setSelectedYear((year) => (year === "all" ? year : year + 1))
 						}
@@ -169,8 +167,10 @@ export default function DashboardPage() {
 				<IndustrySectorsBarChart industrySectors={data.industrySectors} />
 			</div>
 
-			<CompletionRatesBarChart completionRates={data.completionRates} />
-			<SizeDistributionBarChart sizeDistribution={data.sizeDistribution} />
+			<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+				<CompletionRatesBarChart completionRates={data.completionRates} />
+				<SizeDistributionBarChart sizeDistribution={data.sizeDistribution} />
+			</div>
 		</div>
 	);
 }
