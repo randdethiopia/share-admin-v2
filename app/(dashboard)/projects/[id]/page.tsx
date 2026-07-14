@@ -1,11 +1,17 @@
-
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { Exo_2 } from "next/font/google";
 
-import api, { type InvestmentType, type ProjectGallery, type ProjectUpdate } from "@/lib/api";
+import api, {
+	type InvestmentType,
+	type ProjectGallery,
+	type ProjectType,
+	type ProjectUpdate,
+} from "@/lib/api";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,9 +60,15 @@ import {
 	Calendar,
 	CheckCircle2,
 	Clock,
+	ExternalLink,
+	FileText,
+	Globe,
 	Image as ImageIcon,
 	Loader2,
+	Mail,
 	MoreHorizontal,
+	Phone,
+	Tag,
 	Target,
 	Trash2,
 	X,
@@ -64,6 +76,11 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+const exo2 = Exo_2({
+	subsets: ["latin"],
+	variable: "--font-exo2",
+});
 
 function toId(value: string | string[] | undefined) {
 	if (!value) return "";
@@ -82,14 +99,42 @@ function formatCurrencyETB(amount?: number) {
 	return new Intl.NumberFormat("en-ET", { style: "currency", currency: "ETB" }).format(value);
 }
 
+function parseAmount(value?: string | number | null) {
+	if (value == null || value === "") return 0;
+	const parsed = typeof value === "number" ? value : Number(String(value).replace(/,/g, ""));
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeStatus(status?: string) {
+	return (status ?? "").trim().toUpperCase();
+}
+
+function hasFundStatus(value?: string) {
+	return Boolean((value ?? "").trim());
+}
+
+function getRaisedAmount(project: ProjectType, investments: InvestmentType[]) {
+	if (project.raised != null && project.raised !== "") {
+		return parseAmount(project.raised);
+	}
+	return investments
+		.filter((inv) => normalizeStatus(inv.status) === "APPROVED")
+		.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
+}
+
+function getFundingPercent(raised: number, goal: number) {
+	if (goal <= 0) return 0;
+	return Math.min(100, Math.round((raised / goal) * 100));
+}
+
 function statusBadgeClass(status: string) {
-	switch (status) {
+	switch (normalizeStatus(status)) {
 		case "APPROVED":
-			return "bg-[#E6F4EA] text-[#1E8E3E]";
+			return "bg-brand-success/15 text-brand-success";
 		case "PENDING":
-			return "bg-[#FFF7E6] text-[#B45309]";
+			return "bg-brand-pending/15 text-brand-pending";
 		case "REJECTED":
-			return "bg-[#FDECEC] text-[#B91C1C]";
+			return "bg-brand-danger/15 text-brand-danger";
 		case "DRAFT":
 			return "bg-slate-100 text-slate-600";
 		default:
@@ -97,8 +142,22 @@ function statusBadgeClass(status: string) {
 	}
 }
 
+function fundStatusBadgeClass(status: string) {
+	switch (normalizeStatus(status)) {
+		case "APPROVED":
+			return "bg-brand-success/15 text-brand-success";
+		case "RETURNED":
+		case "NOT_RETURNED":
+			return "bg-brand-danger/15 text-brand-danger";
+		case "PENDING":
+			return "bg-brand-pending/15 text-brand-pending";
+		default:
+			return "bg-slate-100 text-slate-600";
+	}
+}
+
 function timelineDotIcon(status: string) {
-	switch (status) {
+	switch (normalizeStatus(status)) {
 		case "APPROVED":
 			return <CheckCircle2 className="h-4 w-4" />;
 		case "REJECTED":
@@ -108,8 +167,12 @@ function timelineDotIcon(status: string) {
 	}
 }
 
-function normalizeProjectStatus(status?: string) {
-	return (status ?? "").trim().toUpperCase();
+function formatWebsiteHref(website?: string) {
+	if (!website) return "";
+	const trimmed = website.trim();
+	if (!trimmed) return "";
+	if (/^https?:\/\//i.test(trimmed)) return trimmed;
+	return `https://${trimmed}`;
 }
 
 type ProjectConfirmAction = "approve" | "reject" | "delete";
@@ -171,6 +234,26 @@ function ProjectLifecycleMenu({
 	);
 }
 
+function DetailField({
+	icon,
+	label,
+	children,
+}: {
+	icon: React.ReactNode;
+	label: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="space-y-1">
+			<p className="text-xs font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
+				{icon}
+				{label}
+			</p>
+			<div className="text-sm font-medium text-slate-900">{children}</div>
+		</div>
+	);
+}
+
 export default function ProjectDetailPage() {
 	const params = useParams();
 	const router = useRouter();
@@ -188,6 +271,15 @@ export default function ProjectDetailPage() {
 	const { data: investments, isLoading: isInvLoading } =
 		api.Investment.GetByProjectId.useQuery(id);
 
+	const companyId = project?.company?._id ?? "";
+	const { data: businessProfile } = api.BusinessProfile.GetById.useQuery(
+		companyId,
+		{
+			queryKey: ["BusinessProfile", companyId],
+			enabled: Boolean(companyId),
+		}
+	);
+
 	const approveInvestment = api.Investment.Approve.useMutation();
 	const approveProject = api.Project.Approve.useMutation();
 	const rejectProject = api.Project.Reject.useMutation();
@@ -196,10 +288,19 @@ export default function ProjectDetailPage() {
 	const approveUpdate = api.Project.ApproveUpdate.useMutation();
 	const rejectUpdate = api.Project.RejectUpdate.useMutation();
 
+	const investmentList = investments ?? [];
+
 	const pendingInvestments = React.useMemo(
-		() => (investments ?? []).filter((inv) => inv.status === "PENDING"),
-		[investments]
+		() => investmentList.filter((inv) => inv.status === "PENDING"),
+		[investmentList]
 	);
+
+	const fundingMetrics = React.useMemo(() => {
+		if (!project) return { goal: 0, raised: 0, percent: 0 };
+		const goal = parseAmount(project.fundingGoal);
+		const raised = getRaisedAmount(project, investmentList);
+		return { goal, raised, percent: getFundingPercent(raised, goal) };
+	}, [project, investmentList]);
 
 	const isLoading = isProjLoading || isInvLoading;
 	const isMutating =
@@ -280,10 +381,19 @@ export default function ProjectDetailPage() {
 		}
 	};
 
-	const projectStatus = normalizeProjectStatus(String(project.status ?? ""));
+	const projectStatus = normalizeStatus(String(project.status ?? ""));
+	const fundStatus = String(project.fundStatus ?? "").trim();
+	const companyName =
+		businessProfile?.businessName || project.company?.businessName || "—";
+	const companyEmail = businessProfile?.email || project.company?.email || "";
+	const companyPhone =
+		businessProfile?.bphoneNumber || project.company?.bphoneNumber || "";
+	const companyWebsite = businessProfile?.website || project.company?.website || "";
+	const websiteHref = formatWebsiteHref(companyWebsite);
+	const categories = project.categories ?? [];
 
 	return (
-		<div className="space-y-6">
+		<div className={cn("space-y-6", exo2.variable)}>
 			<AlertDialog
 				open={projectConfirmOpen}
 				onOpenChange={(open) => {
@@ -362,9 +472,16 @@ export default function ProjectDetailPage() {
 						>
 							{project.status}
 						</Badge>
-						<Badge className="rounded-full px-3 py-1 text-[10px] font-bold border-none bg-slate-100 text-slate-600">
-							Fund: {project.fundStatus}
-						</Badge>
+						{hasFundStatus(fundStatus) ? (
+							<Badge
+								className={cn(
+									"rounded-full px-3 py-1 text-[10px] font-bold border-none",
+									fundStatusBadgeClass(fundStatus)
+								)}
+							>
+								{fundStatus}
+							</Badge>
+						) : null}
 					</div>
 				</div>
 
@@ -391,208 +508,320 @@ export default function ProjectDetailPage() {
 				</div>
 			</div>
 
-			<AdminCard className="p-4 sm:p-8">
-				<div className="flex items-center justify-between gap-3 mb-6">
-					<h3 className="text-lg font-bold text-slate-900">Project Investments</h3>
-					<Badge className="rounded-full px-3 py-1 text-[10px] font-bold border-none bg-slate-100 text-slate-600">
-						{(investments ?? []).length} total
-					</Badge>
-				</div>
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+				{/* Left column — SME demand */}
+				<div className="lg:col-span-2 space-y-6 sm:space-y-8">
+					<AdminCard className="p-4 sm:p-8 bg-white/80 backdrop-blur-sm border-slate-200/80">
+						<div className="flex items-center justify-between gap-3 mb-4">
+							<h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+								<Target className="h-5 w-5 text-emerald-600" />
+								Funding Progress
+							</h3>
+							<span className="font-exo2 text-sm font-semibold text-emerald-600">
+								{fundingMetrics.percent}% funded
+							</span>
+						</div>
+						<p className="font-exo2 text-base sm:text-lg font-semibold text-slate-900">
+							Raised: {formatCurrencyETB(fundingMetrics.raised)} of{" "}
+							{formatCurrencyETB(fundingMetrics.goal)} Goal
+						</p>
+						<div className="mt-4 h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+							<div
+								className="h-full rounded-full bg-[#22C55E] transition-all duration-500"
+								style={{ width: `${fundingMetrics.percent}%` }}
+							/>
+						</div>
+					</AdminCard>
 
-				<div className="rounded-xl border border-slate-200/80 overflow-hidden">
-					<Table>
-						<TableHeader className="bg-slate-50 border-b border-slate-200/80">
-							<TableRow className="border-none hover:bg-transparent">
-								<TableHead className={tableHeadClass}>Investor</TableHead>
-								<TableHead className={tableHeadClass}>Amount</TableHead>
-								<TableHead className={tableHeadClass}>Status</TableHead>
-								<TableHead className={tableHeadClass}>Date</TableHead>
-								<TableHead className={cn(tableHeadClass, "text-right")}>
-									Action
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{(investments ?? []).length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={5}
-										className="py-10 text-center text-sm text-slate-500"
-									>
-										No investments for this project.
-									</TableCell>
-								</TableRow>
-							) : (
-								(investments ?? []).map((inv: InvestmentType) => (
-									<TableRow key={inv._id}>
-										<TableCell className="font-bold text-slate-900">
-											{inv.investor?.fullName || "—"}
-										</TableCell>
-										<TableCell className="font-medium text-slate-700">
-											{formatCurrencyETB(inv.amount)}
-										</TableCell>
-										<TableCell>
-											<Badge
-												className={cn(
-													"rounded-full px-3 py-1 text-[10px] font-bold border-none",
-													statusBadgeClass(inv.status)
-												)}
-											>
-												{inv.status}
-											</Badge>
-										</TableCell>
-										<TableCell className="text-slate-500 text-xs">
-											{formatDate(inv.createdAt as string)}
-										</TableCell>
-										<TableCell className="text-right">
-											{inv.status === "PENDING" ? (
-												<Button
-													size="sm"
-													onClick={onOpenApprove}
-													className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700"
-													disabled={isMutating}
-												>
-													Approve
-												</Button>
-											) : (
-												<span className="text-xs text-slate-400">—</span>
-											)}
-										</TableCell>
+					<AdminCard className="p-4 sm:p-8">
+						<div className="flex items-center justify-between gap-3 mb-6">
+							<h3 className="text-lg font-bold text-slate-900">Project Investments</h3>
+							<Badge className="rounded-full px-3 py-1 text-[10px] font-bold border-none bg-slate-100 text-slate-600">
+								{investmentList.length} total
+							</Badge>
+						</div>
+
+						<div className="rounded-xl border border-slate-200/80 overflow-hidden">
+							<Table>
+								<TableHeader className="bg-slate-50 border-b border-slate-200/80">
+									<TableRow className="border-none hover:bg-transparent">
+										<TableHead className={tableHeadClass}>Investor</TableHead>
+										<TableHead className={tableHeadClass}>Amount</TableHead>
+										<TableHead className={tableHeadClass}>Status</TableHead>
+										<TableHead className={tableHeadClass}>Date</TableHead>
+										<TableHead className={cn(tableHeadClass, "text-right")}>
+											Action
+										</TableHead>
 									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{investmentList.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={5}
+												className="py-10 text-center text-sm text-slate-500"
+											>
+												No investments for this project.
+											</TableCell>
+										</TableRow>
+									) : (
+										investmentList.map((inv: InvestmentType) => (
+											<TableRow key={inv._id}>
+												<TableCell className="font-bold text-slate-900">
+													{inv.investor?.fullName || "—"}
+												</TableCell>
+												<TableCell className="font-medium text-slate-700">
+													{formatCurrencyETB(inv.amount)}
+												</TableCell>
+												<TableCell>
+													<Badge
+														className={cn(
+															"rounded-full px-3 py-1 text-[10px] font-bold border-none",
+															statusBadgeClass(inv.status)
+														)}
+													>
+														{inv.status}
+													</Badge>
+												</TableCell>
+												<TableCell className="text-slate-500 text-xs">
+													{formatDate(inv.createdAt as string)}
+												</TableCell>
+												<TableCell className="text-right">
+													{inv.status === "PENDING" ? (
+														<Button
+															size="sm"
+															onClick={onOpenApprove}
+															className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700"
+															disabled={isMutating}
+														>
+															Approve
+														</Button>
+													) : (
+														<span className="text-xs text-slate-400">—</span>
+													)}
+												</TableCell>
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
+						</div>
+					</AdminCard>
+
+					<AdminCard className="p-4 sm:p-8">
+						<h3 className="text-lg font-bold text-slate-900 mb-8">Timeline</h3>
+						<div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+							{(project.projectUpdates ?? []).length === 0 ? (
+								<div className="text-sm text-slate-500">No updates.</div>
+							) : (
+								project.projectUpdates.map((update: ProjectUpdate) => (
+									<div key={update._id} className="relative flex items-start gap-4">
+										<div
+											className={cn(
+												"absolute left-0 w-10 h-10 rounded-full flex items-center justify-center font-bold z-10 border-2",
+												update.status === "APPROVED"
+													? "bg-emerald-50 border-emerald-600 text-emerald-700"
+													: update.status === "REJECTED"
+														? "bg-red-50 border-red-600 text-red-700"
+														: "bg-blue-50 border-blue-600 text-blue-600"
+											)}
+											aria-hidden
+										>
+											{timelineDotIcon(update.status)}
+										</div>
+										<div className="pl-14 flex-1">
+											<div className="flex justify-between items-start gap-3">
+												<h4 className="font-bold text-slate-900">{update.title}</h4>
+												<span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-bold">
+													{update.status}
+												</span>
+											</div>
+											<p className="text-[10px] text-slate-500 font-bold">
+												{formatDate(update.date)}
+											</p>
+											<div
+												className="text-xs text-slate-600 mt-2 line-clamp-3"
+												dangerouslySetInnerHTML={{ __html: update.description ?? "" }}
+											/>
+											{update.status === "PENDING" && (
+												<div className="flex gap-4 mt-4">
+													<button
+														type="button"
+														className="text-emerald-600 text-[10px] font-bold uppercase hover:underline flex items-center gap-1 disabled:opacity-50"
+														onClick={() =>
+															approveUpdate.mutate({ pid: id, id: update._id })
+														}
+														disabled={isMutating}
+													>
+														<CheckCircle2 size={12} /> Approve
+													</button>
+													<button
+														type="button"
+														className="text-red-500 text-[10px] font-bold uppercase hover:underline flex items-center gap-1 disabled:opacity-50"
+														onClick={() =>
+															rejectUpdate.mutate({ pid: id, id: update._id })
+														}
+														disabled={isMutating}
+													>
+														<XCircle size={12} /> Reject
+													</button>
+												</div>
+											)}
+										</div>
+									</div>
 								))
 							)}
-						</TableBody>
-					</Table>
+						</div>
+					</AdminCard>
 				</div>
-			</AdminCard>
 
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				<AdminCard className="lg:col-span-2 p-4 sm:p-8">
-					<h3 className="text-lg font-bold text-slate-900 mb-6">Gallery</h3>
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-						{(project.projectGallery ?? []).length === 0 ? (
-							<div className="col-span-full text-sm text-slate-500">
-								No images.
-							</div>
-						) : (
-							project.projectGallery.map((img: ProjectGallery, i: number) => (
-								<div
-									key={i}
-									className="aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/80"
-								>
-									{img?.url ? (
-										<img
-											src={img.url}
-											alt=""
-											className="w-full h-full object-cover"
-										/>
+				{/* Right column — SME metadata */}
+				<div className="space-y-6 sm:space-y-8">
+					<AdminCard className="p-4 sm:p-8">
+						<h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+							<Building2 className="h-5 w-5 text-blue-600" />
+							SME Project Owner
+						</h3>
+						<div className="space-y-4">
+							<DetailField icon={<Building2 className="h-3.5 w-3.5" />} label="Company">
+								{companyId ? (
+									<Link
+										href={`/business/${companyId}`}
+										className="text-blue-600 hover:underline cursor-pointer"
+									>
+										{companyName}
+									</Link>
+								) : (
+									companyName
+								)}
+							</DetailField>
+							<DetailField icon={<Mail className="h-3.5 w-3.5" />} label="Email">
+								{companyEmail ? (
+									<a
+										href={`mailto:${companyEmail}`}
+										className="text-blue-600 hover:underline cursor-pointer"
+									>
+										{companyEmail}
+									</a>
+								) : (
+									"—"
+								)}
+							</DetailField>
+							<DetailField icon={<Phone className="h-3.5 w-3.5" />} label="Phone">
+								{companyPhone ? (
+									<a
+										href={`tel:${companyPhone}`}
+										className="text-blue-600 hover:underline cursor-pointer"
+									>
+										{companyPhone}
+									</a>
+								) : (
+									"—"
+								)}
+							</DetailField>
+							<DetailField icon={<Globe className="h-3.5 w-3.5" />} label="Website">
+								{websiteHref ? (
+									<a
+										href={websiteHref}
+										target="_blank"
+										rel="noreferrer"
+										className="inline-flex items-center gap-1 text-blue-600 hover:underline cursor-pointer"
+									>
+										{companyWebsite}
+										<ExternalLink className="h-3.5 w-3.5" />
+									</a>
+								) : (
+									"—"
+								)}
+							</DetailField>
+						</div>
+					</AdminCard>
+
+					<AdminCard className="p-4 sm:p-8">
+						<h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+							<FileText className="h-5 w-5 text-blue-600" />
+							Project Details
+						</h3>
+						<div className="space-y-6">
+							<div>
+								<p className="text-xs font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-1.5 mb-2">
+									<Tag className="h-3.5 w-3.5" />
+									Categories
+								</p>
+								<div className="flex flex-wrap gap-2">
+									{categories.length > 0 ? (
+										categories.map((category) => (
+											<Badge
+												key={category}
+												className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border-none shadow-none"
+											>
+												{category}
+											</Badge>
+										))
 									) : (
-										<div className="flex items-center justify-center h-full">
-											<ImageIcon className="text-slate-300" />
-										</div>
+										<p className="text-sm text-slate-500">No categories provided.</p>
 									)}
 								</div>
-							))
-						)}
-					</div>
+							</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-10 border-t border-slate-200/80 pt-8">
-						<div className="space-y-1">
-							<p className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
-								<Target size={12} /> Funding Goal
-							</p>
-							<p className="text-xl font-bold text-slate-900">
-								{project.fundingGoal} ETB
-							</p>
-						</div>
-						<div className="space-y-1">
-							<p className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
-								<Building2 size={12} /> SME Business
-							</p>
-							<p className="text-slate-900 font-semibold">
-								{project.company?.businessName || "—"}
-							</p>
-						</div>
-						<div className="space-y-1">
-							<p className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
-								<Calendar size={12} /> Start
-							</p>
-							<p className="text-slate-900 font-semibold">{formatDate(project.startDate)}</p>
-						</div>
-						<div className="space-y-1">
-							<p className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
-								<Calendar size={12} /> End
-							</p>
-							<p className="text-slate-900 font-semibold">{formatDate(project.endDate)}</p>
-						</div>
-					</div>
-				</AdminCard>
+							<DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Legal Format">
+								{project.legalFormat || "—"}
+							</DetailField>
 
-				<AdminCard className="p-4 sm:p-8">
-					<h3 className="text-lg font-bold text-slate-900 mb-8">Timeline</h3>
-					<div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-						{(project.projectUpdates ?? []).length === 0 ? (
-							<div className="text-sm text-slate-500">No updates.</div>
-						) : (
-							project.projectUpdates.map((update: ProjectUpdate) => (
-								<div key={update._id} className="relative flex items-start gap-4">
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<DetailField icon={<Calendar className="h-3.5 w-3.5" />} label="Start Date">
+									{formatDate(project.startDate)}
+								</DetailField>
+								<DetailField icon={<Calendar className="h-3.5 w-3.5" />} label="End Date">
+									{formatDate(project.endDate)}
+								</DetailField>
+							</div>
+
+							<div>
+								<p className="text-xs font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-1.5 mb-2">
+									<FileText className="h-3.5 w-3.5" />
+									Description
+								</p>
+								{project.description ? (
 									<div
-										className={cn(
-											"absolute left-0 w-10 h-10 rounded-full flex items-center justify-center font-bold z-10 border-2",
-											update.status === "APPROVED"
-												? "bg-emerald-50 border-emerald-600 text-emerald-700"
-												: update.status === "REJECTED"
-													? "bg-red-50 border-red-600 text-red-700"
-													: "bg-blue-50 border-blue-600 text-blue-600"
-										)}
-										aria-hidden
+										className="text-sm leading-7 text-slate-600 prose prose-sm max-w-none"
+										dangerouslySetInnerHTML={{ __html: project.description }}
+									/>
+								) : (
+									<p className="text-sm text-slate-500">No description provided.</p>
+								)}
+							</div>
+						</div>
+					</AdminCard>
+
+					<AdminCard className="p-4 sm:p-8">
+						<h3 className="text-lg font-bold text-slate-900 mb-6">Gallery</h3>
+						<div className="grid grid-cols-2 gap-4">
+							{(project.projectGallery ?? []).length === 0 ? (
+								<div className="col-span-full text-sm text-slate-500">No images.</div>
+							) : (
+								project.projectGallery.map((img: ProjectGallery, i: number) => (
+									<div
+										key={i}
+										className="aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/80"
 									>
-										{timelineDotIcon(update.status)}
-									</div>
-									<div className="pl-14 flex-1">
-										<div className="flex justify-between items-start gap-3">
-											<h4 className="font-bold text-slate-900">{update.title}</h4>
-											<span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-bold">
-												{update.status}
-											</span>
-										</div>
-										<p className="text-[10px] text-slate-500 font-bold">
-											{formatDate(update.date)}
-										</p>
-										<div
-											className="text-xs text-slate-600 mt-2 line-clamp-3"
-											dangerouslySetInnerHTML={{ __html: update.description ?? "" }}
-										/>
-										{update.status === "PENDING" && (
-											<div className="flex gap-4 mt-4">
-												<button
-													type="button"
-													className="text-emerald-600 text-[10px] font-bold uppercase hover:underline flex items-center gap-1 disabled:opacity-50"
-													onClick={() =>
-														approveUpdate.mutate({ pid: id, id: update._id })
-													}
-													disabled={isMutating}
-												>
-													<CheckCircle2 size={12} /> Approve
-												</button>
-												<button
-													type="button"
-													className="text-red-500 text-[10px] font-bold uppercase hover:underline flex items-center gap-1 disabled:opacity-50"
-													onClick={() =>
-														rejectUpdate.mutate({ pid: id, id: update._id })
-													}
-													disabled={isMutating}
-												>
-													<XCircle size={12} /> Reject
-												</button>
+										{img?.url ? (
+											<img
+												src={img.url}
+												alt=""
+												className="w-full h-full object-cover"
+											/>
+										) : (
+											<div className="flex items-center justify-center h-full">
+												<ImageIcon className="text-slate-300" />
 											</div>
 										)}
 									</div>
-								</div>
-							))
-						)}
-					</div>
-				</AdminCard>
+								))
+							)}
+						</div>
+					</AdminCard>
+				</div>
 			</div>
 
 			<Dialog open={approveOpen} onOpenChange={setApproveOpen}>
@@ -643,4 +872,3 @@ export default function ProjectDetailPage() {
 		</div>
 	);
 }
-

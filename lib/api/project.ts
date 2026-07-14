@@ -39,16 +39,22 @@ export interface ProjectFormType {
 	consent: boolean;
 }
 
+export interface ProjectCompanyType {
+	_id: string;
+	smeId?: string;
+	businessName: string;
+	email?: string;
+	bphoneNumber?: string;
+	website?: string;
+}
+
 export interface ProjectType extends ProjectFormType {
 	_id: string;
 	smeId?: string;
 	status: ProjectStatus | string;
-	fundStatus: FundStatus;
-	company: {
-		_id: string;
-		smeId: string;
-		businessName: string;
-	};
+	fundStatus?: FundStatus | string;
+	raised?: number | string;
+	company: ProjectCompanyType;
 }
 
 function updateProjectCache(

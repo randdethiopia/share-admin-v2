@@ -37,6 +37,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-danger: var(--brand-danger);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-pending: var(--brand-pending);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-success: var(--brand-success);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,6 +54,12 @@
 
 :root {
   --radius: 0.625rem;
+  --brand-danger: #FF0D0D;
+  --brand-primary: #FF4E11;
+  --brand-secondary: #FF8E15;
+  --brand-pending: #FAB733;
+  --brand-accent: #ACB334;
+  --brand-success: #69B34C;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

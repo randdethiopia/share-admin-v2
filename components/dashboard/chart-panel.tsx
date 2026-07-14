@@ -10,6 +10,7 @@ type ChartPanelProps = {
 	legend?: ReactNode;
 	children: ReactNode;
 	className?: string;
+	contentClassName?: string;
 };
 
 export function ChartPanel({
@@ -18,6 +19,7 @@ export function ChartPanel({
 	legend,
 	children,
 	className,
+	contentClassName,
 }: ChartPanelProps) {
 	return (
 		<div className={cn("rounded-lg p-5", DASHBOARD_PANEL_CLASS, className)}>
@@ -26,7 +28,7 @@ export function ChartPanel({
 				<p className="mt-1 text-xs text-slate-500">{subtitle}</p>
 			) : null}
 			{legend ? <div className="mb-3 mt-4 flex flex-wrap gap-2">{legend}</div> : null}
-			<div className="h-[200px] w-full">{children}</div>
+			<div className={cn("w-full", contentClassName ?? "h-[200px]")}>{children}</div>
 		</div>
 	);
 }
