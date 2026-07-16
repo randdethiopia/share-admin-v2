@@ -25,7 +25,7 @@ const DATA = [
 ];
 
 const LEGEND = [
-	{ color: CHART_COLORS.blue, label: "trainees comletion status" },
+	{ color: CHART_COLORS.blue, label: "Trainees completion status" },
 	{ color: CHART_COLORS.success, label: "Trainees in progress" },
 ];
 
@@ -52,7 +52,7 @@ export function MonthlyEnrolmentChart() {
 						dataKey="enrolled"
 						fill={`${CHART_COLORS.blue}14`}
 						stroke="none"
-						name="trainees comletion status"
+						name="Trainees completion status"
 					/>
 					<Area
 						type="monotone"
@@ -67,7 +67,7 @@ export function MonthlyEnrolmentChart() {
 						stroke={CHART_COLORS.blue}
 						strokeWidth={2}
 						dot={{ r: 4 }}
-						name="trainees comletion status"
+						name="Trainees completion status"
 					/>
 					<Line
 						type="monotone"

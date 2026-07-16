@@ -51,6 +51,7 @@ export default function TraineeStatPage() {
 			<MonthlyEnrolmentChart />
 
 			<SnapshotCards
+				trainees={data.trainees}
 				gender={data.gender}
 				ageGroups={data.ageGroups}
 				regions={data.regions}
