@@ -7,6 +7,8 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,9 +30,13 @@ export { dashboardMenuItems } from "@/lib/access";
 export function Sidebar({
   className,
   onNavigate,
+  collapsed = false,
+  onToggleCollapse,
 }: {
   className?: string;
   onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -86,6 +92,31 @@ export function Sidebar({
 
   if (!hasHydrated) return null;
 
+  if (collapsed) {
+    return (
+      <div
+        className={cn(
+          "flex h-full w-full flex-col items-center bg-white md:h-screen md:border-r",
+          className,
+        )}
+      >
+        <div className="flex w-full justify-center border-b px-2 py-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            aria-label="Show sidebar"
+            title="Show sidebar"
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <PanelLeftOpen className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -93,7 +124,20 @@ export function Sidebar({
         className,
       )}
     >
-      <div className="flex flex-col items-center gap-3 border-b px-6 py-6">
+      <div className="relative flex flex-col items-center gap-3 border-b px-6 py-6">
+        {onToggleCollapse ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            aria-label="Hide sidebar"
+            title="Hide sidebar"
+            className="absolute top-3 right-3 text-gray-500 hover:text-gray-900"
+          >
+            <PanelLeftClose className="h-5 w-5" />
+          </Button>
+        ) : null}
         <Avatar className="h-16 w-16">
           <AvatarFallback className="bg-gray-200 text-gray-600">
             <UserCog className="h-8 w-8" />

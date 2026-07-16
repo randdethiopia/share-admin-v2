@@ -1,16 +1,17 @@
 "use client";
 
-import { AgarWaitlistHeader } from "@/components/agar-waitlist/AgarWaitlistHeader";
-import { AgarWaitlistStats } from "@/components/agar-waitlist/AgarWaitlistStats";
-import { AgarWaitlistTable } from "@/components/agar-waitlist/AgarWaitlistTable";
-import { AgarWaitlistToolbar } from "@/components/agar-waitlist/AgarWaitlistToolbar";
+import { AgarMentorWaitlistHeader } from "@/components/agar-mentor-waitlist/AgarMentorWaitlistHeader";
+import { AgarMentorWaitlistStats } from "@/components/agar-mentor-waitlist/AgarMentorWaitlistStats";
+import { AgarMentorWaitlistTable } from "@/components/agar-mentor-waitlist/AgarMentorWaitlistTable";
+import { AgarMentorWaitlistToolbar } from "@/components/agar-mentor-waitlist/AgarMentorWaitlistToolbar";
 import PaginationControls from "@/components/shared/PaginationControls";
-import { useAgarWaitlist } from "@/hooks/useAgarWaitlist";
+import { useAgarMentorWaitlist } from "@/hooks/useAgarMentorWaitlist";
 
-export default function AgarWaitlistPage() {
+export default function AgarMentorWaitlistPage() {
 	const {
 		search,
 		sort,
+		genderSort,
 		page,
 		pageSize,
 		pageData,
@@ -22,20 +23,21 @@ export default function AgarWaitlistPage() {
 		setPage,
 		handleSearchChange,
 		handleSortChange,
-	} = useAgarWaitlist();
+		handleGenderSortChange,
+	} = useAgarMentorWaitlist();
 
 	return (
 		<div className="w-full min-w-0 space-y-6">
-			<AgarWaitlistHeader />
+			<AgarMentorWaitlistHeader />
 
 			<div className="w-full min-w-0 rounded-3xl md:rounded-[2.5rem] border border-blue-50 bg-white p-4 shadow-sm sm:p-6 md:p-10 min-h-[70vh]">
-				<AgarWaitlistStats
+				<AgarMentorWaitlistStats
 					total={stats.total}
 					genderBreakdown={stats.genderBreakdown}
 					isLoading={isLoading}
 				/>
 
-				<AgarWaitlistToolbar
+				<AgarMentorWaitlistToolbar
 					search={search}
 					sort={sort}
 					totalCount={filteredData.length}
@@ -43,8 +45,10 @@ export default function AgarWaitlistPage() {
 					onSortChange={handleSortChange}
 				/>
 
-				<AgarWaitlistTable
+				<AgarMentorWaitlistTable
 					items={pageData}
+					genderSort={genderSort}
+					onGenderSortChange={handleGenderSortChange}
 					isLoading={isLoading}
 					isError={isError}
 					isEmpty={filteredData.length === 0}

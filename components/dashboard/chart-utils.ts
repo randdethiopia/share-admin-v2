@@ -1,19 +1,29 @@
 import type { AdminDashboardStats, ProfileStatusKey } from "@/lib/api/admin-dashboard";
 
+export const BRAND_GREEN = "#68b247";
+
+export const GREEN_SHADES = {
+	dark: "#3f7a2a",
+	base: BRAND_GREEN,
+	mid: "#8fc86f",
+	light: "#b5dba0",
+	soft: "#d4ebc8",
+} as const;
+
 export const DASHBOARD_PANEL_CLASS =
-	"bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm text-slate-900";
+	"rounded-lg border border-border/60 bg-card text-foreground";
 
 export const STATUS_COLORS: Record<ProfileStatusKey, string> = {
-	APPROVED: "#69B34C",
-	PENDING: "#FAB733",
-	REJECTED: "#FF0D0D",
-	DRAFT: "#888780",
+	APPROVED: GREEN_SHADES.dark,
+	PENDING: GREEN_SHADES.base,
+	REJECTED: GREEN_SHADES.mid,
+	DRAFT: GREEN_SHADES.light,
 };
 
 export const LINE_COLORS = {
-	sme: "#FF4E11",
-	advisor: "#69B34C",
-	investor: "#ACB334",
+	sme: GREEN_SHADES.dark,
+	advisor: GREEN_SHADES.base,
+	investor: GREEN_SHADES.mid,
 } as const;
 
 export const COMPLETION_THRESHOLD = 70;
@@ -186,7 +196,7 @@ export function mapSizeDistributionData(
 
 export function getChartTheme() {
 	return {
-		grid: "rgba(0,0,0,0.1)",
-		label: "#64748B",
+		grid: "color-mix(in oklch, var(--border) 40%, transparent)",
+		label: "var(--muted-foreground)",
 	};
 }

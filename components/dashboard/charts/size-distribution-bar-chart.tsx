@@ -31,13 +31,15 @@ export function SizeDistributionBarChart({ sizeDistribution }: Props) {
 		<ChartPanel
 			title="Size & experience distribution"
 			subtitle="Vertical bar — staff size and experience brackets"
+			className="flex h-full flex-col"
+			contentClassName="min-h-[280px] flex-1"
 			legend={[
 				<ChartLegendItem key="expert" color={LINE_COLORS.advisor} label="Expert experience" />,
 				<ChartLegendItem key="business" color={LINE_COLORS.sme} label="Business staff size" />,
 			]}
 		>
 			{data.length === 0 ? (
-				<div className="flex h-full items-center justify-center text-sm text-slate-500">
+				<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
 					No size distribution data for the selected year
 				</div>
 			) : (

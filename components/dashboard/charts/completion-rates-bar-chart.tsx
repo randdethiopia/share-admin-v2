@@ -5,6 +5,7 @@ import {
 	BarChart,
 	CartesianGrid,
 	Cell,
+	LabelList,
 	ReferenceLine,
 	ResponsiveContainer,
 	Tooltip,
@@ -25,6 +26,34 @@ type Props = {
 	completionRates: AdminDashboardStats["completionRates"];
 };
 
+const AXIS_TICK_FILL = "#737373";
+
+function PercentYTick({
+	x,
+	y,
+	payload,
+}: {
+	x?: number;
+	y?: number;
+	payload?: { value: number };
+}) {
+	if (x == null || y == null || payload == null) return null;
+
+	return (
+		<text
+			x={x}
+			y={y}
+			dy={4}
+			textAnchor="end"
+			fill={AXIS_TICK_FILL}
+			fontSize={12}
+			fontWeight={500}
+		>
+			{`${payload.value}%`}
+		</text>
+	);
+}
+
 export function CompletionRatesBarChart({ completionRates }: Props) {
 	const theme = getChartTheme();
 	const data = mapCompletionRatesData(completionRates);
@@ -33,6 +62,8 @@ export function CompletionRatesBarChart({ completionRates }: Props) {
 		<ChartPanel
 			title="Profile completion rate"
 			subtitle="Vertical bar chart — average completion per profile type"
+			className="flex h-full flex-col"
+			contentClassName="min-h-[280px] flex-1"
 			legend={[
 				<ChartLegendItem
 					key="ok"
@@ -47,11 +78,13 @@ export function CompletionRatesBarChart({ completionRates }: Props) {
 			]}
 		>
 			<ResponsiveContainer width="100%" height="100%">
-				<BarChart data={data} margin={{ left: 0, right: 8 }}>
+				<BarChart data={data} margin={{ top: 20, left: 4, right: 8 }}>
 					<CartesianGrid stroke={theme.grid} vertical={false} />
 					<XAxis dataKey="role" tick={{ fill: theme.label, fontSize: 11 }} />
 					<YAxis
 						domain={[0, 100]}
+						ticks={[0, 25, 50, 75, 100]}
+						width={40}
 						tick={{ fill: theme.label, fontSize: 11 }}
 						tickFormatter={(v) => `${v}%`}
 					/>
@@ -72,6 +105,12 @@ export function CompletionRatesBarChart({ completionRates }: Props) {
 								}
 							/>
 						))}
+						<LabelList
+							dataKey="rate"
+							position="top"
+							formatter={(value: number) => `${value.toFixed(1)}%`}
+							style={{ fill: theme.label, fontSize: 11, fontWeight: 600 }}
+						/>
 					</Bar>
 				</BarChart>
 			</ResponsiveContainer>

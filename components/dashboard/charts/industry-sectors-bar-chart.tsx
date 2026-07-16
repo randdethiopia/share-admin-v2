@@ -36,7 +36,7 @@ export function IndustrySectorsBarChart({ industrySectors }: Props) {
 			]}
 		>
 			{data.length === 0 ? (
-				<div className="flex h-full items-center justify-center text-sm text-slate-500">
+				<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
 					No industry data for the selected year
 				</div>
 			) : (

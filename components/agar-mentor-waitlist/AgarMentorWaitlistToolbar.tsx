@@ -7,17 +7,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { AgarWaitlistSortMode } from "@/types/agar-waitlist";
+import type { AgarMentorWaitlistSortMode } from "@/types/agar-mentor-waitlist";
 
 type Props = {
 	search: string;
-	sort: AgarWaitlistSortMode;
+	sort: AgarMentorWaitlistSortMode;
 	totalCount: number;
 	onSearchChange: (value: string) => void;
-	onSortChange: (value: AgarWaitlistSortMode) => void;
+	onSortChange: (value: AgarMentorWaitlistSortMode) => void;
 };
 
-export function AgarWaitlistToolbar({
+export function AgarMentorWaitlistToolbar({
 	search,
 	sort,
 	totalCount,
@@ -29,7 +29,7 @@ export function AgarWaitlistToolbar({
 			<div className="relative w-full max-w-sm">
 				<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 				<Input
-					placeholder="Search name, business, email, city..."
+					placeholder="Search name, organization, email, location..."
 					className="pl-11 bg-[#F3F8FF] border-none h-12 rounded-xl text-sm"
 					value={search}
 					onChange={(e) => onSearchChange(e.target.value)}
