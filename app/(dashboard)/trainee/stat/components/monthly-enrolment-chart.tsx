@@ -20,7 +20,8 @@ const DATA = [
 	{ month: "Mar", enrolled: 14462, completed: 1637 },
 	{ month: "Apr", enrolled: 16660, completed: 3500},
 	{ month: "May", enrolled: 17255, completed: 11476 },
-	{ month: "Jun", enrolled: 20823, completed: 27265 },
+	{ month: "Jun", enrolled: 20783, completed: 27215 },
+	{ month: "Jul", enrolled: 20823, completed: 27265 },
 ];
 
 const LEGEND = [
@@ -32,6 +33,7 @@ export function MonthlyEnrolmentChart() {
 	return (
 		<ChartPanel
 			title="Monthly enrolment vs completions"
+			subtitle="Enrolment growth compared to completions over time"
 			legend={<ChartLegend items={LEGEND} />}
 		>
 			<ResponsiveContainer width="100%" height="100%">

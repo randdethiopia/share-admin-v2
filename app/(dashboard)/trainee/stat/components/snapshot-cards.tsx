@@ -26,10 +26,11 @@ function pickHighestByTotal<T extends { total: number }>(
 
 type SnapshotCardProps = {
 	label: string;
+	description: string;
 	children: ReactNode;
 };
 
-function SnapshotCard({ label, children }: SnapshotCardProps) {
+function SnapshotCard({ label, description, children }: SnapshotCardProps) {
 	return (
 		<div
 			className="rounded-md border border-border/50 bg-card px-3.5 py-3"
@@ -38,6 +39,7 @@ function SnapshotCard({ label, children }: SnapshotCardProps) {
 			<p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
 				{label}
 			</p>
+			<p className="mt-1 text-xs text-muted-foreground">{description}</p>
 			<div className="mt-1.5">{children}</div>
 		</div>
 	);
@@ -60,14 +62,17 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 
 	return (
 		<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-			<SnapshotCard label="Gender snapshot">
+			<SnapshotCard
+				label="Gender snapshot"
+				description="Gender with the highest number of trainees"
+			>
 				{topGender ? (
 					<>
 						<p className="text-lg font-semibold" style={{ color: BRAND_GREEN }}>
 							{formatGenderLabel(topGender.gender)}
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
-							Most trainees · {topGender.total.toLocaleString()} (
+							{topGender.total.toLocaleString()} trainees (
 							{Math.round((topGender.total / genderTotal) * 100)}%)
 						</p>
 						<div className="mt-2 space-y-0.5">
@@ -89,14 +94,17 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 				)}
 			</SnapshotCard>
 
-			<SnapshotCard label="Age group snapshot">
+			<SnapshotCard
+				label="Age group snapshot"
+				description="Age group with the highest number of trainees"
+			>
 				{topAge ? (
 					<>
 						<p className="text-lg font-semibold" style={{ color: BRAND_GREEN }}>
 							{topAge.ageGroup}
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
-							Most trainees · {topAge.total.toLocaleString()} (
+							{topAge.total.toLocaleString()} trainees (
 							{Math.round((topAge.total / ageTotal) * 100)}%)
 						</p>
 						<div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
@@ -124,14 +132,17 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 				)}
 			</SnapshotCard>
 
-			<SnapshotCard label="Regional snapshot">
+			<SnapshotCard
+				label="Regional snapshot"
+				description="Region with the highest number of trainees"
+			>
 				{topRegion ? (
 					<>
 						<p className="text-lg font-semibold" style={{ color: BRAND_GREEN }}>
 							{topRegion.region}
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
-							Most trainees · {topRegion.total.toLocaleString()} (
+							{topRegion.total.toLocaleString()} trainees (
 							{Math.round((topRegion.total / regionTotal) * 100)}%)
 						</p>
 						<div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
