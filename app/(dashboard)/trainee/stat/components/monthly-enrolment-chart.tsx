@@ -25,8 +25,8 @@ const DATA = [
 ];
 
 const LEGEND = [
-	{ color: CHART_COLORS.blue, label: "Enrolled" },
-	{ color: CHART_COLORS.success, label: "Completed" },
+	{ color: CHART_COLORS.blue, label: "trainees comletion status" },
+	{ color: CHART_COLORS.success, label: "Trainees in progress" },
 ];
 
 export function MonthlyEnrolmentChart() {
@@ -52,14 +52,14 @@ export function MonthlyEnrolmentChart() {
 						dataKey="enrolled"
 						fill={`${CHART_COLORS.blue}14`}
 						stroke="none"
-						name="Enrolled"
+						name="trainees comletion status"
 					/>
 					<Area
 						type="monotone"
 						dataKey="completed"
 						fill={`${CHART_COLORS.success}14`}
 						stroke="none"
-						name="Completed"
+						name="Trainees in progress"
 					/>
 					<Line
 						type="monotone"
@@ -67,7 +67,7 @@ export function MonthlyEnrolmentChart() {
 						stroke={CHART_COLORS.blue}
 						strokeWidth={2}
 						dot={{ r: 4 }}
-						name="Enrolled"
+						name="trainees comletion status"
 					/>
 					<Line
 						type="monotone"
@@ -76,7 +76,7 @@ export function MonthlyEnrolmentChart() {
 						strokeWidth={2}
 						strokeDasharray="5 4"
 						dot={{ r: 4 }}
-						name="Completed"
+						name="Trainees in progress"
 					/>
 				</ComposedChart>
 			</ResponsiveContainer>
