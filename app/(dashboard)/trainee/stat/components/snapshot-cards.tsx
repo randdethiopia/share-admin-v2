@@ -3,6 +3,7 @@ import type {
 	TraineeReportAgeGroup,
 	TraineeReportGender,
 	TraineeReportRegion,
+	TraineeReportTrainees,
 } from "@/lib/api/trainee";
 
 import { BRAND_GREEN } from "./chart-colors";
@@ -46,19 +47,24 @@ function SnapshotCard({ label, description, children }: SnapshotCardProps) {
 }
 
 type SnapshotCardsProps = {
+	trainees: TraineeReportTrainees;
 	gender: TraineeReportGender[];
 	ageGroups: TraineeReportAgeGroup[];
 	regions: TraineeReportRegion[];
 };
 
-export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps) {
+function percentOfTotalTrainees(snapshotValue: number, totalTrainees: number) {
+	return Math.round((snapshotValue / (totalTrainees || 1)) * 100);
+}
+
+const snapshotRowClassName =
+	"flex w-fit items-baseline gap-6 text-xs text-muted-foreground";
+
+export function SnapshotCards({ trainees, gender, ageGroups, regions }: SnapshotCardsProps) {
+	const totalTrainees = trainees.total;
 	const topGender = pickHighestByTotal(gender, () => false);
 	const topAge = pickHighestByTotal(ageGroups, (item) => item.ageGroup === "Unknown");
 	const topRegion = pickHighestByTotal(regions, (item) => item.region === "Unknown");
-
-	const genderTotal = gender.reduce((sum, entry) => sum + entry.total, 0) || 1;
-	const ageTotal = ageGroups.reduce((sum, entry) => sum + entry.total, 0) || 1;
-	const regionTotal = regions.reduce((sum, entry) => sum + entry.total, 0) || 1;
 
 	return (
 		<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -73,16 +79,13 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
 							{topGender.total.toLocaleString()} trainees (
-							{Math.round((topGender.total / genderTotal) * 100)}%)
+							{percentOfTotalTrainees(topGender.total, totalTrainees)}%)
 						</p>
 						<div className="mt-2 space-y-0.5">
 							{[...gender]
 								.sort((a, b) => b.total - a.total)
 								.map((entry) => (
-									<div
-										key={entry.gender}
-										className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground"
-									>
+									<div key={entry.gender} className={snapshotRowClassName}>
 										<span>{formatGenderLabel(entry.gender)}</span>
 										<span className="tabular-nums">{entry.total.toLocaleString()}</span>
 									</div>
@@ -105,21 +108,21 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
 							{topAge.total.toLocaleString()} trainees (
-							{Math.round((topAge.total / ageTotal) * 100)}%)
+							{percentOfTotalTrainees(topAge.total, totalTrainees)}%)
 						</p>
 						<div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>Completed</span>
 								<span className="font-medium tabular-nums" style={{ color: BRAND_GREEN }}>
 									{topAge.completed.toLocaleString()} (
-									{Math.round((topAge.completed / topAge.total) * 100)}%)
+									{percentOfTotalTrainees(topAge.completed, totalTrainees)}%)
 								</span>
 							</div>
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>In progress</span>
 								<span className="tabular-nums">{topAge.inProgress.toLocaleString()}</span>
 							</div>
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>Accessed, not started</span>
 								<span className="tabular-nums">
 									{topAge.accessedNotStarted.toLocaleString()}
@@ -143,21 +146,21 @@ export function SnapshotCards({ gender, ageGroups, regions }: SnapshotCardsProps
 						</p>
 						<p className="mt-0.5 text-xs text-muted-foreground">
 							{topRegion.total.toLocaleString()} trainees (
-							{Math.round((topRegion.total / regionTotal) * 100)}%)
+							{percentOfTotalTrainees(topRegion.total, totalTrainees)}%)
 						</p>
 						<div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>Completed</span>
 								<span className="font-medium tabular-nums" style={{ color: BRAND_GREEN }}>
 									{topRegion.completed.toLocaleString()} (
-									{Math.round((topRegion.completed / topRegion.total) * 100)}%)
+									{percentOfTotalTrainees(topRegion.completed, totalTrainees)}%)
 								</span>
 							</div>
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>In progress</span>
 								<span className="tabular-nums">{topRegion.inProgress.toLocaleString()}</span>
 							</div>
-							<div className="flex items-baseline justify-between gap-2">
+							<div className={snapshotRowClassName}>
 								<span>Accessed, not started</span>
 								<span className="tabular-nums">
 									{topRegion.accessedNotStarted.toLocaleString()}
