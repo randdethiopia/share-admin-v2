@@ -10,6 +10,7 @@ import type { BusinessProfileType } from "@/lib/api";
 import { AdminCard } from "@/components/shared/admin/AdminCard";
 import { FilterField } from "@/components/shared/admin/FilterField";
 import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -21,7 +22,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -85,20 +85,6 @@ const businessTableCol = {
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
-}
-
-function statusBadgeClass(status: string) {
-	switch (normalizeStatus(status)) {
-		case "APPROVED":
-			return "bg-brand-success/15 text-brand-success";
-		case "REJECTED":
-			return "bg-brand-danger/15 text-brand-danger";
-		case "DRAFT":
-			return "bg-slate-100 text-slate-600";
-		case "PENDING":
-		default:
-			return "bg-brand-pending/15 text-brand-pending";
-	}
 }
 
 function formatDate(value?: string) {
@@ -411,14 +397,12 @@ function BusinessPageInner() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<div className="px-4">
-				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-					Business
-				</h1>
-				<p className="text-zinc-600 text-sm font-medium">
-					See all your businesses
-				</p>
-			</div>
+			<PageHeader
+				category="Business"
+				title="Business"
+				description="See all your businesses"
+				className="px-4"
+			/>
 
 			<AdminCard className="min-h-[70vh] p-4 sm:p-6 md:p-8">
 				<div className="mb-8 flex flex-col justify-between gap-4 md:flex-row">
@@ -497,14 +481,7 @@ function BusinessPageInner() {
 										</p>
 									</div>
 									<div className="flex shrink-0 items-center gap-2">
-										<Badge
-											className={cn(
-												"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-												statusBadgeClass(business.status)
-											)}
-										>
-											{normalizeStatus(business.status) || "PENDING"}
-										</Badge>
+										<StatusBadge status={business.status} />
 										{renderActionsMenu(business)}
 									</div>
 								</div>
@@ -593,14 +570,7 @@ function BusinessPageInner() {
 											<TableCell
 												className={cn("px-6 py-4", businessTableCol.status)}
 											>
-												<Badge
-													className={cn(
-														"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-														statusBadgeClass(business.status)
-													)}
-												>
-													{normalizeStatus(business.status) || "PENDING"}
-												</Badge>
+												<StatusBadge status={business.status} />
 											</TableCell>
 											<TableCell
 												className={cn("px-6 py-4", businessTableCol.actions)}

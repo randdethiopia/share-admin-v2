@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import type { InvitationType } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/shared/PaginationControls";
@@ -23,23 +24,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE, getPaginationMeta } from "@/lib/pagination";
 import { Eye, Loader2, Search } from "lucide-react";
 
 type SortMode = "newest" | "oldest";
 type InvitationRow = InvitationType & { createdAt?: string | Date };
-
-function normalizeStatus(status?: string) {
-	return (status ?? "").trim().toLowerCase();
-}
-
-function statusBadgeClass(status?: string) {
-	const s = normalizeStatus(status);
-	if (s.includes("accept")) return "bg-[#E6F4EA] text-[#1E8E3E]";
-	if (s.includes("reject")) return "bg-[#FDECEC] text-[#B91C1C]";
-	return "bg-[#FFF7E6] text-[#B45309]";
-}
 
 export default function InvitationsPage() {
 	const router = useRouter();
@@ -98,15 +87,14 @@ export default function InvitationsPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
-			<div className="px-4">
-				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-					Job Invitations
-				</h1>
-				<p className="text-zinc-600 text-sm font-medium">See your Invitations</p>
-			</div>
+		<div className="space-y-6">
+			<PageHeader
+				category="INVITATIONS"
+				title="Manage Invitations"
+				description="Review and track platform invitations."
+			/>
 
-			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
+			<div className="bg-card rounded-xl border border-border shadow-sm p-6 min-h-[70vh]">
 				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -167,14 +155,7 @@ export default function InvitationsPage() {
 									</div>
 
 									<div className="flex items-center gap-2">
-										<Badge
-											className={cn(
-												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-												statusBadgeClass(item.status)
-											)}
-										>
-											{item.status || "-"}
-										</Badge>
+										<StatusBadge status={item.status} />
 										<Button
 											variant="ghost"
 											size="icon"
@@ -211,29 +192,16 @@ export default function InvitationsPage() {
 				</div>
 
 				{/* Desktop: Table */}
-				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
-					<div className="overflow-x-auto">
+				<div className="hidden md:block overflow-x-auto">
 						<Table>
-							<TableHeader className="bg-[#D6E6F2]">
-								<TableRow className="border-none hover:bg-transparent">
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Business
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Expert
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Duration
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Payment Term
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Status
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Action
-									</TableHead>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Business</TableHead>
+									<TableHead>Expert</TableHead>
+									<TableHead>Duration</TableHead>
+									<TableHead>Payment Term</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead className="text-center">Action</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -276,14 +244,7 @@ export default function InvitationsPage() {
 												{item.paymentTerm || "-"}
 											</TableCell>
 											<TableCell className="px-6 py-4">
-												<Badge
-													className={cn(
-														"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-														statusBadgeClass(item.status)
-													)}
-												>
-													{item.status || "-"}
-												</Badge>
+												<StatusBadge status={item.status} />
 											</TableCell>
 											<TableCell className="px-6 py-4 text-center">
 												<Button
@@ -301,7 +262,6 @@ export default function InvitationsPage() {
 								)}
 							</TableBody>
 						</Table>
-					</div>
 				</div>
 
 				{/* Pagination */}

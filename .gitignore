@@ -42,4 +42,5 @@ next-env.d.ts
 debug-*.log
 training_dashboard_examples.html
 .cursor/
-.design-system/
+ADMIN_PAGES_AUDIT.md
+design-system/share/

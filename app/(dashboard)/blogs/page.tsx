@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import type { BlogType } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/shared/PaginationControls";
@@ -55,12 +56,6 @@ function safeFormatDate(value?: string) {
 
 function normalizeStatus(status?: string) {
     return (status ?? "").trim().toUpperCase();
-}
-
-function statusBadgeClass(status: string) {
-    if (status === "APPROVED") return "bg-[#34A853] text-white";
-    if (status === "REJECTED") return "bg-red-500 text-white";
-    return "bg-[#FFF7E6] text-[#B45309]";
 }
 
 export default function BlogsPage() {
@@ -128,17 +123,14 @@ export default function BlogsPage() {
     const isWorking = isApproving || isRejecting;
 
     return (
-        <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
-            <div className="px-4">
-                <h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-                    Blog Requests
-                </h1>
-                <p className="text-zinc-600 text-sm font-medium">
-                    See all blog requests here
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader
+                category="BLOG CONTENT"
+                title="Blog Posts"
+                description="Manage and publish blog articles."
+            />
 
-            <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-6">
                 <div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -210,14 +202,7 @@ export default function BlogsPage() {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge
-                                                className={cn(
-                                                    "rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-                                                    statusBadgeClass(status)
-                                                )}
-                                            >
-                                                {status}
-                                            </Badge>
+                                            <StatusBadge status={status} />
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -255,23 +240,14 @@ export default function BlogsPage() {
                 </div>
 
                 {/* Desktop: Table */}
-                <div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                         <Table>
-                            <TableHeader className="bg-[#D6E6F2]">
-                                <TableRow className="border-none hover:bg-transparent">
-                                    <TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider w-[45%]">
-                                        Info
-                                    </TableHead>
-                                    <TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider w-[25%]">
-                                        Approved Date
-                                    </TableHead>
-                                    <TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider w-[15%]">
-                                        Status
-                                    </TableHead>
-                                    <TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center w-[15%]">
-                                        Actions
-                                    </TableHead>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[45%]">Info</TableHead>
+                                    <TableHead className="w-[25%]">Approved Date</TableHead>
+                                    <TableHead className="w-[15%]">Status</TableHead>
+                                    <TableHead className="text-center w-[15%]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -315,14 +291,7 @@ export default function BlogsPage() {
                                                     {safeFormatDate(blog.approvedAt)}
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4 w-[15%]">
-                                                    <Badge
-                                                        className={cn(
-                                                            "rounded-md px-3 py-0.5 text-[10px] font-bold border-none",
-                                                            statusBadgeClass(status)
-                                                        )}
-                                                    >
-                                                        {status}
-                                                    </Badge>
+                                                    <StatusBadge status={status} />
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4 w-[15%]">
                                                     <div className="flex justify-center">
@@ -374,7 +343,6 @@ export default function BlogsPage() {
                                 )}
                             </TableBody>
                         </Table>
-                    </div>
                 </div>
 
                 {/* Pagination */}
