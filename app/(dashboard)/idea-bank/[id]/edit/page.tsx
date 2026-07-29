@@ -273,7 +273,7 @@ export default function EditIdeaPage() {
 
             <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-10 h-12" disabled={isWorking}>
               {isWorking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Uploading image..." : isPending ? "Saving..." : "Submit For a review"}
+              {isSubmitting ? "Uploading image..." : isPending ? "Saving..." : "Save idea"}
             </Button>
           </form>
         </Form>
