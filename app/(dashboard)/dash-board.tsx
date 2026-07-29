@@ -160,9 +160,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [children, userRole]);
 
   return (
-    <div className="flex min-h-screen bg-[#E2EDF8]">
+    <div className="flex min-h-screen bg-background">
       <aside
-        className={`fixed hidden h-full border-r bg-white transition-[width] duration-200 md:block ${
+        className={`fixed hidden h-full border-r border-white/10 bg-agar-navy transition-[width] duration-200 md:block ${
           isSidebarCollapsed ? "w-14" : "w-64"
         }`}
         aria-label="Main navigation"
@@ -178,7 +178,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           isSidebarCollapsed ? "md:ml-14" : "md:ml-64"
         }`}
       >
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
           <Sheet
             open={isMobileNavOpen}
             onOpenChange={setIsMobileNavOpen}
@@ -193,7 +193,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-64 p-0 [&>button]:hidden">
+            <SheetContent side="left" className="w-64 border-white/10 bg-agar-navy p-0 [&>button]:hidden">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
@@ -205,7 +205,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </SheetContent>
           </Sheet>
 
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-sm font-semibold text-agar-navy">
             {currentTitle}
           </span>
         </header>

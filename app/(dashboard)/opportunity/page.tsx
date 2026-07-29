@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import api from "@/lib/api";
 import { OpportunityCard } from "@/components/opportunity/opportunity-card";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import PaginationControls from "@/components/shared/PaginationControls";
 import { Button } from "@/components/ui/button";
@@ -27,19 +28,21 @@ export default function OpportunitiesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
-      <div className="flex justify-between items-center mb-6 px-4">
-        <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
-          All opportunity posts
-        </h1>
-        <Button asChild className="bg-[#3B82F6] hover:bg-blue-600 text-white rounded-xl px-6 h-10 shadow-sm">
-          <Link href="/opportunity/new">
-            <Plus className="w-4 h-4 mr-1" /> New opportunity
-          </Link>
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        category="OPPORTUNITY"
+        title="All opportunity posts"
+        description="Browse and manage opportunity listings."
+        actions={
+          <Button asChild>
+            <Link href="/opportunity/new">
+              <Plus className="w-4 h-4 mr-1" /> New opportunity
+            </Link>
+          </Button>
+        }
+      />
 
-      <div className="bg-white rounded-[3rem] p-10 shadow-sm min-h-[80vh]">
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6 min-h-[80vh]">
         {isLoading ? (
           <CardGridSkeleton count={10} />
         ) : (
