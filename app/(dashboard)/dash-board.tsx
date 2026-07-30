@@ -131,6 +131,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
         const cards = document.querySelectorAll('[class*="card"], .card, [role="article"]');
         
         cards.forEach(card => {
+          if (card.closest('[data-preserve-percentages]')) return;
+
           const percentageElements = card.querySelectorAll('[class*="percentage"], [class*="percent"], .trend-value, .stat-percentage');
           
           percentageElements.forEach(el => {
