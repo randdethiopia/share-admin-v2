@@ -22,6 +22,7 @@ export function ChartPanel({
 }: ChartPanelProps) {
 	return (
 		<div
+			data-preserve-percentages
 			className={cn(
 				"rounded-lg border border-border/60 bg-card p-5",
 				className
@@ -49,12 +50,12 @@ export function ChartLegendItem({
 	label: string;
 }) {
 	return (
-		<span className="inline-flex items-center gap-2 text-sm text-foreground">
+		<span className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
 			<span
 				className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
 				style={{ backgroundColor: color }}
 			/>
-			{label}
+			<span>{label}</span>
 		</span>
 	);
 }
