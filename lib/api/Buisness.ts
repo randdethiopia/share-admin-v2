@@ -41,6 +41,11 @@ export interface BusinessProfileFormType {
 	bussinessLicense?: FileType;
 }
 
+export interface RejectBusinessInput {
+	id: string;
+	reason?: string;
+}
+
 export interface BusinessProfileType extends BusinessProfileFormType {
 	_id: string;
 	smeId: {
@@ -108,8 +113,12 @@ export async function approveBusinessProfileFn(id: string) {
 	return (await axios.patch(`${API_URL}/api/sme-profile/approve/${id}`)).data;
 }
 
-export async function rejectBusinessProfileFn(id: string) {
-	return (await axios.patch(`${API_URL}/api/sme-profile/reject/${id}`)).data;
+export async function rejectBusinessProfileFn({ id, reason }: RejectBusinessInput) {
+	return (
+		await axios.patch(`${API_URL}/api/sme-profile/reject/${id}`, {
+			...(reason ? { reason } : {}),
+		})
+	).data;
 }
 
 export async function updateApproveBusinessProfileFn(id: string) {
@@ -117,9 +126,15 @@ export async function updateApproveBusinessProfileFn(id: string) {
 		.data;
 }
 
-export async function updateRejectBusinessProfileFn(id: string) {
-	return (await axios.post(`${API_URL}/api/sme-profile/reject-update/${id}`))
-		.data;
+export async function updateRejectBusinessProfileFn({
+	id,
+	reason,
+}: RejectBusinessInput) {
+	return (
+		await axios.post(`${API_URL}/api/sme-profile/reject-update/${id}`, {
+			...(reason ? { reason } : {}),
+		})
+	).data;
 }
 
 const BusinessProfileApi = {
@@ -212,13 +227,17 @@ const BusinessProfileApi = {
 
 	Reject: {
 		useMutation: (
-			options?: UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, string>
+			options?: UseMutationOptions<
+				SuccessRes,
+				AxiosError<ErrorRes>,
+				RejectBusinessInput
+			>
 		) => {
 			const queryClient = useQueryClient();
 
 			return useMutation({
 				mutationFn: rejectBusinessProfileFn,
-				onSuccess: (res, id, context) => {
+				onSuccess: (res, { id }, context) => {
 					toast.success(res.message || "Rejected");
 					updateBusinessProfileCache(queryClient, id, {
 						status: "REJECTED",
@@ -226,11 +245,11 @@ const BusinessProfileApi = {
 					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
-					options?.onSuccess?.(res, id, context, undefined as never);
+					options?.onSuccess?.(res, { id }, context, undefined as never);
 				},
-				onError: (err, id, context) => {
+				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as never);
+					options?.onError?.(err, variables, context, undefined as never);
 				},
 				...options,
 			});
@@ -265,24 +284,28 @@ const BusinessProfileApi = {
 
 	UpdateReject: {
 		useMutation: (
-			options?: UseMutationOptions<SuccessRes, AxiosError<ErrorRes>, string>
+			options?: UseMutationOptions<
+				SuccessRes,
+				AxiosError<ErrorRes>,
+				RejectBusinessInput
+			>
 		) => {
 			const queryClient = useQueryClient();
 
 			return useMutation({
 				mutationFn: updateRejectBusinessProfileFn,
-				onSuccess: (res, id, context) => {
+				onSuccess: (res, { id }, context) => {
 					toast.success(res.message || "Rejected");
 					updateBusinessProfileCache(queryClient, id, {
 						updateStatus: "REJECTED",
 					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
-					options?.onSuccess?.(res, id, context, undefined as never);
+					options?.onSuccess?.(res, { id }, context, undefined as never);
 				},
-				onError: (err, id, context) => {
+				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
-					options?.onError?.(err, id, context, undefined as never);
+					options?.onError?.(err, variables, context, undefined as never);
 				},
 				...options,
 			});

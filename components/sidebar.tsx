@@ -26,13 +26,13 @@ import {
 export { dashboardMenuItems } from "@/lib/access";
 
 const navLinkBase =
-  "flex items-center rounded-lg text-sm font-medium transition-colors";
+  "flex items-center rounded-lg text-sm transition-colors";
 const navLinkInactive =
-  "text-white/70 hover:bg-white/10 hover:text-white px-3 py-2";
+  "text-white/85 hover:bg-white/15 hover:text-white font-medium px-3 py-2";
 const navLinkActive =
-  "bg-agar-navy-dark text-white font-semibold px-3 py-2 shadow-sm";
+  "bg-white text-[#69B34C] font-bold rounded-lg px-3 py-2 text-sm shadow-sm";
 const sectionTitleClasses =
-  "text-emerald-200/50 text-[11px] font-bold tracking-wider uppercase px-3 pt-4 pb-1";
+  "text-white/70 text-[11px] font-bold tracking-wider uppercase px-3 pt-4 pb-1";
 
 function getNavLinkClasses(active: boolean, layoutClasses: string) {
   return cn(
@@ -111,11 +111,11 @@ export function Sidebar({
     return (
       <div
         className={cn(
-          "flex h-full w-full flex-col items-center bg-agar-navy text-white md:h-screen md:border-r md:border-white/10",
+          "flex h-full w-full flex-col items-center overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
           className,
         )}
       >
-        <div className="flex w-full justify-center border-b border-white/10 px-2 py-4">
+        <div className="flex w-full shrink-0 justify-center border-b border-white/20 px-2 py-4">
           <Button
             type="button"
             variant="ghost"
@@ -123,7 +123,7 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Show sidebar"
             title="Show sidebar"
-            className="text-white/70 hover:bg-white/10 hover:text-white"
+            className="text-white/85 hover:bg-white/15 hover:text-white"
           >
             <PanelLeftOpen className="h-5 w-5" />
           </Button>
@@ -135,16 +135,16 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-full w-full flex-col bg-agar-navy text-white md:h-screen md:w-70 md:border-r md:border-white/10",
+        "flex h-full w-72 flex-col overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
         className,
       )}
     >
-      <div className="relative flex items-center gap-2 border-b border-white/10 px-4 py-5">
+      <div className="relative flex shrink-0 items-center gap-2 border-b border-white/20 px-4 py-5">
         <div className="flex min-w-0 flex-1 items-center gap-2 pr-8">
           <span className="text-lg font-extrabold tracking-tight text-white truncate">
             SHARE
           </span>
-          <span className="shrink-0 rounded bg-agar-orange px-1.5 py-0.5 text-[10px] font-bold text-agar-navy">
+          <span className="shrink-0 rounded bg-[#FF4E11] px-1.5 py-0.5 text-[10px] font-bold text-white">
             ADMIN
           </span>
         </div>
@@ -156,14 +156,14 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Hide sidebar"
             title="Hide sidebar"
-            className="absolute top-3 right-3 text-white/70 hover:bg-white/10 hover:text-white"
+            className="absolute top-3 right-3 text-white/85 hover:bg-white/15 hover:text-white"
           >
             <PanelLeftClose className="h-5 w-5" />
           </Button>
         ) : null}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref = item.href;
@@ -195,8 +195,8 @@ export function Sidebar({
                       className={cn(
                         "flex w-full cursor-pointer items-center justify-between rounded-lg transition-colors",
                         sectionTitleClasses,
-                        "hover:text-emerald-200/70",
-                        childActive && "bg-white/5 text-emerald-200/70",
+                        "hover:text-white",
+                        childActive && "text-white",
                       )}
                     >
                       <span>{item.label}</span>
@@ -253,14 +253,14 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="mt-auto border-t border-white/10 bg-agar-navy-dark/60 p-3">
-        <div className="mb-2 px-1">
-          <p className="truncate text-xs font-medium text-white">
+      <div className="mt-auto shrink-0 space-y-2 border-t border-white/20 bg-[#529339] p-3.5">
+        <div className="min-w-0 px-1">
+          <p className="truncate text-xs font-bold text-white">
             {user?.firstName && user?.lastName
               ? `${user.firstName} ${user.lastName}`
               : "Guest"}
           </p>
-          <p className="truncate text-[11px] text-white/60">
+          <p className="truncate text-[11px] text-white/80">
             {user?.email ?? ""}
           </p>
         </div>
@@ -268,9 +268,9 @@ export function Sidebar({
           type="button"
           variant="ghost"
           onClick={handleLogout}
-          className="flex w-full items-center justify-start gap-2 rounded-lg px-2 py-2 text-sm font-medium text-red-400 hover:bg-white/5 hover:text-red-300"
+          className="flex h-auto w-full items-center justify-start gap-2.5 rounded-lg bg-red-600/30 px-2.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600/50"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4 shrink-0 text-white" />
           <span>Logout</span>
         </Button>
       </div>

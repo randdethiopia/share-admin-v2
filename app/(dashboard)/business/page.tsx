@@ -328,10 +328,11 @@ function BusinessPageInner() {
 			onSuccess: () => setConfirmOpen(false),
 		};
 		if (confirmAction === "approve") approveBusiness(selectedId, mutationOptions);
-		else if (confirmAction === "reject") rejectBusiness(selectedId, mutationOptions);
+		else if (confirmAction === "reject")
+			rejectBusiness({ id: selectedId }, mutationOptions);
 		else if (confirmAction === "update-approve")
 			approveUpdate(selectedId, mutationOptions);
-		else rejectUpdate(selectedId, mutationOptions);
+		else rejectUpdate({ id: selectedId }, mutationOptions);
 	};
 
 	const isMutating =
