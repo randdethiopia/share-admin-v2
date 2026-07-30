@@ -40,7 +40,10 @@
   --color-card: var(--card);
   --color-brand-danger: var(--brand-danger);
   --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: #529339;
+  --color-brand-primary-light: #EFF8DE;
   --color-brand-secondary: var(--brand-secondary);
+  --color-brand-secondary-hover: #E03E00;
   --color-brand-pending: var(--brand-pending);
   --color-brand-accent: var(--brand-accent);
   --color-brand-success: var(--brand-success);
@@ -64,7 +67,10 @@
   --radius: 0.625rem;
   --brand-danger: #FF0D0D;
   --brand-primary: #FF4E11;
+  --brand-primary-hover: #529339;
+  --brand-primary-light: #EFF8DE;
   --brand-secondary: #FF8E15;
+  --brand-secondary-hover: #E03E00;
   --brand-pending: #FAB733;
   --brand-accent: #ACB334;
   --brand-success: #69B34C;
@@ -76,6 +82,7 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: #D4A835;
   --primary-foreground: #FFFFFF;
+  --primary-hover: #A8831F;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: #F4F4F5;
@@ -148,6 +155,29 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+}
+
+@layer utilities {
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+  }
+}
+
+.admin-theme {
+  --primary: #69B34C;
+  --primary-foreground: #FFFFFF;
+  --ring: #69B34C;
+  --primary-hover: #529339;
+  --brand-primary: #69B34C;
+  --brand-secondary: #FF4E11;
 }
 
 .dashboard-analytics {
