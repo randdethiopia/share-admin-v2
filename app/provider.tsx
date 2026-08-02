@@ -4,7 +4,7 @@ import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import AxiosConfig from "@/lib/axios";
-import useAuthStore from "@/store/useAuthStore";
+import { AuthGate } from "@/components/auth-gate";
 
 export default function Providers({
   children,
@@ -27,19 +27,18 @@ export default function Providers({
         },
       })
   );
-  const logOut = useAuthStore((s) => s.logOut);
 
   React.useEffect(() => {
-    const cleanup = AxiosConfig(logOut);
+    const cleanup = AxiosConfig();
 
     return () => {
       cleanup?.();
     };
-  }, [logOut]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthGate>{children}</AuthGate>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

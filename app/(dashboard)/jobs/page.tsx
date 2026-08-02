@@ -1,8 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Briefcase, CheckCircle, XCircle, Loader2Icon, X } from "lucide-react";
+import { CheckCircle, XCircle, Loader2Icon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -79,9 +80,7 @@ function JobDetailContent({
                     <div className="space-y-1">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Current Status</p>
                         <div>
-                            {job.status === "PENDING" && <Badge className="bg-brand-pending/15 text-brand-pending hover:bg-brand-pending/15">Pending</Badge>}
-                            {job.status === "APPROVED" && <Badge className="bg-brand-success/15 text-brand-success hover:bg-brand-success/15">Approved</Badge>}
-                            {job.status === "REJECTED" && <Badge className="bg-brand-danger/15 text-brand-danger hover:bg-brand-danger/15">Rejected</Badge>}
+                            <StatusBadge status={job.status} />
                         </div>
                     </div>
                 </div>
@@ -191,21 +190,13 @@ export default function JobsPage() {
         <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
             <div className="mx-auto max-w-5xl space-y-6">
                 <div className="rounded-3xl border border-blue-50 bg-white p-6 shadow-sm md:p-10">
-                    <div className="flex items-start gap-4">
-                        <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-                            <Briefcase className="h-6 w-6" />
-                        </div>
-                        <div className="space-y-2">
-                            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-                                Jobs Workspace
-                            </p>
-                            <h1 className="text-2xl font-bold text-gray-900">Manage Job Postings</h1>
-                            <p className="max-w-2xl text-sm text-gray-600">
-                                Review and approve jobs posted by businesses.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="mt-8">
+                    <PageHeader
+                        category="Jobs Workspace"
+                        title="Manage Job Postings"
+                        description="Review and approve jobs posted by businesses."
+                        className="mb-8"
+                    />
+                    <div>
                         {isLoading ? (
                             <div className="flex h-32 items-center justify-center">
                                 <Loader2Icon className="h-8 w-8 animate-spin text-blue-600" />
@@ -227,9 +218,7 @@ export default function JobsPage() {
                                                 <h3 className="text-lg font-semibold text-slate-900">
                                                     {job.jobTitle || job.title || "Untitled Job"}
                                                 </h3>
-                                                {job.status === "PENDING" && <Badge variant="secondary" className="bg-brand-pending/15 text-brand-pending">Pending</Badge>}
-                                                {job.status === "APPROVED" && <Badge variant="secondary" className="bg-brand-success/15 text-brand-success">Approved</Badge>}
-                                                {job.status === "REJECTED" && <Badge variant="secondary" className="bg-brand-danger/15 text-brand-danger">Rejected</Badge>}
+                                                <StatusBadge status={job.status} />
                                             </div>
                                             <div className="text-sm text-slate-600">
                                                 <span className="font-medium text-slate-800">{job.companyName || "Unknown Company"}</span> • {job.jobType || job.employmentType || "Job"}

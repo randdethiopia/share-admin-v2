@@ -26,34 +26,6 @@ type Props = {
 	completionRates: AdminDashboardStats["completionRates"];
 };
 
-const AXIS_TICK_FILL = "#737373";
-
-function PercentYTick({
-	x,
-	y,
-	payload,
-}: {
-	x?: number;
-	y?: number;
-	payload?: { value: number };
-}) {
-	if (x == null || y == null || payload == null) return null;
-
-	return (
-		<text
-			x={x}
-			y={y}
-			dy={4}
-			textAnchor="end"
-			fill={AXIS_TICK_FILL}
-			fontSize={12}
-			fontWeight={500}
-		>
-			{`${payload.value}%`}
-		</text>
-	);
-}
-
 export function CompletionRatesBarChart({ completionRates }: Props) {
 	const theme = getChartTheme();
 	const data = mapCompletionRatesData(completionRates);
@@ -84,8 +56,8 @@ export function CompletionRatesBarChart({ completionRates }: Props) {
 					<YAxis
 						domain={[0, 100]}
 						ticks={[0, 25, 50, 75, 100]}
-						width={40}
-						tick={{ fill: theme.label, fontSize: 11 }}
+						width={45}
+						tick={{ fill: "#525252", fontSize: 11, fontWeight: 500 }}
 						tickFormatter={(v) => `${v}%`}
 					/>
 					<Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, "Average"]} />

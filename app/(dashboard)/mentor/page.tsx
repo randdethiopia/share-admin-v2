@@ -29,6 +29,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,18 +80,6 @@ type ConfirmAction = "approve" | "reject";
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
-}
-
-function statusBadgeClass(status?: string) {
-	switch (normalizeStatus(status)) {
-		case "APPROVED":
-			return "bg-brand-success/15 text-brand-success";
-		case "REJECTED":
-			return "bg-brand-danger/15 text-brand-danger";
-		case "PENDING":
-		default:
-			return "bg-brand-pending/15 text-brand-pending";
-	}
 }
 
 function formatDate(value?: string | null) {
@@ -374,6 +363,7 @@ function MentorProfilePageInner() {
 			</AlertDialog>
 
 			<PageHeader
+				category="Mentor"
 				title="Mentor"
 				description="Manage and verify mentor profiles"
 			/>
@@ -452,14 +442,7 @@ function MentorProfilePageInner() {
 											{mentor.email || "-"} • {mentor.phoneNumber || "-"}
 										</p>
 									</div>
-									<Badge
-										className={cn(
-											"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-											statusBadgeClass(mentor.status)
-										)}
-									>
-										{mentor.status || "-"}
-									</Badge>
+									<StatusBadge status={mentor.status} />
 								</div>
 
 								{(hasText(mentor.country) || hasText(mentor.jobType)) && (
@@ -578,14 +561,7 @@ function MentorProfilePageInner() {
 												{formatDate(mentor.approvedAt)}
 											</TableCell>
 											<TableCell className="px-6">
-												<Badge
-													className={cn(
-														"rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-														statusBadgeClass(mentor.status)
-													)}
-												>
-													{mentor.status || "-"}
-												</Badge>
+												<StatusBadge status={mentor.status} />
 											</TableCell>
 											<TableCell className="px-6">
 												<div className="flex justify-center">
@@ -620,14 +596,10 @@ function MentorProfilePageInner() {
 								<SheetDescription className="text-sm text-slate-500">
 									{viewingMentor.email || "-"}
 								</SheetDescription>
-								<Badge
-									className={cn(
-										"mt-1 w-fit rounded-md border-none px-3 py-1 text-[10px] font-bold shadow-none",
-										statusBadgeClass(viewingMentor.status)
-									)}
-								>
-									{viewingMentor.status || "-"}
-								</Badge>
+								<StatusBadge
+									status={viewingMentor.status}
+									className="mt-1 w-fit"
+								/>
 							</SheetHeader>
 
 							<div className="flex-1 overflow-y-auto px-6 py-5">

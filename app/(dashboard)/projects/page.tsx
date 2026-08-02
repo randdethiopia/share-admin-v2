@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { getInvestmentByProjectIdFn } from "@/lib/api/investment";
 import useAuthStore from "@/store/useAuthStore";
-import Cookies from "js-cookie";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,8 +142,9 @@ export default function ProjectsPage() {
 	const queryClient = useQueryClient();
 	const role = useAuthStore((s) => s.role);
 	const hasHydrated = useAuthStore((s) => s.hasHydrated);
+	const accessToken = useAuthStore((s) => s.accessToken);
 	const isAdmin = role === "ADMIN";
-	const hasToken = Boolean(Cookies.get("session_token"));
+	const hasToken = Boolean(accessToken);
 	const canFetchProjects = hasHydrated && isAdmin && hasToken;
 	const canMutateProjects = hasHydrated && isAdmin && hasToken;
 	const [search, setSearch] = React.useState("");
@@ -163,7 +163,6 @@ export default function ProjectsPage() {
 		data: projects,
 		isLoading,
 		isError,
-		error,
 		refetch,
 	} = api.Project.GetList.useQuery({
 		enabled: canFetchProjects,
@@ -484,9 +483,7 @@ export default function ProjectsPage() {
 							<div className="flex flex-col items-center justify-center h-40 text-center text-sm text-slate-600 gap-3">
 								<div>
 									<div className="font-semibold text-slate-900">Failed to load projects</div>
-									<div className="mt-1">
-										{error?.response?.data?.message || "Please try again."}
-									</div>
+									<div className="mt-1">Please try again.</div>
 								</div>
 								<Button onClick={() => refetch()} variant="outline">
 									Retry
@@ -652,7 +649,7 @@ export default function ProjectsPage() {
 								<TableRow>
 									<TableCell colSpan={4} className="h-40 text-center text-sm text-slate-600">
 										<div className="font-semibold text-slate-900 mb-2">Failed to load projects</div>
-										<div className="mb-4">{error?.response?.data?.message || "Please try again."}</div>
+										<div className="mb-4">Please try again.</div>
 										<Button onClick={() => refetch()} variant="outline">
 											Retry
 										</Button>

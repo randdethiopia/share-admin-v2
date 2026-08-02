@@ -18,9 +18,30 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 interface DashboardShellProps {
   children: React.ReactNode;
+}
+
+const ADMIN_THEME_ROUTES = [
+  "/business",
+  "/expert",
+  "/mentor",
+  "/jobs",
+  "/invitations",
+  "/blogs",
+  "/idea-bank",
+  "/skills",
+  "/opportunity",
+  "/admin-management",
+  "/change-password",
+] as const;
+
+function isAdminThemedRoute(pathname: string) {
+  return ADMIN_THEME_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 }
 
 // Add this function to get user role from your auth system
@@ -110,6 +131,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
         const cards = document.querySelectorAll('[class*="card"], .card, [role="article"]');
         
         cards.forEach(card => {
+          if (card.closest('[data-preserve-percentages]')) return;
+
           const percentageElements = card.querySelectorAll('[class*="percentage"], [class*="percent"], .trend-value, .stat-percentage');
           
           percentageElements.forEach(el => {
@@ -160,10 +183,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [children, userRole]);
 
   return (
-    <div className="flex min-h-screen bg-[#E2EDF8]">
+    <div className="flex min-h-screen bg-background">
       <aside
-        className={`fixed hidden h-full border-r bg-white transition-[width] duration-200 md:block ${
-          isSidebarCollapsed ? "w-14" : "w-64"
+        className={`fixed hidden h-screen overflow-hidden border-r border-white/20 bg-[#69B34C] transition-[width] duration-200 md:block ${
+          isSidebarCollapsed ? "w-14" : "w-72"
         }`}
         aria-label="Main navigation"
       >
@@ -175,10 +198,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
       <div
         className={`flex flex-1 flex-col transition-[margin] duration-200 ${
-          isSidebarCollapsed ? "md:ml-14" : "md:ml-64"
+          isSidebarCollapsed ? "md:ml-14" : "md:ml-72"
         }`}
       >
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
           <Sheet
             open={isMobileNavOpen}
             onOpenChange={setIsMobileNavOpen}
@@ -193,7 +216,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-64 p-0 [&>button]:hidden">
+            <SheetContent side="left" className="w-72 border-white/20 bg-[#69B34C] p-0 [&>button]:hidden">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
@@ -205,12 +228,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </SheetContent>
           </Sheet>
 
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-sm font-semibold text-agar-navy">
             {currentTitle}
           </span>
         </header>
 
-        <main className="min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden">
+        <main
+          className={cn(
+            "min-w-0 flex-1 p-6 md:p-10 max-w-full overflow-x-hidden",
+            isAdminThemedRoute(pathname) && "admin-theme"
+          )}
+        >
           {canViewCurrentPath ? children : null}
         </main>
       </div>

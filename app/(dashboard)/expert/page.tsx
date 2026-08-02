@@ -17,7 +17,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -60,20 +61,6 @@ const EXPERT_STATUS_VALUES = [
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
-}
-
-function statusBadgeClass(status: string) {
-	switch (normalizeStatus(status)) {
-		case "APPROVED":
-			return "bg-brand-success/15 text-brand-success";
-		case "REJECTED":
-			return "bg-brand-danger/15 text-brand-danger";
-		case "DRAFT":
-			return "bg-slate-100 text-slate-600";
-		case "PENDING":
-		default:
-			return "bg-brand-pending/15 text-brand-pending";
-	}
 }
 
 function formatDate(value?: string) {
@@ -201,7 +188,7 @@ function ExpertPageInner() {
 	);
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
+		<div className="space-y-6">
 			<AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -254,16 +241,13 @@ function ExpertPageInner() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<div className="px-4">
-				<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-					Expert
-				</h1>
-				<p className="text-zinc-600 text-sm font-medium">
-					See all your experts
-				</p>
-			</div>
+			<PageHeader
+				category="EXPERT DIRECTORY"
+				title="Expert Profiles"
+				description="Manage and verify expert profiles."
+			/>
 
-			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
+			<div className="bg-card rounded-xl border border-border shadow-sm p-6 min-h-[70vh]">
 				<div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
 					<div className="relative w-full max-w-sm">
 						<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -338,14 +322,7 @@ function ExpertPageInner() {
 									</div>
 
 									<div className="flex items-center gap-2">
-										<Badge
-											className={cn(
-												"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-												statusBadgeClass(advisor.status)
-											)}
-										>
-											{normalizeStatus(advisor.status) || "PENDING"}
-										</Badge>
+										<StatusBadge status={advisor.status} />
 									</div>
 								</div>
 
@@ -415,23 +392,14 @@ function ExpertPageInner() {
 				</div>
 
 				
-				<div className="hidden md:block rounded-2xl border border-gray-100 overflow-hidden">
-					<div className="overflow-x-auto">
+				<div className="hidden md:block overflow-x-auto">
 						<Table>
-							<TableHeader className="bg-[#D6E6F2]">
-								<TableRow className="border-none hover:bg-transparent">
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Expert
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Approved Date
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider">
-										Status
-									</TableHead>
-									<TableHead className="font-bold text-[#4A5568] h-12 px-6 text-[11px] uppercase tracking-wider text-center">
-										Actions
-									</TableHead>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Expert</TableHead>
+									<TableHead>Approved Date</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead className="text-center">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -472,14 +440,7 @@ function ExpertPageInner() {
 												{formatDate(advisor.approvedAt)}
 											</TableCell>
 											<TableCell className="px-6 py-4">
-												<Badge
-													className={cn(
-														"rounded-md px-3 py-1 text-[10px] font-bold border-none shadow-none",
-														statusBadgeClass(advisor.status)
-													)}
-												>
-													{normalizeStatus(advisor.status) || "PENDING"}
-												</Badge>
+												<StatusBadge status={advisor.status} />
 											</TableCell>
 											<TableCell className="px-6 py-4 text-center">
 												<DropdownMenu>
@@ -527,7 +488,6 @@ function ExpertPageInner() {
 								)}
 							</TableBody>
 						</Table>
-					</div>
 				</div>
 
 				<div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

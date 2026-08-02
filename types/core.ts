@@ -1,7 +1,8 @@
 export type Roles = "ADMIN" | "COORDINATOR" | `TRANNIE`;
 
-export type ErrorRes = { 
-  message: string 
+export type ErrorRes = {
+  message: string;
+  success?: false;
 };
 export interface SuccessRes {
   success: boolean;
