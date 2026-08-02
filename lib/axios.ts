@@ -1,22 +1,25 @@
-import axios from 'axios'
-import Cookies from 'js-cookie'
-import useAuthStore from '@/store/useAuthStore' // 1. Import your memory store
+import axios from "axios";
+import { toast } from "sonner";
+import useAuthStore from "@/store/useAuthStore";
+import { getApiErrorMessage } from "@/lib/api-error";
+import {
+  isAuthSessionEndpoint,
+  refreshAccessToken,
+  shouldAttemptTokenRefresh,
+  signOut,
+} from "@/lib/auth-session";
 
-export default function AxiosConfig(logOut: () => void) {
-  const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et"
-  axios.defaults.baseURL = url
+export default function AxiosConfig() {
+  const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et";
+  axios.defaults.baseURL = url;
 
-  // THE REQUEST INTERCEPTOR: The "Automatic Security Check"
   const requestInterceptorId = axios.interceptors.request.use((config) => {
-    // 2. GET THE KEYS: Grab token from cookie and role from Zustand
-    const token = Cookies.get("session_token");
-    const { role, permissions } = useAuthStore.getState();
+    const { accessToken, role, permissions } = useAuthStore.getState();
 
-    // 3. STAMP THE HEADERS: Attach the badge to the request
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    if (accessToken) {
+      config.headers["Authorization"] = `Bearer ${accessToken}`;
     }
-    
+
     if (role) {
       const normalizedRole = String(role).trim().toUpperCase();
       const p = (permissions ?? []).map((x) => String(x).toLowerCase().trim());
@@ -45,44 +48,77 @@ export default function AxiosConfig(logOut: () => void) {
           ? "COORDINATOR"
           : normalizedRole;
 
-      config.headers['role'] = roleHeader;
+      config.headers["role"] = roleHeader;
     }
 
-    // Avoid browser HTTP caching / 304 + If-None-Match reusing a stale body for API GETs
-    // (e.g. different query string but buggy cache key, or dev tools confusion).
     const m = (config.method ?? "get").toLowerCase();
     if (m === "get" || m === "head") {
       config.headers["Cache-Control"] = "no-cache";
       config.headers["Pragma"] = "no-cache";
     }
 
-    config.headers['ngrok-skip-browser-warning'] = 'true';
+    config.headers["ngrok-skip-browser-warning"] = "true";
 
-    // FormData must keep the browser-set multipart boundary; forcing JSON empties files as `{}`.
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      delete config.headers["Content-Type"];
     } else {
-      config.headers['Content-Type'] = 'application/json';
+      config.headers["Content-Type"] = "application/json";
     }
 
     return config;
   });
 
-  // THE RESPONSE INTERCEPTOR: The "Logout Guard"
   const responseInterceptorId = axios.interceptors.response.use(
     (response) => response,
-    (error) => {
-      // 401: invalid/expired session — sign out. 403: forbidden resource — let callers show UI.
-      if (error.response?.status === 401) {
-        logOut();
+    async (error) => {
+      const original = error.config;
+      const status = error.response?.status as number | undefined;
+      const backendMessage = error.response?.data?.message as string | undefined;
+
+      if (
+        !original ||
+        original.skipAuthRefresh ||
+        isAuthSessionEndpoint(original.url)
+      ) {
+        return Promise.reject(error);
       }
+
+      if (!original._retry && shouldAttemptTokenRefresh(status)) {
+        original._retry = true;
+        try {
+          await refreshAccessToken();
+          const token = useAuthStore.getState().accessToken;
+          if (token) {
+            original.headers = original.headers ?? {};
+            original.headers.Authorization = `Bearer ${token}`;
+          }
+          return axios(original);
+        } catch {
+          toast.error(getApiErrorMessage(401), {
+            id: "auth-unauthorized",
+          });
+          void signOut();
+          return Promise.reject(error);
+        }
+      }
+
+      if (status === 401) {
+        toast.error(getApiErrorMessage(401, backendMessage), {
+          id: "auth-unauthorized",
+        });
+        void signOut();
+      } else if (status === 403) {
+        toast.error(getApiErrorMessage(403, backendMessage), {
+          id: "auth-forbidden",
+        });
+      }
+
       return Promise.reject(error);
     }
   );
 
-  // Return cleanup so interceptors don't stack (dev StrictMode, route changes, HMR)
   return () => {
-    axios.interceptors.request.eject(requestInterceptorId)
-    axios.interceptors.response.eject(responseInterceptorId)
-  }
+    axios.interceptors.request.eject(requestInterceptorId);
+    axios.interceptors.response.eject(responseInterceptorId);
+  };
 }
