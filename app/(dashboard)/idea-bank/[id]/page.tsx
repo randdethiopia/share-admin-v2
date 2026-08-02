@@ -20,6 +20,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const sanitizeHTML = (html: string) => {
+  // Strips out carriage returns (\r), zero-width spaces (\u200b, \u200c), soft hyphens (\u00ad), standard pipes (|), and ASCII 127 DEL characters (\x7f)
+  return html ? html.replace(/[\r\u200b\u200c\u00ad|\x7f]/g, "") : "";
+};
+
 export default function IdeaDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -235,7 +240,7 @@ export default function IdeaDetailPage() {
                 "prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:bg-slate-950 prose-pre:text-slate-50 " +
                 "prose-code:wrap-break-word"
               }
-              dangerouslySetInnerHTML={{ __html: idea.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHTML(idea.description) }}
             />
             <div className="mt-10 flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">

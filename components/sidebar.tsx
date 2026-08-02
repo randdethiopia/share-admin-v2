@@ -4,14 +4,12 @@ import { usePathname } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
 import { signOut } from "@/lib/auth-session";
 import {
-  UserCog,
   ChevronRight,
   ChevronDown,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   type MenuItem,
@@ -27,6 +25,23 @@ import {
 } from "./ui/collapsible";
 
 export { dashboardMenuItems } from "@/lib/access";
+
+const navLinkBase =
+  "flex items-center rounded-lg text-sm transition-colors";
+const navLinkInactive =
+  "text-white/85 hover:bg-white/15 hover:text-white font-medium px-3 py-2";
+const navLinkActive =
+  "bg-white text-[#69B34C] font-bold rounded-lg px-3 py-2 text-sm shadow-sm";
+const sectionTitleClasses =
+  "text-white/70 text-[11px] font-bold tracking-wider uppercase px-3 pt-4 pb-1";
+
+function getNavLinkClasses(active: boolean, layoutClasses: string) {
+  return cn(
+    navLinkBase,
+    layoutClasses,
+    active ? navLinkActive : navLinkInactive,
+  );
+}
 
 export function Sidebar({
   className,
@@ -100,11 +115,11 @@ export function Sidebar({
     return (
       <div
         className={cn(
-          "flex h-full w-full flex-col items-center bg-white md:h-screen md:border-r",
+          "flex h-full w-full flex-col items-center overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
           className,
         )}
       >
-        <div className="flex w-full justify-center border-b px-2 py-4">
+        <div className="flex w-full shrink-0 justify-center border-b border-white/20 px-2 py-4">
           <Button
             type="button"
             variant="ghost"
@@ -112,7 +127,7 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Show sidebar"
             title="Show sidebar"
-            className="text-gray-600 hover:text-gray-900"
+            className="text-white/85 hover:bg-white/15 hover:text-white"
           >
             <PanelLeftOpen className="h-5 w-5" />
           </Button>
@@ -124,11 +139,19 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-full w-full flex-col bg-white md:h-screen md:w-70 md:border-r",
+        "flex h-full w-72 flex-col overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
         className,
       )}
     >
-      <div className="relative flex flex-col items-center gap-3 border-b px-6 py-6">
+      <div className="relative flex shrink-0 items-center gap-2 border-b border-white/20 px-4 py-5">
+        <div className="flex min-w-0 flex-1 items-center gap-2 pr-8">
+          <span className="text-lg font-extrabold tracking-tight text-white truncate">
+            SHARE
+          </span>
+          <span className="shrink-0 rounded bg-[#FF4E11] px-1.5 py-0.5 text-[10px] font-bold text-white">
+            ADMIN
+          </span>
+        </div>
         {onToggleCollapse ? (
           <Button
             type="button"
@@ -137,25 +160,14 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Hide sidebar"
             title="Hide sidebar"
-            className="absolute top-3 right-3 text-gray-500 hover:text-gray-900"
+            className="absolute top-3 right-3 text-white/85 hover:bg-white/15 hover:text-white"
           >
             <PanelLeftClose className="h-5 w-5" />
           </Button>
         ) : null}
-        <Avatar className="h-16 w-16">
-          <AvatarFallback className="bg-gray-200 text-gray-600">
-            <UserCog className="h-8 w-8" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="text-center">
-          <h2 className="text-lg font-semibold capitalize">
-            {user?.firstName && user?.lastName ? `${user?.firstName} ${user?.lastName}` : "Guest"}
-          </h2>
-          <p className="text-xs">Portal Access</p>
-        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref = item.href;
@@ -185,27 +197,24 @@ export function Sidebar({
                     <button
                       type="button"
                       className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                        isOpen
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-gray-700 hover:bg-gray-50",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg transition-colors",
+                        sectionTitleClasses,
+                        "hover:text-white",
+                        childActive && "text-white",
                       )}
                     >
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-5 w-5" />
-                        <span>{item.label}</span>
-                      </div>
+                      <span>{item.label}</span>
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                       ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                       )}
                       <span className="sr-only">Toggle {item.label}</span>
                     </button>
                   </CollapsibleTrigger>
 
                   <CollapsibleContent>
-                    <div className="ml-6 flex flex-col gap-1">
+                    <div className="ml-3 flex flex-col gap-1">
                       {item.items.map((subItem) => {
                         const SubIcon = subItem.icon;
                         const isSubActive =
@@ -217,11 +226,9 @@ export function Sidebar({
                             key={subItem.href}
                             href={subItem.href}
                             onClick={onNavigate}
-                            className={cn(
-                              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                              isSubActive
-                                ? "bg-blue-50 text-blue-600"
-                                : "text-gray-700 hover:bg-gray-50",
+                            className={getNavLinkClasses(
+                              isSubActive,
+                              "gap-3 py-2",
                             )}
                           >
                             <SubIcon className="h-4 w-4" />
@@ -240,12 +247,7 @@ export function Sidebar({
                 key={item.id}
                 href={resolvedHref}
                 onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-700 hover:bg-gray-50",
-                )}
+                className={getNavLinkClasses(isActive, "gap-3 py-2")}
               >
                 <Icon className="h-5 w-5" />
                 <span>{item.label}</span>
@@ -255,7 +257,17 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="border-t px-3 py-4">
+      <div className="mt-auto shrink-0 space-y-2 border-t border-white/20 bg-[#529339] p-3.5">
+        <div className="min-w-0 px-1">
+          <p className="truncate text-xs font-bold text-white">
+            {user?.firstName && user?.lastName
+              ? `${user.firstName} ${user.lastName}`
+              : "Guest"}
+          </p>
+          <p className="truncate text-[11px] text-white/80">
+            {user?.email ?? ""}
+          </p>
+        </div>
         <Button
           type="button"
           variant="ghost"
