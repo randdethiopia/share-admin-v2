@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
-import Link from "next/link";
+import { CreateTraineeModal } from "../components/create-trainee-modal";
 import { Loader2, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -269,12 +269,7 @@ export default function TraineePage() {
 						</Button>
 					)}
 					<AssignTraineesToCoordinator />
-					{/* <Button
-						asChild
-						className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
-					>
-						<Link href="/trainee/list/create-trainee">Create</Link>
-					</Button> */}
+					<CreateTraineeModal />
 				</div>
 			</div>
 
