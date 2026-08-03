@@ -12,7 +12,6 @@ import {
 	DEFAULT_CATEGORY,
 	DEFAULT_PAGE_SIZE,
 	DEFAULT_STATUS,
-	type CategoryFilter,
 	type StatusFilter,
 } from "@/components/support/support.constants";
 import api from "@/lib/api";
@@ -27,7 +26,6 @@ export default function SupportPage() {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState<StatusFilter>(DEFAULT_STATUS);
-	const [category, setCategory] = useState<CategoryFilter>(DEFAULT_CATEGORY);
 	const [search, setSearch] = useState("");
 
 	const queryParams = useMemo(
@@ -36,10 +34,10 @@ export default function SupportPage() {
 				page,
 				limit: DEFAULT_PAGE_SIZE,
 				status,
-				category,
+				category: DEFAULT_CATEGORY,
 				search,
 			}),
-		[page, status, category, search]
+		[page, status, search]
 	);
 
 	const { data, isLoading, isError, error } =
@@ -74,51 +72,57 @@ export default function SupportPage() {
 		}
 	};
 
+	const handleMetricClick = (filter: StatusFilter) => {
+		setStatus(filter);
+		setPage(1);
+	};
+
 	return (
-		<div className="w-full space-y-6 bg-background p-6">
+		<div className="w-full space-y-5 bg-background p-6">
 			<PageHeader
 				category="SUPPORT MANAGEMENT"
-				title="Support Tickets"
-				description="Review, manage, and reply to customer inquiries."
+				title="Support Inbox"
+				description="Review, manage, and respond to customer inquiries."
 			/>
 
-			<SupportMetrics tickets={tickets} totalCount={totalCount} />
-
-			<SupportFilterBar
-				search={search}
-				onSearchChange={(value) => {
-					setSearch(value);
-					setPage(1);
-				}}
-				status={status}
-				onStatusChange={(value) => {
-					setStatus(value);
-					setPage(1);
-				}}
-				category={category}
-				onCategoryChange={(value) => {
-					setCategory(value);
-					setPage(1);
-				}}
+			<SupportMetrics
+				tickets={tickets}
+				activeStatus={status}
+				onMetricClick={handleMetricClick}
 			/>
 
 			{isError ? (
-				<div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+				<div className="rounded-xl border-0 bg-destructive/5 px-4 py-3 text-sm text-destructive shadow-xs">
 					{(error as { response?: { data?: { message?: string } } })?.response
 						?.data?.message || "Failed to load support tickets."}
 				</div>
 			) : null}
 
-			<SupportTable
-				tickets={tickets}
-				loading={isLoading}
-				page={page}
-				totalItems={totalCount}
-				pageSize={DEFAULT_PAGE_SIZE}
-				onPageChange={setPage}
-				onViewTicket={handleViewTicket}
-				onMarkClosed={handleMarkClosed}
-			/>
+			<div className="rounded-xl border-0 bg-card p-6 shadow-xs">
+				<SupportFilterBar
+					search={search}
+					onSearchChange={(value) => {
+						setSearch(value);
+						setPage(1);
+					}}
+					status={status}
+					onStatusChange={(value) => {
+						setStatus(value);
+						setPage(1);
+					}}
+				/>
+
+				<SupportTable
+					tickets={tickets}
+					loading={isLoading}
+					page={page}
+					totalItems={totalCount}
+					pageSize={DEFAULT_PAGE_SIZE}
+					onPageChange={setPage}
+					onViewTicket={handleViewTicket}
+					onMarkClosed={handleMarkClosed}
+				/>
+			</div>
 
 			<TicketDetailDialog
 				ticketId={selectedTicketId}

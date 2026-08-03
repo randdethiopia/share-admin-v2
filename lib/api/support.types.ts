@@ -52,6 +52,7 @@ export interface SupportTicketType {
 	emailStatus: EmailStatus;
 	submitterName?: string;
 	submitterEmail?: string;
+	replies?: SupportReplyType[];
 	createdAt: string;
 	updatedAt: string;
 	lastReplyAt?: string;

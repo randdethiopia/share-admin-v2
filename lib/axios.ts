@@ -1,9 +1,73 @@
-import axios from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import Cookies from 'js-cookie'
 import useAuthStore from '@/store/useAuthStore' // 1. Import your memory store
 
 export { AxiosError } from 'axios'
 export default axios
+
+export const SUPPRESS_AUTO_LOGOUT_HEADER = "X-Suppress-Auto-Logout";
+
+function getRequestHeader(
+	config: InternalAxiosRequestConfig,
+	name: string
+): unknown {
+	const headers = config.headers;
+	if (!headers) return undefined;
+
+	if (typeof headers.get === "function") {
+		return headers.get(name);
+	}
+
+	return (headers as Record<string, unknown>)[name];
+}
+
+function isTruthyHeader(value: unknown): boolean {
+	return value === true || value === "true" || value === "1";
+}
+
+function isPublicAuthRequest(url: string): boolean {
+	return /\/api\/auth-(admin|trannie)\/(login|register|forgotPassword|resetPassword|activate)/i.test(
+		url
+	);
+}
+
+function isCriticalAuthRequest(url: string, method: string): boolean {
+	const m = method.toLowerCase();
+	if (m !== "get" && m !== "head") return false;
+
+	return (
+		url.includes("/api/auth-admin/refresh") ||
+		url.includes("/api/auth-admin/get")
+	);
+}
+
+function isBackgroundPollingRequest(config: InternalAxiosRequestConfig): boolean {
+	if (isTruthyHeader(getRequestHeader(config, SUPPRESS_AUTO_LOGOUT_HEADER))) {
+		return true;
+	}
+
+	const url = String(config.url ?? "");
+	const method = (config.method ?? "get").toLowerCase();
+
+	return method === "get" && /\/api\/support\/tickets\/?(\?|$)/.test(url);
+}
+
+function shouldAutoLogoutOn401(error: AxiosError): boolean {
+	const config = error.config;
+	if (!config) return false;
+
+	if (isBackgroundPollingRequest(config)) return false;
+
+	const url = String(config.url ?? "");
+	const method = (config.method ?? "get").toLowerCase();
+
+	if (isPublicAuthRequest(url)) return false;
+	if (isCriticalAuthRequest(url, method)) return true;
+
+	if (method !== "get" && method !== "head") return true;
+
+	return true;
+}
 
 export function AxiosConfig(logOut: () => void) {
   const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et"
@@ -72,9 +136,10 @@ export function AxiosConfig(logOut: () => void) {
   // THE RESPONSE INTERCEPTOR: The "Logout Guard"
   const responseInterceptorId = axios.interceptors.response.use(
     (response) => response,
-    (error) => {
-      // 401: invalid/expired session — sign out. 403: forbidden resource — let callers show UI.
-      if (error.response?.status === 401) {
+    (error: AxiosError) => {
+      // 401: invalid/expired session — sign out when session-critical or user-initiated.
+      // Background polls and X-Suppress-Auto-Logout requests reject without redirecting.
+      if (error.response?.status === 401 && shouldAutoLogoutOn401(error)) {
         logOut();
       }
       return Promise.reject(error);

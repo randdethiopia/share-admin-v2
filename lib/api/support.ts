@@ -6,7 +6,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import axios, { AxiosError } from "@/lib/axios";
+import axios, { AxiosError, SUPPRESS_AUTO_LOGOUT_HEADER } from "@/lib/axios";
 import { toast } from "sonner";
 
 import { SUPPORT_POLLING_INTERVAL } from "./support.constants";
@@ -51,6 +51,7 @@ export async function getTicketsFn(params?: GetTicketsQueryParams) {
 	return (
 		await axios.get<TicketListResponse>(`${API_URL}/api/support/tickets`, {
 			params,
+			headers: { [SUPPRESS_AUTO_LOGOUT_HEADER]: "true" },
 		})
 	).data;
 }

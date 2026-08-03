@@ -1,4 +1,9 @@
-import { EmailStatus, TicketStatus } from "@/lib/api/support.types";
+import {
+	EmailStatus,
+	TicketCategory,
+	TicketStatus,
+} from "@/lib/api/support.types";
+import { formatCategoryLabel } from "@/components/support/support.constants";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<TicketStatus, string> = {
@@ -24,6 +29,24 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 			)}
 		>
 			● {status}
+		</span>
+	);
+}
+
+type CategoryBadgeProps = {
+	category: TicketCategory;
+	className?: string;
+};
+
+export function CategoryBadge({ category, className }: CategoryBadgeProps) {
+	return (
+		<span
+			className={cn(
+				"inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground",
+				className
+			)}
+		>
+			{formatCategoryLabel(category)}
 		</span>
 	);
 }
