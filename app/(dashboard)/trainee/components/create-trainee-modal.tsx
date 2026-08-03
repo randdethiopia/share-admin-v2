@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { CreateTraineeForm } from "./create-trainee-form";
 
-export function CreateTraineeModal() {
+interface CreateTraineeModalProps {
+	renderTrigger?: (openDialog: () => void) => ReactNode;
+}
+
+export function CreateTraineeModal({ renderTrigger }: CreateTraineeModalProps = {}) {
 	const [open, setOpen] = useState(false);
 	const queryClient = useQueryClient();
 
@@ -24,12 +28,16 @@ export function CreateTraineeModal() {
 
 	return (
 		<>
-			<Button
-				className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
-				onClick={() => setOpen(true)}
-			>
-				Create
-			</Button>
+			{renderTrigger ? (
+				renderTrigger(() => setOpen(true))
+			) : (
+				<Button
+					className="bg-[#69B34C] hover:bg-emerald-600 rounded-xl px-6 font-bold"
+					onClick={() => setOpen(true)}
+				>
+					Add Trainee
+				</Button>
+			)}
 
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="sm:max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
