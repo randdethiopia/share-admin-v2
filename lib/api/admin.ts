@@ -7,7 +7,6 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import Cookies from "js-cookie";
 
 export interface AdminLoginSuccessResType extends SuccessRes {
   user: {
@@ -92,7 +91,11 @@ export async function activateAdminFn(
   ).data;
 }
 export async function loginAdminFn(AdminLogin: AdminLogin) {
-  return (await axios.post(`${API_URL}/api/auth-admin/login`, AdminLogin)).data;
+  return (
+    await axios.post(`${API_URL}/api/auth-admin/login`, AdminLogin, {
+      withCredentials: true,
+    })
+  ).data;
 }
 export async function changePasswordFn(
   changePassword: ChangePasswordType,
@@ -112,8 +115,10 @@ export async function resetPasswordFn(resetPassword: ResetPasswordType) {
 export async function refreshAdminTokenFn() {
   return (
     await axios.get("/api/auth-admin/refresh", {
-      withCredentials: true,  
-    })).data;
+      withCredentials: true,
+      skipAuthRefresh: true,
+    })
+  ).data;
 }
 
 
@@ -189,21 +194,17 @@ const AdminAuth = {
       useMutation({
         ...options,
         mutationFn: (AdminLogin) => loginAdminFn(AdminLogin),
-        onSuccess: (data, variables, context) => {
+        onSuccess: (data, variables, onMutateResult, context) => {
           useAuthStore.getState().setAccessToken(
             data.user._id,
             data.accessToken,
             data.user.role,
             data.user.email,
-            data.user.permissions ?? data.permissions ?? null,
+            data.permissions ?? data.user.permissions ?? null,
             data.user ?? null
           );
 
-          // Needed for `middleware.ts` route protection.
-          Cookies.set("session_token", data.accessToken, { expires: 7 });
-
-          // React Query's callback arity differs slightly by version; forward all args.
-          options?.onSuccess?.(data, variables, context, undefined as any);
+          options?.onSuccess?.(data, variables, onMutateResult, context);
         },
       }),
   },

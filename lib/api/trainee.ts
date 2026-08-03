@@ -122,6 +122,38 @@ export interface TraineeRegistrationType {
 	phoneNumber: string;
 }
 
+export interface BulkTraineeImportEntry {
+	firstname: string;
+	lastname: string;
+	phoneNumber: string;
+	email?: string;
+	age?: number;
+	region?: string;
+	gender?: string;
+}
+
+export interface BulkTraineeImportSuccess {
+	phone: string;
+	name: string;
+	id: string;
+}
+
+export interface BulkTraineeImportFailure {
+	data: BulkTraineeImportEntry;
+	reason: string;
+}
+
+export interface BulkTraineeImportResType extends SuccessRes {
+	status: number;
+	data: {
+		totalProcessed: number;
+		totalSuccess: number;
+		totalFailed: number;
+		successTrainees: BulkTraineeImportSuccess[];
+		failedTrainees: BulkTraineeImportFailure[];
+	};
+}
+
 export interface TraineeRegistrationResType extends SuccessRes {
 	email: string;
 }
@@ -168,6 +200,12 @@ export async function registerTraineeFn(traineeAuth: TraineeRegistrationType) {
 	return (
 		await axios.post(`${API_URL}/api/auth-trannie/aregister`, traineeAuth)
 	).data as TraineeRegistrationResType;
+}
+
+export async function bulkImportTraineesFn(payload: { trainees: BulkTraineeImportEntry[] }) {
+	return (
+		await axios.post(`${API_URL}/api/trannie/bulk-import`, payload)
+	).data as BulkTraineeImportResType;
 }
 
 export async function getAllTraineeFn(
@@ -364,6 +402,43 @@ const TraineeAuth = {
 				},
 				...options,
 			}),
+	},
+
+	bulkImportTrainees: {
+		useMutation: (
+			options?: UseMutationOptions<
+				BulkTraineeImportResType,
+				AxiosError<ErrorRes>,
+				{ trainees: BulkTraineeImportEntry[] }
+			> & {
+				/** Called for every successful import, whether or not the toast action is clicked. */
+				onResult?: (data: BulkTraineeImportResType["data"]) => void;
+				onViewDetails?: (data: BulkTraineeImportResType["data"]) => void;
+			}
+		) => {
+			const queryClient = useQueryClient();
+
+			return useMutation({
+				mutationFn: bulkImportTraineesFn,
+				...options,
+				onSuccess: (res, variables, context) => {
+					options?.onResult?.(res.data);
+					toast.success(res.message || "Trainees processed", {
+						description: `${res.data.totalSuccess} succeeded, ${res.data.totalFailed} failed`,
+						action: {
+							label: "View details",
+							onClick: () => options?.onViewDetails?.(res.data),
+						},
+					});
+					queryClient.invalidateQueries({ queryKey: ["Trainee"] });
+					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
+				},
+				onError: (err, variables, context) => {
+					toast.error(err.response?.data?.message || "Error");
+					options?.onError?.(err, variables, context, undefined as unknown as never);
+				},
+			});
+		},
 	},
 
 	activateTrainee: {

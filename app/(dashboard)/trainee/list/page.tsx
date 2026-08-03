@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import CohortApi from "@/lib/api/cohort";
 import TraineeAuth, { type TraineeType } from "@/lib/api/trainee";
 import PaginationControls from "@/components/shared/PaginationControls";
@@ -24,6 +25,12 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -42,8 +49,9 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
-import Link from "next/link";
-import { Loader2, Search, Trash2, Upload } from "lucide-react";
+import { BulkImportTraineesModal } from "../components/bulk-import-trainees-modal";
+import { CreateTraineeModal } from "../components/create-trainee-modal";
+import { ChevronDown, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 type TraineeTypeFilter = "all" | "NORMAL" | "EDGE";
@@ -60,6 +68,7 @@ function normalizeIsActive(value: unknown) {
 }
 
 export default function TraineePage() {
+	const router = useRouter();
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [searchInput, setSearchInput] = useState("");
@@ -68,6 +77,9 @@ export default function TraineePage() {
 	const [status, setStatus] = useState<TraineeStatusFilter>("all");
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [isSelectable, setIsSelectable] = useState(false);
+
+	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -269,12 +281,34 @@ export default function TraineePage() {
 						</Button>
 					)}
 					<AssignTraineesToCoordinator />
-					{/* <Button
-						asChild
-						className="bg-[#10B981] hover:bg-emerald-600 rounded-xl px-6 font-bold"
-					>
-						<Link href="/trainee/list/create-trainee">Create</Link>
-					</Button> */}
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button className="bg-[#69B34C] hover:bg-emerald-600 rounded-xl px-6 font-bold">
+								Add Trainees
+								<ChevronDown className="h-4 w-4 ml-2" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-56 rounded-xl">
+							<DropdownMenuItem onClick={() => setCreateOpen(true)} className="gap-2 cursor-pointer">
+								<Plus className="h-4 w-4" />
+								Add Trainee
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => setBulkImportOpen(true)} className="gap-2 cursor-pointer">
+								<Upload className="h-4 w-4" />
+								Bulk Import
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/trainee/list/import-result")}
+								className="gap-2 cursor-pointer"
+							>
+								<History className="h-4 w-4" />
+								See Last Upload Result
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+					{/* Rendered outside the DropdownMenu so closing the menu doesn't unmount (and dismiss) these dialogs */}
+					<CreateTraineeModal open={createOpen} onOpenChange={setCreateOpen} />
+					<BulkImportTraineesModal open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
 				</div>
 			</div>
 

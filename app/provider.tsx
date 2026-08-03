@@ -27,19 +27,18 @@ export default function Providers({
         },
       })
   );
-  const logOut = useAuthStore((s) => s.logOut);
 
   React.useEffect(() => {
-    const cleanup = AxiosConfig(logOut);
+    const cleanup = AxiosConfig();
 
     return () => {
       cleanup?.();
     };
-  }, [logOut]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthGate>{children}</AuthGate>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

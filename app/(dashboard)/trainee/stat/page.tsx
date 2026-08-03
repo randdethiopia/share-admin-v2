@@ -12,19 +12,18 @@ import { SnapshotCards } from "./components/snapshot-cards";
 import { TraineeStatSkeleton } from "./components/trainee-stat-skeleton";
 
 export default function TraineeStatPage() {
-	const { data, isLoading, isError, error } = TraineeAuth.GetReport.useQuery();
+	const { data, isLoading, isError } = TraineeAuth.GetReport.useQuery();
 
 	if (isLoading) {
 		return <TraineeStatSkeleton />;
 	}
 
 	if (isError || !data) {
-		const message =
-			(error as { response?: { data?: { message?: string } } })?.response?.data
-				?.message ?? "Failed to load trainee statistics.";
 		return (
 			<div className="flex min-h-[40vh] flex-col items-center justify-center py-4">
-				<p className="text-sm text-destructive">{message}</p>
+				<p className="text-sm text-muted-foreground">
+					Error fetching trainee statistics.
+				</p>
 			</div>
 		);
 	}

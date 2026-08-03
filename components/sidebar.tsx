@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useAuthStore from "@/store/useAuthStore";
+import useAuthStore from "@/store/useAuthStore"; // 1. Use the NEW store
+import { signOut } from "@/lib/auth-session";
 import {
   ChevronRight,
   ChevronDown,
@@ -57,7 +58,8 @@ export function Sidebar({
 
   const pathname = usePathname();
 
-  const { user, permissions, hasHydrated, logOut } = useAuthStore();
+  const { user, permissions, hasHydrated } = useAuthStore();
+  const [signingOut, setSigningOut] = useState(false);
 
   const canViewItem = (item: MenuItem) => canAccessMenuItem(item, permissions);
 
@@ -101,8 +103,10 @@ export function Sidebar({
     }
   }, [pathname]);
 
-  const handleLogout = () => {
-    logOut();
+  const handleLogout = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut();
   };
 
   if (!hasHydrated) return null;
@@ -268,10 +272,11 @@ export function Sidebar({
           type="button"
           variant="ghost"
           onClick={handleLogout}
-          className="flex h-auto w-full items-center justify-start gap-2.5 rounded-lg bg-red-600/30 px-2.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600/50"
+          disabled={signingOut}
+          className="flex w-full items-center justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
         >
-          <LogOut className="h-4 w-4 shrink-0 text-white" />
-          <span>Logout</span>
+          <LogOut className="h-5 w-5" />
+          <span>{signingOut ? "Signing out…" : "Logout"}</span>
         </Button>
       </div>
     </div>
