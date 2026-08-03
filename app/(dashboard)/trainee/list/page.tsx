@@ -78,6 +78,9 @@ export default function TraineePage() {
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [isSelectable, setIsSelectable] = useState(false);
 
+	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkImportOpen, setBulkImportOpen] = useState(false);
+
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
 	const [openPickDataBulk, setOpenPickDataBulk] = useState(false);
@@ -286,22 +289,14 @@ export default function TraineePage() {
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-56 rounded-xl">
-							<CreateTraineeModal
-								renderTrigger={(open) => (
-									<DropdownMenuItem onClick={open} className="gap-2 cursor-pointer">
-										<Plus className="h-4 w-4" />
-										Add Trainee
-									</DropdownMenuItem>
-								)}
-							/>
-							<BulkImportTraineesModal
-								renderTrigger={(open) => (
-									<DropdownMenuItem onClick={open} className="gap-2 cursor-pointer">
-										<Upload className="h-4 w-4" />
-										Bulk Import
-									</DropdownMenuItem>
-								)}
-							/>
+							<DropdownMenuItem onClick={() => setCreateOpen(true)} className="gap-2 cursor-pointer">
+								<Plus className="h-4 w-4" />
+								Add Trainee
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => setBulkImportOpen(true)} className="gap-2 cursor-pointer">
+								<Upload className="h-4 w-4" />
+								Bulk Import
+							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => router.push("/trainee/list/import-result")}
 								className="gap-2 cursor-pointer"
@@ -311,6 +306,9 @@ export default function TraineePage() {
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
+					{/* Rendered outside the DropdownMenu so closing the menu doesn't unmount (and dismiss) these dialogs */}
+					<CreateTraineeModal open={createOpen} onOpenChange={setCreateOpen} />
+					<BulkImportTraineesModal open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
 				</div>
 			</div>
 

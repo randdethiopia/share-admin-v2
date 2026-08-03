@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -111,12 +111,20 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 }
 
 interface BulkImportTraineesModalProps {
-	renderTrigger?: (openDialog: () => void) => ReactNode;
+	/** Pass to control the dialog from a parent (e.g. a menu item) instead of the built-in button. */
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
-export function BulkImportTraineesModal({ renderTrigger }: BulkImportTraineesModalProps = {}) {
+export function BulkImportTraineesModal({
+	open: openProp,
+	onOpenChange: onOpenChangeProp,
+}: BulkImportTraineesModalProps = {}) {
 	const router = useRouter();
-	const [open, setOpen] = useState(false);
+	const isControlled = openProp !== undefined;
+	const [internalOpen, setInternalOpen] = useState(false);
+	const open = isControlled ? openProp : internalOpen;
+	const setOpen = isControlled ? (onOpenChangeProp ?? (() => {})) : setInternalOpen;
 	const [fileName, setFileName] = useState<string | null>(null);
 	const [trainees, setTrainees] = useState<BulkTraineeImportEntry[]>([]);
 	const [parseError, setParseError] = useState<string | null>(null);
@@ -178,9 +186,7 @@ export function BulkImportTraineesModal({ renderTrigger }: BulkImportTraineesMod
 
 	return (
 		<>
-			{renderTrigger ? (
-				renderTrigger(() => setOpen(true))
-			) : (
+			{!isControlled && (
 				<Button
 					variant="outline"
 					className="rounded-xl px-6 font-bold border-blue-500 text-blue-600 hover:bg-blue-50"

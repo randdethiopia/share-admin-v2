@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,16 @@ import {
 import { CreateTraineeForm } from "./create-trainee-form";
 
 interface CreateTraineeModalProps {
-	renderTrigger?: (openDialog: () => void) => ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
-export function CreateTraineeModal({ renderTrigger }: CreateTraineeModalProps = {}) {
-	const [open, setOpen] = useState(false);
+export function CreateTraineeModal({ open: openProp, onOpenChange: onOpenChangeProp }: CreateTraineeModalProps = {}) {
+	const isControlled = openProp !== undefined;
+	const [internalOpen, setInternalOpen] = useState(false);
+	const open = isControlled ? openProp : internalOpen;
+	const setOpen = isControlled ? (onOpenChangeProp ?? (() => {})) : setInternalOpen;
+
 	const queryClient = useQueryClient();
 
 	const handleCreated = () => {
@@ -28,9 +33,7 @@ export function CreateTraineeModal({ renderTrigger }: CreateTraineeModalProps = 
 
 	return (
 		<>
-			{renderTrigger ? (
-				renderTrigger(() => setOpen(true))
-			) : (
+			{!isControlled && (
 				<Button
 					className="bg-[#69B34C] hover:bg-emerald-600 rounded-xl px-6 font-bold"
 					onClick={() => setOpen(true)}
