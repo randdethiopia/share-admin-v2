@@ -3,7 +3,7 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import AxiosConfig from "@/lib/axios";
+import { AxiosConfig } from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
 
 export default function Providers({

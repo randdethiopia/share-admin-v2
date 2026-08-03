@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Sparkles,
   BarChart,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
@@ -75,6 +76,7 @@ export const dashboardMenuItems: MenuItem[] = [
   { id: "projects", icon: Users, label: "Projects", href: "/projects", permissions: ["project.read", "project.write", "project.delete"] },
   { id: "jobs", icon: Briefcase, label: "Jobs", href: "/jobs", permissions: ["job.read", "job.write", "job.delete"] },
   { id: "invitations", icon: Mail, label: "Invitations", href: "/invitations", permissions: ["invitation.read", "invitation.write", "invitation.delete"] },
+  { id: "support", icon: LifeBuoy, label: "Support Tickets", href: "/support", permissions: ["support.read", "support.write", "support.delete"] },
   { id: "blogs", icon: BookOpen, label: "Blogs", href: "/blogs", permissions: ["blog.read", "blog.write", "blog.delete"] },
   { id: "idea-bank", icon: Lightbulb, label: "Idea Bank", href: "/idea-bank", permissions: ["idea.read", "idea.write", "idea.delete"] },
   { id: "skills", icon: Sparkles, label: "Skills", href: "/skills", permissions: ["skill.read", "skill.write", "skill.delete"] },

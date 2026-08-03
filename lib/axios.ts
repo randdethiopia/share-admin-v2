@@ -2,7 +2,10 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import useAuthStore from '@/store/useAuthStore' // 1. Import your memory store
 
-export default function AxiosConfig(logOut: () => void) {
+export { AxiosError } from 'axios'
+export default axios
+
+export function AxiosConfig(logOut: () => void) {
   const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et"
   axios.defaults.baseURL = url
 
@@ -55,8 +58,6 @@ export default function AxiosConfig(logOut: () => void) {
       config.headers["Cache-Control"] = "no-cache";
       config.headers["Pragma"] = "no-cache";
     }
-
-    config.headers['ngrok-skip-browser-warning'] = 'true';
 
     // FormData must keep the browser-set multipart boundary; forcing JSON empties files as `{}`.
     if (config.data instanceof FormData) {
