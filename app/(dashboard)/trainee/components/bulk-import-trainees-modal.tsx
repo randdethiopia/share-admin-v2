@@ -20,9 +20,9 @@ import { downloadTextFile } from "@/lib/downloadTextFile";
 import { saveLastImportResult } from "@/lib/importResultStorage";
 import useAuthStore from "@/store/useAuthStore";
 
-const TEMPLATE_HEADERS = ["firstname", "lastname", "email", "phoneNumber", "age", "gender", "region"];
+const TEMPLATE_HEADERS = ["firstname", "middlename", "lastname", "email", "phoneNumber", "age", "gender", "region"];
 
-const TEMPLATE_EXAMPLE_ROW = ["John", "Doe", "john.doe@example.com", "0911223344", "25", "male", "Addis Ababa"];
+const TEMPLATE_EXAMPLE_ROW = ["Dawit", "Girma", "Bekele", "dawit.bekele@example.com", "0911223344", "25", "male", "Amhara"];
 
 const MAX_TRAINEES_PER_IMPORT = 100;
 const REQUIRED_HEADERS = ["firstname", "lastname", "phoneNumber"];
@@ -99,6 +99,7 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 			lastname: row.lastname,
 			phoneNumber: row.phoneNumber,
 		};
+		if (row.middlename) entry.middlename = row.middlename;
 		if (row.email) entry.email = row.email;
 		if (row.age) entry.age = Number(row.age);
 		if (row.region) entry.region = row.region;

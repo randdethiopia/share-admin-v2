@@ -16,6 +16,13 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 export function CreateTraineeForm({
@@ -34,15 +41,26 @@ export function CreateTraineeForm({
 
 	const form = useForm<TraineeFormData>({
 		resolver: zodResolver(traineeSchema),
-		defaultValues: { firstName: "", lastName: "", email: "", phoneNumber: "" },
+		defaultValues: {
+			firstName: "",
+			middleName: "",
+			lastName: "",
+			email: "",
+			phoneNumber: "",
+			region: "",
+			gender: undefined,
+		},
 	});
 
 	const onSubmit = (data: TraineeFormData) => {
 		createTrainee({
 			firstname: data.firstName,
+			middlename: data.middleName || undefined,
 			lastname: data.lastName,
 			email: data.email,
 			phoneNumber: data.phoneNumber,
+			region: data.region || undefined,
+			gender: data.gender,
 		});
 	};
 
@@ -62,7 +80,25 @@ export function CreateTraineeForm({
 							</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="John"
+									placeholder="Dawit"
+									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
+									{...field}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					name="middleName"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel className="text-gray-700 font-semibold">Middle Name</FormLabel>
+							<FormControl>
+								<Input
+									placeholder="Girma"
 									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
 									{...field}
 								/>
@@ -82,7 +118,7 @@ export function CreateTraineeForm({
 							</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="Doe"
+									placeholder="Bekele"
 									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
 									{...field}
 								/>
@@ -102,7 +138,7 @@ export function CreateTraineeForm({
 							</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="john@example.com"
+									placeholder="dawit.bekele@example.com"
 									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
 									{...field}
 								/>
@@ -127,6 +163,46 @@ export function CreateTraineeForm({
 									{...field}
 								/>
 							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					name="region"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel className="text-gray-700 font-semibold">Region</FormLabel>
+							<FormControl>
+								<Input
+									placeholder="Amhara"
+									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
+									{...field}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					name="gender"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel className="text-gray-700 font-semibold">Gender</FormLabel>
+							<Select onValueChange={field.onChange} value={field.value}>
+								<FormControl>
+									<SelectTrigger className="bg-[#F3F8FF] border-none h-12 rounded-xl w-full">
+										<SelectValue placeholder="Select gender" />
+									</SelectTrigger>
+								</FormControl>
+								<SelectContent>
+									<SelectItem value="male">Male</SelectItem>
+									<SelectItem value="female">Female</SelectItem>
+								</SelectContent>
+							</Select>
 							<FormMessage />
 						</FormItem>
 					)}

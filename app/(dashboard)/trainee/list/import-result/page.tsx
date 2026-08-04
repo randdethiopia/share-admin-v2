@@ -24,14 +24,15 @@ function csvCell(value: string) {
 }
 
 function failedTraineeName(f: BulkTraineeImportFailure) {
-	return `${f.data.firstname} ${f.data.lastname}`;
+	return [f.data.firstname, f.data.middlename, f.data.lastname].filter(Boolean).join(" ");
 }
 
 function failedTraineesToCsv(failed: BulkTraineeImportFailure[]): string {
-	const headers = ["firstname", "lastname", "email", "phoneNumber", "age", "gender", "region", "reason"];
+	const headers = ["firstname", "middlename", "lastname", "email", "phoneNumber", "age", "gender", "region", "reason"];
 	const rows = failed.map((f) =>
 		[
 			f.data.firstname,
+			f.data.middlename ?? "",
 			f.data.lastname,
 			f.data.email ?? "",
 			f.data.phoneNumber,

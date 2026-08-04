@@ -117,13 +117,17 @@ export interface TraineeReport {
 
 export interface TraineeRegistrationType {
 	firstname: string;
+	middlename?: string;
 	lastname: string;
 	email: string;
 	phoneNumber: string;
+	region?: string;
+	gender?: string;
 }
 
 export interface BulkTraineeImportEntry {
 	firstname: string;
+	middlename?: string;
 	lastname: string;
 	phoneNumber: string;
 	email?: string;
