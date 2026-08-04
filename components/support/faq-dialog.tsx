@@ -34,6 +34,7 @@ type FaqDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	faq?: FAQType | null;
+	refetchFaqs: () => Promise<unknown>;
 };
 
 const defaultValues: FaqFormValues = {
@@ -44,7 +45,7 @@ const defaultValues: FaqFormValues = {
 	category: undefined,
 };
 
-export function FaqDialog({ open, onOpenChange, faq }: FaqDialogProps) {
+export function FaqDialog({ open, onOpenChange, faq, refetchFaqs }: FaqDialogProps) {
 	const isEdit = Boolean(faq?._id);
 
 	const form = useForm<FaqFormValues>({
@@ -54,14 +55,16 @@ export function FaqDialog({ open, onOpenChange, faq }: FaqDialogProps) {
 
 	const { mutate: createFaq, isPending: isCreating } =
 		api.FAQ.Create.useMutation({
-			onSuccess: () => {
+			onSuccess: async () => {
+				await refetchFaqs();
 				onOpenChange(false);
 			},
 		});
 
 	const { mutate: updateFaq, isPending: isUpdating } =
 		api.FAQ.Update.useMutation({
-			onSuccess: () => {
+			onSuccess: async () => {
+				await refetchFaqs();
 				onOpenChange(false);
 			},
 		});

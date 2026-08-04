@@ -1,5 +1,6 @@
 import { ErrorRes, SuccessRes } from "@/types/core";
 import {
+	type QueryClient,
 	UseMutationOptions,
 	UseQueryOptions,
 	useMutation,
@@ -43,6 +44,12 @@ export async function deleteFaqFn(id: string) {
 	return (await axios.delete<SuccessRes>(`${API_URL}/api/faq/${id}`)).data;
 }
 
+async function invalidateAndRefetchFaqs(queryClient: QueryClient) {
+	await queryClient.invalidateQueries({ queryKey: ["faq"] });
+	await queryClient.invalidateQueries({ queryKey: faqKeys.all });
+	await queryClient.refetchQueries({ queryKey: ["faq"] });
+}
+
 const FaqApi = {
 	GetList: {
 		useQuery: (
@@ -70,17 +77,17 @@ const FaqApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: createFaqFn,
-				onSuccess: (res, variables, context) => {
+				onSuccess: async (data, variables, context) => {
+					await invalidateAndRefetchFaqs(queryClient);
 					toast.success("Question added to Question Bank!");
-					queryClient.invalidateQueries({ queryKey: faqKeys.all });
-					options?.onSuccess?.(res, variables, context, undefined as never);
+					options?.onSuccess?.(data, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -96,17 +103,17 @@ const FaqApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: updateFaqFn,
-				onSuccess: (res, variables, context) => {
+				onSuccess: async (data, variables, context) => {
+					await invalidateAndRefetchFaqs(queryClient);
 					toast.success("Question Bank entry updated.");
-					queryClient.invalidateQueries({ queryKey: faqKeys.all });
-					options?.onSuccess?.(res, variables, context, undefined as never);
+					options?.onSuccess?.(data, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -118,17 +125,17 @@ const FaqApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: deleteFaqFn,
-				onSuccess: (res, variables, context) => {
+				onSuccess: async (data, variables, context) => {
+					await invalidateAndRefetchFaqs(queryClient);
 					toast.success("Question removed from Question Bank.");
-					queryClient.invalidateQueries({ queryKey: faqKeys.all });
-					options?.onSuccess?.(res, variables, context, undefined as never);
+					options?.onSuccess?.(data, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},

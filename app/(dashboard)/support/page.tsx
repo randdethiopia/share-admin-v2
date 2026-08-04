@@ -57,16 +57,17 @@ export default function SupportPage() {
 	const { data, isLoading, isError, error } =
 		api.Support.GetList.useQuery(queryParams);
 
-	const { data: faqs = [], isLoading: isFaqsLoading } =
+	const { data: faqs = [], isLoading: isFaqsLoading, refetch: refetchFaqs } =
 		api.FAQ.GetList.useQuery();
 
 	const { mutate: markClosed } = api.Support.UpdateStatus.useMutation();
 
 	const { mutate: deleteFaq, isPending: isDeletingFaq } =
 		api.FAQ.Delete.useMutation({
-			onSuccess: () => {
+			onSuccess: async () => {
 				setDeleteDialogOpen(false);
 				setDeletingFaq(null);
+				await refetchFaqs();
 			},
 		});
 
@@ -222,6 +223,7 @@ export default function SupportPage() {
 						faqs={faqs}
 						loading={isFaqsLoading}
 						search={faqSearch}
+						refetchFaqs={refetchFaqs}
 						onEdit={handleOpenEditFaq}
 						onDelete={handleOpenDeleteFaq}
 						onAddFirst={handleOpenCreateFaq}
@@ -231,6 +233,7 @@ export default function SupportPage() {
 						open={faqDialogOpen}
 						onOpenChange={handleFaqDialogOpenChange}
 						faq={editingFaq}
+						refetchFaqs={refetchFaqs}
 					/>
 
 					<FaqDeleteDialog

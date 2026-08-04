@@ -136,17 +136,6 @@ export function AxiosConfig(logOut: () => void) {
         logOut();
       }
 
-      if (status === 401) {
-        toast.error(getApiErrorMessage(401, backendMessage), {
-          id: "auth-unauthorized",
-        });
-        void signOut();
-      } else if (status === 403) {
-        toast.error(getApiErrorMessage(403, backendMessage), {
-          id: "auth-forbidden",
-        });
-      }
-
       return Promise.reject(error);
     }
   );

@@ -28,6 +28,7 @@ type FaqTableProps = {
 	faqs: FAQType[];
 	loading: boolean;
 	search: string;
+	refetchFaqs: () => Promise<unknown>;
 	onEdit: (faq: FAQType) => void;
 	onDelete: (faq: FAQType) => void;
 	onAddFirst: () => void;
@@ -38,9 +39,9 @@ function TableSkeleton() {
 		<>
 			{Array.from({ length: 4 }).map((_, index) => (
 				<TableRow key={index}>
-					<TableCell><Skeleton className="h-5 w-10" /></TableCell>
+					<TableCell><Skeleton className="h-5 w-14" /></TableCell>
 					<TableCell><Skeleton className="h-10 w-64" /></TableCell>
-					<TableCell><Skeleton className="h-6 w-10" /></TableCell>
+					<TableCell><Skeleton className="h-6 w-32" /></TableCell>
 					<TableCell><Skeleton className="h-8 w-8" /></TableCell>
 				</TableRow>
 			))}
@@ -52,12 +53,16 @@ export function FaqTable({
 	faqs,
 	loading,
 	search,
+	refetchFaqs,
 	onEdit,
 	onDelete,
 	onAddFirst,
 }: FaqTableProps) {
-	const { mutate: updateFaq, isPending: isUpdating } =
-		api.FAQ.Update.useMutation();
+	const updateMutation = api.FAQ.Update.useMutation({
+		onSuccess: async () => {
+			await refetchFaqs();
+		},
+	});
 
 	const filteredFaqs = useMemo(() => {
 		const query = search.trim().toLowerCase();
@@ -81,14 +86,19 @@ export function FaqTable({
 			<Table>
 				<TableHeader>
 					<TableRow className="bg-[#F9F9F9] hover:bg-[#F9F9F9]">
-						<TableHead className="w-20 text-xs font-bold uppercase tracking-wider">
-							Order
+						<TableHead className="w-28 text-xs font-bold uppercase tracking-wider">
+							<div className="flex flex-col">
+								<span>DISPLAY ORDER</span>
+								<span className="text-[10px] font-normal lowercase text-muted-foreground">
+									(chatbot priority)
+								</span>
+							</div>
 						</TableHead>
 						<TableHead className="text-xs font-bold uppercase tracking-wider">
 							Question & Answer
 						</TableHead>
-						<TableHead className="w-24 text-xs font-bold uppercase tracking-wider">
-							Status
+						<TableHead className="min-w-[180px] w-48 text-xs font-bold uppercase tracking-wider">
+							LIVE IN CHATBOT
 						</TableHead>
 						<TableHead className="w-16 text-right text-xs font-bold uppercase tracking-wider">
 							Actions
@@ -108,14 +118,19 @@ export function FaqTable({
 							</TableCell>
 						</TableRow>
 					) : (
-						filteredFaqs.map((faq) => (
+						filteredFaqs.map((faq) => {
+							const isRowUpdating =
+								updateMutation.isPending &&
+								updateMutation.variables?.id === faq._id;
+
+							return (
 							<TableRow
 								key={faq._id}
 								className="transition-colors hover:bg-muted/30"
 							>
 								<TableCell>
-									<span className="font-mono text-sm font-semibold text-foreground">
-										{faq.order}
+									<span className="rounded bg-muted px-2 py-1 font-mono text-xs font-bold">
+										#{faq.order}
 									</span>
 								</TableCell>
 								<TableCell>
@@ -129,13 +144,25 @@ export function FaqTable({
 									</div>
 								</TableCell>
 								<TableCell>
-									<Switch
-										checked={faq.isActive}
-										disabled={isUpdating}
-										onCheckedChange={(checked) =>
-											updateFaq({ id: faq._id, isActive: checked })
-										}
-									/>
+									<div className="flex items-center gap-2">
+										<Switch
+											checked={faq.isActive}
+											disabled={isRowUpdating}
+											onCheckedChange={(checked) =>
+												updateMutation.mutate({
+													id: faq._id,
+													isActive: checked,
+												})
+											}
+										/>
+										<span className="text-xs font-semibold">
+											{isRowUpdating
+												? "Updating..."
+												: faq.isActive
+													? "Live in Chatbot"
+													: "Hidden from Chatbot"}
+										</span>
+									</div>
 								</TableCell>
 								<TableCell className="text-right">
 									<DropdownMenu>
@@ -168,7 +195,8 @@ export function FaqTable({
 									</DropdownMenu>
 								</TableCell>
 							</TableRow>
-						))
+							);
+						})
 					)}
 				</TableBody>
 			</Table>

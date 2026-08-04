@@ -3,6 +3,7 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { AuthGate } from "@/components/auth-gate";
 import { AxiosConfig } from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
 
@@ -27,14 +28,15 @@ export default function Providers({
         },
       })
   );
+  const logOut = useAuthStore((s) => s.logOut);
 
   React.useEffect(() => {
-    const cleanup = AxiosConfig();
+    const cleanup = AxiosConfig(logOut);
 
     return () => {
       cleanup?.();
     };
-  }, []);
+  }, [logOut]);
 
   return (
     <QueryClientProvider client={queryClient}>
