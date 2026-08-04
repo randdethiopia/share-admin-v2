@@ -32,8 +32,7 @@ export default function DashboardPage() {
 		() => new Date().getFullYear()
 	);
 
-	const { data, isLoading, isError, error, refetch } =
-		api.AdminDashboard.GetStats.useQuery(selectedYear);
+	const { data, isLoading, isError, refetch } = api.AdminDashboard.GetStats.useQuery(selectedYear);
 
 	const yearOptions = React.useMemo(() => {
 		const years = new Set<number>();
@@ -52,13 +51,11 @@ export default function DashboardPage() {
 	if (isLoading) return <DashboardSkeleton />;
 
 	if (isError || !data) {
-		const message =
-			(error as { response?: { data?: { message?: string } } })?.response?.data
-				?.message ?? "Failed to load dashboard statistics.";
-
 		return (
 			<div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 py-4">
-				<p className="text-sm text-destructive">{message}</p>
+				<p className="text-sm text-muted-foreground">
+					Failed to load dashboard statistics.
+				</p>
 				<Button variant="outline" onClick={() => refetch()}>
 					Try again
 				</Button>
