@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/admin/PageHeader";
+import { FaqDeleteDialog } from "@/components/support/faq-delete-dialog";
+import { FaqDialog } from "@/components/support/faq-dialog";
+import { FaqTable } from "@/components/support/faq-table";
 import { SupportFilterBar } from "@/components/support/support-filter-bar";
 import { SupportMetrics } from "@/components/support/support-metrics";
 import { SupportTable } from "@/components/support/support-table";
@@ -14,7 +18,11 @@ import {
 	DEFAULT_STATUS,
 	type StatusFilter,
 } from "@/components/support/support.constants";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
+import type { FAQType } from "@/lib/api/faq.types";
 import type {
 	SupportTicketType,
 	TicketListData,
@@ -27,6 +35,12 @@ export default function SupportPage() {
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState<StatusFilter>(DEFAULT_STATUS);
 	const [search, setSearch] = useState("");
+
+	const [faqSearch, setFaqSearch] = useState("");
+	const [faqDialogOpen, setFaqDialogOpen] = useState(false);
+	const [editingFaq, setEditingFaq] = useState<FAQType | null>(null);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deletingFaq, setDeletingFaq] = useState<FAQType | null>(null);
 
 	const queryParams = useMemo(
 		() =>
@@ -43,7 +57,18 @@ export default function SupportPage() {
 	const { data, isLoading, isError, error } =
 		api.Support.GetList.useQuery(queryParams);
 
+	const { data: faqs = [], isLoading: isFaqsLoading } =
+		api.FAQ.GetList.useQuery();
+
 	const { mutate: markClosed } = api.Support.UpdateStatus.useMutation();
+
+	const { mutate: deleteFaq, isPending: isDeletingFaq } =
+		api.FAQ.Delete.useMutation({
+			onSuccess: () => {
+				setDeleteDialogOpen(false);
+				setDeletingFaq(null);
+			},
+		});
 
 	const tickets: SupportTicketType[] = Array.isArray(data)
 		? data
@@ -77,6 +102,40 @@ export default function SupportPage() {
 		setPage(1);
 	};
 
+	const handleOpenCreateFaq = () => {
+		setEditingFaq(null);
+		setFaqDialogOpen(true);
+	};
+
+	const handleOpenEditFaq = (faq: FAQType) => {
+		setEditingFaq(faq);
+		setFaqDialogOpen(true);
+	};
+
+	const handleFaqDialogOpenChange = (open: boolean) => {
+		setFaqDialogOpen(open);
+		if (!open) {
+			setEditingFaq(null);
+		}
+	};
+
+	const handleOpenDeleteFaq = (faq: FAQType) => {
+		setDeletingFaq(faq);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleDeleteDialogOpenChange = (open: boolean) => {
+		setDeleteDialogOpen(open);
+		if (!open) {
+			setDeletingFaq(null);
+		}
+	};
+
+	const handleConfirmDeleteFaq = () => {
+		if (!deletingFaq) return;
+		deleteFaq(deletingFaq._id);
+	};
+
 	return (
 		<div className="w-full space-y-5 bg-background p-6">
 			<PageHeader
@@ -85,50 +144,104 @@ export default function SupportPage() {
 				description="Review, manage, and respond to customer inquiries."
 			/>
 
-			<SupportMetrics
-				tickets={tickets}
-				activeStatus={status}
-				onMetricClick={handleMetricClick}
-			/>
+			<Tabs defaultValue="inbox" className="w-full space-y-6">
+				<TabsList className="rounded-lg bg-muted p-1">
+					<TabsTrigger value="inbox">Support Inbox</TabsTrigger>
+					<TabsTrigger value="bank">Question Bank</TabsTrigger>
+				</TabsList>
 
-			{isError ? (
-				<div className="rounded-xl border-0 bg-destructive/5 px-4 py-3 text-sm text-destructive shadow-xs">
-					{(error as { response?: { data?: { message?: string } } })?.response
-						?.data?.message || "Failed to load support tickets."}
-				</div>
-			) : null}
+				<TabsContent value="inbox" className="space-y-5">
+					<SupportMetrics
+						tickets={tickets}
+						activeStatus={status}
+						onMetricClick={handleMetricClick}
+					/>
 
-			<div className="rounded-xl border-0 bg-card p-6 shadow-xs">
-				<SupportFilterBar
-					search={search}
-					onSearchChange={(value) => {
-						setSearch(value);
-						setPage(1);
-					}}
-					status={status}
-					onStatusChange={(value) => {
-						setStatus(value);
-						setPage(1);
-					}}
-				/>
+					{isError ? (
+						<div className="rounded-xl border-0 bg-destructive/5 px-4 py-3 text-sm text-destructive shadow-xs">
+							{(error as { response?: { data?: { message?: string } } })?.response
+								?.data?.message || "Failed to load support tickets."}
+						</div>
+					) : null}
 
-				<SupportTable
-					tickets={tickets}
-					loading={isLoading}
-					page={page}
-					totalItems={totalCount}
-					pageSize={DEFAULT_PAGE_SIZE}
-					onPageChange={setPage}
-					onViewTicket={handleViewTicket}
-					onMarkClosed={handleMarkClosed}
-				/>
-			</div>
+					<div className="rounded-xl border-0 bg-card p-6 shadow-xs">
+						<SupportFilterBar
+							search={search}
+							onSearchChange={(value) => {
+								setSearch(value);
+								setPage(1);
+							}}
+							status={status}
+							onStatusChange={(value) => {
+								setStatus(value);
+								setPage(1);
+							}}
+						/>
 
-			<TicketDetailDialog
-				ticketId={selectedTicketId}
-				open={dialogOpen}
-				onOpenChange={handleDialogOpenChange}
-			/>
+						<SupportTable
+							tickets={tickets}
+							loading={isLoading}
+							page={page}
+							totalItems={totalCount}
+							pageSize={DEFAULT_PAGE_SIZE}
+							onPageChange={setPage}
+							onViewTicket={handleViewTicket}
+							onMarkClosed={handleMarkClosed}
+						/>
+					</div>
+
+					<TicketDetailDialog
+						ticketId={selectedTicketId}
+						open={dialogOpen}
+						onOpenChange={handleDialogOpenChange}
+					/>
+				</TabsContent>
+
+				<TabsContent value="bank" className="space-y-5">
+					<div className="flex flex-wrap items-center gap-3">
+						<div className="relative min-w-[220px] max-w-md flex-1">
+							<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								placeholder="Search questions and answers..."
+								value={faqSearch}
+								onChange={(e) => setFaqSearch(e.target.value)}
+								className="h-10 border-0 bg-[#F4F4F5] pl-9"
+							/>
+						</div>
+						<Button
+							type="button"
+							onClick={handleOpenCreateFaq}
+							className="rounded-md bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:bg-[#529339]"
+						>
+							<Plus className="mr-2 h-4 w-4" />
+							Add New Question
+						</Button>
+					</div>
+
+					<FaqTable
+						faqs={faqs}
+						loading={isFaqsLoading}
+						search={faqSearch}
+						onEdit={handleOpenEditFaq}
+						onDelete={handleOpenDeleteFaq}
+						onAddFirst={handleOpenCreateFaq}
+					/>
+
+					<FaqDialog
+						open={faqDialogOpen}
+						onOpenChange={handleFaqDialogOpenChange}
+						faq={editingFaq}
+					/>
+
+					<FaqDeleteDialog
+						faq={deletingFaq}
+						open={deleteDialogOpen}
+						onOpenChange={handleDeleteDialogOpenChange}
+						onConfirm={handleConfirmDeleteFaq}
+						isPending={isDeletingFaq}
+					/>
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }

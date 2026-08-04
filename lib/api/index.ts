@@ -13,6 +13,7 @@ import InvestorProfileApi from "./mentor"
 import OpportunityApi from "./opportunity";
 import ProjectApi from "./project";
 import SkillsApi from "./skills";
+import FaqApi from "./faq";
 import SupportApi from "./support";
 import TraineeAuth from "./trainee";
 import TrainingSessionApi from "./training-session";
@@ -48,6 +49,8 @@ export {
 	EmailStatus,
 } from "./support.types";
 export { supportKeys } from "./support.keys";
+export type { FAQType, CreateFAQInput, UpdateFAQInput } from "./faq.types";
+export { faqKeys } from "./faq.keys";
 export { getProjectByIdFn } from "./project";
 export { getWaitListServerSideFn } from "./waitlist";
 export { uploadFileFn } from "./upload";
@@ -69,6 +72,7 @@ const api = {
     Opportunity: OpportunityApi,
     Project: ProjectApi,
     Skills: SkillsApi,
+    FAQ: FaqApi,
     Support: SupportApi,
     TraineeAuth,
     TrainingSession: TrainingSessionApi,
