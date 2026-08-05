@@ -30,6 +30,7 @@ const ADMIN_THEME_ROUTES = [
   "/mentor",
   "/jobs",
   "/invitations",
+  "/support",
   "/blogs",
   "/idea-bank",
   "/skills",

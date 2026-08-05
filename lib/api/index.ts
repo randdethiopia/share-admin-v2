@@ -13,6 +13,8 @@ import InvestorProfileApi from "./mentor"
 import OpportunityApi from "./opportunity";
 import ProjectApi from "./project";
 import SkillsApi from "./skills";
+import FaqApi from "./faq";
+import SupportApi from "./support";
 import TraineeAuth from "./trainee";
 import TrainingSessionApi from "./training-session";
 import WaitListApi from "./waitlist";
@@ -31,6 +33,24 @@ export type { TraineeType, TraineeReport } from "./trainee";
 export type { ApplicantCreateRequest } from "./waitlist";
 export type { InvitationType } from "./invitation";
 export type { AdminDashboardStats } from "./admin-dashboard";
+export type {
+	SupportTicketType,
+	SupportReplyType,
+	GetTicketsQueryParams,
+	TicketListResponse,
+	TicketDetailResponse,
+	TicketListData,
+	TicketDetailData,
+} from "./support.types";
+export {
+	TicketStatus,
+	TicketPriority,
+	TicketCategory,
+	EmailStatus,
+} from "./support.types";
+export { supportKeys } from "./support.keys";
+export type { FAQType, CreateFAQInput, UpdateFAQInput } from "./faq.types";
+export { faqKeys } from "./faq.keys";
 export { getProjectByIdFn } from "./project";
 export { getWaitListServerSideFn } from "./waitlist";
 export { uploadFileFn } from "./upload";
@@ -52,6 +72,8 @@ const api = {
     Opportunity: OpportunityApi,
     Project: ProjectApi,
     Skills: SkillsApi,
+    FAQ: FaqApi,
+    Support: SupportApi,
     TraineeAuth,
     TrainingSession: TrainingSessionApi,
     WaitList: WaitListApi,
