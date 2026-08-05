@@ -36,7 +36,7 @@ export async function createFaqFn(input: CreateFAQInput) {
 
 export async function updateFaqFn({ id, ...data }: UpdateFAQInput) {
 	return (
-		await axios.patch<SuccessRes>(`${API_URL}/api/faq/${id}`, data)
+		await axios.put<SuccessRes>(`${API_URL}/api/faq/${id}`, data)
 	).data;
 }
 
