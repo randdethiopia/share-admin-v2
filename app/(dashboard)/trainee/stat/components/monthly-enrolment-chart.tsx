@@ -22,6 +22,9 @@ const DATA = [
 	{ month: "May", enrolled: 17255, completed: 11476 },
 	{ month: "Jun", enrolled: 20783, completed: 27215 },
 	{ month: "Jul", enrolled: 20823, completed: 27265 },
+	{ month: "Aug", enrolled: 20878, completed: 27290 },
+	{ month: "Sep"},
+	{ month: "Oct"},
 ];
 
 const LEGEND = [
