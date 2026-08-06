@@ -26,20 +26,24 @@ import {
 
 export { dashboardMenuItems } from "@/lib/access";
 
-const navLinkBase =
-  "flex items-center rounded-lg text-sm transition-colors";
+const navLinkBase = "flex items-center text-sm transition-colors";
 const navLinkInactive =
-  "text-white/85 hover:bg-white/15 hover:text-white font-medium px-3 py-2";
+  "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 rounded-lg px-3 py-2 text-sm font-medium transition-colors";
 const navLinkActive =
-  "bg-white text-[#69B34C] font-bold rounded-lg px-3 py-2 text-sm shadow-sm";
+  "bg-[#69B34C]/10 text-[#3B6A22] font-semibold border-l-[3px] border-[#69B34C] rounded-r-lg px-3 py-2 text-sm transition-colors shadow-xs";
 const sectionTitleClasses =
-  "text-white/70 text-[11px] font-bold tracking-wider uppercase px-3 pt-4 pb-1";
+  "text-slate-400 text-[11px] font-extrabold tracking-wider uppercase px-3 pt-4 pb-1";
+
+const toggleButtonClasses =
+  "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors";
 
 function getNavLinkClasses(active: boolean, layoutClasses: string) {
   return cn(
     navLinkBase,
     layoutClasses,
-    active ? navLinkActive : navLinkInactive,
+    active
+      ? cn(navLinkActive, "hover:bg-[#69B34C]/10 hover:text-[#3B6A22]")
+      : navLinkInactive,
   );
 }
 
@@ -115,11 +119,11 @@ export function Sidebar({
     return (
       <div
         className={cn(
-          "flex h-full w-full flex-col items-center overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
+          "flex h-full w-16 flex-col items-center overflow-hidden bg-white text-slate-800 border-r border-slate-200/80",
           className,
         )}
       >
-        <div className="flex w-full shrink-0 justify-center border-b border-white/20 px-2 py-4">
+        <div className="flex w-full shrink-0 justify-center border-b border-slate-100 px-2 py-4">
           <Button
             type="button"
             variant="ghost"
@@ -127,7 +131,7 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Show sidebar"
             title="Show sidebar"
-            className="text-white/85 hover:bg-white/15 hover:text-white"
+            className={toggleButtonClasses}
           >
             <PanelLeftOpen className="h-5 w-5" />
           </Button>
@@ -139,13 +143,13 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-full w-72 flex-col overflow-hidden bg-[#69B34C] text-white md:h-screen md:border-r md:border-white/20",
+        "flex h-full w-72 flex-col overflow-hidden bg-white text-slate-800 border-r border-slate-200/80",
         className,
       )}
     >
-      <div className="relative flex shrink-0 items-center gap-2 border-b border-white/20 px-4 py-5">
+      <div className="relative flex shrink-0 items-center gap-2 border-b border-slate-100 px-4 py-5">
         <div className="flex min-w-0 flex-1 items-center gap-2 pr-8">
-          <span className="text-lg font-extrabold tracking-tight text-white truncate">
+          <span className="truncate text-lg font-extrabold tracking-tight text-slate-900">
             SHARE
           </span>
           <span className="shrink-0 rounded bg-[#FF4E11] px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -160,14 +164,14 @@ export function Sidebar({
             onClick={onToggleCollapse}
             aria-label="Hide sidebar"
             title="Hide sidebar"
-            className="absolute top-3 right-3 text-white/85 hover:bg-white/15 hover:text-white"
+            className={cn("absolute top-3 right-3", toggleButtonClasses)}
           >
             <PanelLeftClose className="h-5 w-5" />
           </Button>
         ) : null}
       </div>
 
-      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-color:rgb(203_213_225)_transparent] [&::-webkit-scrollbar-thumb]:bg-slate-300/60">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref = item.href;
@@ -199,8 +203,9 @@ export function Sidebar({
                       className={cn(
                         "flex w-full cursor-pointer items-center justify-between rounded-lg transition-colors",
                         sectionTitleClasses,
-                        "hover:text-white",
-                        childActive && "text-white",
+                        childActive
+                          ? "text-slate-600"
+                          : "hover:text-slate-500",
                       )}
                     >
                       <span>{item.label}</span>
@@ -257,14 +262,14 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="mt-auto shrink-0 space-y-2 border-t border-white/20 bg-[#529339] p-3.5">
+      <div className="mt-auto shrink-0 space-y-2 border-t border-slate-200/80 bg-slate-50/80 p-3.5">
         <div className="min-w-0 px-1">
-          <p className="truncate text-xs font-bold text-white">
+          <p className="truncate text-xs font-bold text-slate-900">
             {user?.firstName && user?.lastName
               ? `${user.firstName} ${user.lastName}`
-              : "Guest"}
+              : "Portal User"}
           </p>
-          <p className="truncate text-[11px] text-white/80">
+          <p className="truncate text-[11px] text-slate-500">
             {user?.email ?? ""}
           </p>
         </div>
@@ -273,7 +278,7 @@ export function Sidebar({
           variant="ghost"
           onClick={handleLogout}
           disabled={signingOut}
-          className="flex w-full items-center justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+          className="flex w-full items-center justify-start gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-colors"
         >
           <LogOut className="h-5 w-5" />
           <span>{signingOut ? "Signing out…" : "Logout"}</span>
