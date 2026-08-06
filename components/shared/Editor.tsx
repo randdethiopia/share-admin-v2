@@ -23,6 +23,7 @@ import {
 interface EditorProps {
   value: string;
   onChange: (value: string) => void;
+  readOnly?: boolean;
 }
 
 const sanitizeHTML = (html: string) => {
@@ -164,29 +165,39 @@ function Toolbar({ editor }: { editor: TiptapEditor }) {
   );
 }
 
-export default function Editor({ value, onChange }: EditorProps) {
+export default function Editor({ value, onChange, readOnly = false }: EditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        link: { openOnClick: false },
+        link: { openOnClick: readOnly ? true : false },
       }),
       Image,
       Placeholder.configure({
-        placeholder: "Write your description here...",
+        placeholder: readOnly ? "" : "Write your description here...",
       }),
     ],
     content: value,
+    editable: !readOnly,
     // Required under Next.js SSR to avoid hydration mismatch.
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: "editor-content focus:outline-none",
+        class: readOnly
+          ? "editor-content editor-content-readonly focus:outline-none"
+          : "editor-content focus:outline-none",
       },
     },
-    onUpdate: ({ editor }) => {
-      onChange(sanitizeHTML(editor.getHTML()));
-    },
+    onUpdate: readOnly
+      ? undefined
+      : ({ editor }) => {
+          onChange(sanitizeHTML(editor.getHTML()));
+        },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   // Keep the editor in sync when `value` is set externally (e.g. the edit page
   // loads the idea asynchronously after mount).
@@ -200,7 +211,7 @@ export default function Editor({ value, onChange }: EditorProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      {editor && <Toolbar editor={editor} />}
+      {editor && !readOnly ? <Toolbar editor={editor} /> : null}
       <EditorContent editor={editor} />
 
       {/* TipTap ships unstyled and Tailwind preflight strips list markers /
@@ -211,6 +222,9 @@ export default function Editor({ value, onChange }: EditorProps) {
           padding: 0.75rem 1rem;
           font-size: 16px;
           line-height: 1.6;
+        }
+        .editor-content-readonly {
+          min-height: auto;
         }
         .editor-content p {
           margin: 0.25rem 0;
