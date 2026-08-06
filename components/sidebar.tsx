@@ -17,7 +17,7 @@ import {
   dashboardMenuItems,
 } from "@/lib/access";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -86,27 +86,6 @@ export function Sidebar({
     return items;
   }, []);
 
-  useEffect(() => {
-    const autoOpen: Record<string, boolean> = {};
-
-    filteredItems.forEach((item) => {
-      if (!item.isCollapsable || !item.items?.length) return;
-
-      const childActive = item.items.some(
-        (s) =>
-          pathname === s.href || pathname.startsWith(`${s.href}/`)
-      );
-
-      if (childActive) {
-        autoOpen[item.id] = true;
-      }
-    });
-
-    if (Object.keys(autoOpen).length > 0) {
-      setOpenSections((prev) => ({ ...prev, ...autoOpen }));
-    }
-  }, [pathname]);
-
   const handleLogout = async () => {
     if (signingOut) return;
     setSigningOut(true);
@@ -143,7 +122,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-full w-72 flex-col overflow-hidden bg-white text-slate-800 border-r border-slate-200/80",
+        "flex h-full w-72 flex-col bg-white text-slate-800 border-r border-slate-200/80 overflow-hidden",
         className,
       )}
     >
@@ -171,7 +150,7 @@ export function Sidebar({
         ) : null}
       </div>
 
-      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-color:rgb(203_213_225)_transparent] [&::-webkit-scrollbar-thumb]:bg-slate-300/60">
+      <nav className="sidebar-scroll flex-1 min-h-0 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-color:rgb(203_213_225)_transparent] [&::-webkit-scrollbar-thumb]:bg-slate-300/60">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const resolvedHref = item.href;
@@ -262,14 +241,14 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="mt-auto shrink-0 space-y-2 border-t border-slate-200/80 bg-slate-50/80 p-3.5">
-        <div className="min-w-0 px-1">
-          <p className="truncate text-xs font-bold text-slate-900">
+      <div className="mt-auto shrink-0 border-t border-slate-200/80 bg-slate-50/80 p-3.5 space-y-2.5">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-bold text-slate-900 leading-tight">
             {user?.firstName && user?.lastName
               ? `${user.firstName} ${user.lastName}`
               : "Portal User"}
           </p>
-          <p className="truncate text-[11px] text-slate-500">
+          <p className="truncate text-[11px] text-slate-500 leading-tight">
             {user?.email ?? ""}
           </p>
         </div>
@@ -280,8 +259,8 @@ export function Sidebar({
           disabled={signingOut}
           className="flex w-full items-center justify-start gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-colors"
         >
-          <LogOut className="h-5 w-5" />
-          <span>{signingOut ? "Signing out…" : "Logout"}</span>
+          <LogOut className="h-4 w-4 shrink-0 text-red-600" />
+          <span>{signingOut ? "Signing out..." : "Logout"}</span>
         </Button>
       </div>
     </div>
