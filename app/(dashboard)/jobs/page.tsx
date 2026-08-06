@@ -32,7 +32,16 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { JobApi, type JobType } from "@/lib/api/job";
+import Editor from "@/components/shared/Editor";
 import { format } from "date-fns";
+
+function stripHtml(html: string): string {
+    return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function containsHtml(value: string): boolean {
+    return /<[^>]+>/.test(value);
+}
 
 function Field({ label, value }: { label: string; value: string }) {
     return (
@@ -49,6 +58,54 @@ function TextBlock({ label, value }: { label: string; value: string }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
             <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{value || "—"}</p>
         </div>
+    );
+}
+
+function RichTextBlock({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+            {value ? (
+                <Editor value={value} onChange={() => {}} readOnly />
+            ) : (
+                <p className="text-sm text-slate-700">—</p>
+            )}
+        </div>
+    );
+}
+
+function RequirementsBlock({ requirements }: { requirements: JobType["requirements"] }) {
+    if (Array.isArray(requirements)) {
+        if (!requirements.length) {
+            return (
+                <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Requirements</p>
+                    <p className="text-sm text-slate-700">No specific requirements provided.</p>
+                </div>
+            );
+        }
+        return (
+            <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Requirements</p>
+                <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {requirements.map((item) => (
+                        <li key={item}>{item}</li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
+
+    const text = requirements || "";
+    if (text && containsHtml(text)) {
+        return <RichTextBlock label="Requirements" value={text} />;
+    }
+
+    return (
+        <TextBlock
+            label="Requirements"
+            value={text || "No specific requirements provided."}
+        />
     );
 }
 
@@ -88,22 +145,15 @@ function JobDetailContent({
 
             
             <div className="rounded-xl bg-slate-50 p-4 space-y-2">
-                <TextBlock
+                <RichTextBlock
                     label="Description"
-                    value={job.jobDescription || job.description || "No description provided."}
+                    value={job.jobDescription || job.description || ""}
                 />
             </div>
 
             
             <div className="rounded-xl bg-slate-50 p-4 space-y-2">
-                <TextBlock
-                    label="Requirements"
-                    value={
-                        Array.isArray(job.requirements)
-                            ? job.requirements.join("\n")
-                            : job.requirements || "No specific requirements provided."
-                    }
-                />
+                <RequirementsBlock requirements={job.requirements} />
             </div>
 
             
@@ -224,7 +274,8 @@ export default function JobsPage() {
                                                 <span className="font-medium text-slate-800">{job.companyName || "Unknown Company"}</span> • {job.jobType || job.employmentType || "Job"}
                                             </div>
                                             <p className="text-sm text-slate-500 max-w-3xl line-clamp-2">
-                                                {job.jobDescription || job.description || "No description provided."}
+                                                {stripHtml(job.jobDescription || job.description || "") ||
+                                                    "No description provided."}
                                             </p>
                                             {job.createdAt && (
                                                 <p className="text-xs text-slate-400 mt-2">

@@ -134,20 +134,17 @@ const IdeaBankApi = {
     ) => {
       const queryClient = useQueryClient();
 
-      const userOnSuccess = options?.onSuccess;
-      const userOnError = options?.onError;
-
       return useMutation({
+        ...options,
         mutationFn: (data: IdeaBankUpdateType) => updateIdeaFn(id, data),
         onSuccess: (res, vars, ctx) => {
           queryClient.invalidateQueries({ queryKey: ["IdeaBank"] });
           queryClient.invalidateQueries({ queryKey: ["IdeaBank", id] });
-          userOnSuccess?.(res, vars, ctx, undefined as unknown as never);
+          options?.onSuccess?.(res, vars, ctx, undefined as unknown as never);
         },
         onError: (err, vars, ctx) => {
-          userOnError?.(err, vars, ctx, undefined as unknown as never);
+          options?.onError?.(err, vars, ctx, undefined as unknown as never);
         },
-        ...options,
       });
     },
   },
