@@ -568,7 +568,7 @@ export default function TraineePage() {
 												</TableCell>
 											)}
 											<TableCell className="px-6 py-4 font-bold text-gray-700">
-												{t.firstname} {t.lastname}
+												{t.firstname} {t.middlename} {t.lastname}
 											</TableCell>
 											<TableCell className="px-6 py-4 text-xs font-medium text-gray-600">
 												{t.phoneNumber || "-"}

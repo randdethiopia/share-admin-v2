@@ -25,6 +25,23 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
+const ETHIOPIA_REGIONS = [
+	"Addis Ababa",
+	"Tigray",
+	"Afar",
+	"Amhara",
+	"Oromia",
+	"Benishangul-Gumuz",
+	"Central Ethiopia",
+	"Dire Dawa",
+	"Gambela",
+	"Harari",
+	"Sidama",
+	"Somali",
+	"South Ethiopia",
+	"South West Ethiopia Peoples",
+];
+
 export function CreateTraineeForm({
 	onCreated,
 	onCancel,
@@ -47,6 +64,7 @@ export function CreateTraineeForm({
 			lastName: "",
 			email: "",
 			phoneNumber: "",
+			age: undefined,
 			region: "",
 			gender: undefined,
 		},
@@ -55,11 +73,12 @@ export function CreateTraineeForm({
 	const onSubmit = (data: TraineeFormData) => {
 		createTrainee({
 			firstname: data.firstName,
-			middlename: data.middleName || undefined,
+			middlename: data.middleName,
 			lastname: data.lastName,
 			email: data.email,
 			phoneNumber: data.phoneNumber,
-			region: data.region || undefined,
+			age: data.age,
+			region: data.region,
 			gender: data.gender,
 		});
 	};
@@ -95,7 +114,9 @@ export function CreateTraineeForm({
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel className="text-gray-700 font-semibold">Middle Name</FormLabel>
+							<FormLabel className="text-gray-700 font-semibold">
+								Middle Name <span className="text-red-500">*</span>
+							</FormLabel>
 							<FormControl>
 								<Input
 									placeholder="Girma"
@@ -169,18 +190,52 @@ export function CreateTraineeForm({
 				/>
 
 				<FormField
+					name="age"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel className="text-gray-700 font-semibold">
+								Age <span className="text-red-500">*</span>
+							</FormLabel>
+							<FormControl>
+								<Input
+									type="number"
+									placeholder="25"
+									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
+									{...field}
+									onChange={(e) =>
+										field.onChange(e.target.value === "" ? undefined : Number(e.target.value))
+									}
+									value={field.value ?? ""}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
 					name="region"
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel className="text-gray-700 font-semibold">Region</FormLabel>
-							<FormControl>
-								<Input
-									placeholder="Amhara"
-									className="bg-[#F3F8FF] border-none h-12 rounded-xl"
-									{...field}
-								/>
-							</FormControl>
+							<FormLabel className="text-gray-700 font-semibold">
+								Region <span className="text-red-500">*</span>
+							</FormLabel>
+							<Select onValueChange={field.onChange} value={field.value}>
+								<FormControl>
+									<SelectTrigger className="bg-[#F3F8FF] border-none h-12 rounded-xl w-full">
+										<SelectValue placeholder="Select region" />
+									</SelectTrigger>
+								</FormControl>
+								<SelectContent>
+									{ETHIOPIA_REGIONS.map((region) => (
+										<SelectItem key={region} value={region}>
+											{region}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -191,7 +246,9 @@ export function CreateTraineeForm({
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel className="text-gray-700 font-semibold">Gender</FormLabel>
+							<FormLabel className="text-gray-700 font-semibold">
+								Gender <span className="text-red-500">*</span>
+							</FormLabel>
 							<Select onValueChange={field.onChange} value={field.value}>
 								<FormControl>
 									<SelectTrigger className="bg-[#F3F8FF] border-none h-12 rounded-xl w-full">

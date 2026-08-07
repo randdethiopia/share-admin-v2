@@ -86,12 +86,13 @@ export const reinvestSchema = z.object({
 );
 export const traineeSchema = z.object({
   firstName: z.string().min(1, "Firts name is required"),
-  middleName: z.string().optional(),
+  middleName: z.string().min(1, "Middle name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
-  region: z.string().optional(),
-  gender: z.enum(["male", "female"]).optional(),
+  age: z.number({ message: "Age is required" }).int().min(1, "Age is required"),
+  region: z.string().min(1, "Region is required"),
+  gender: z.enum(["male", "female"], { message: "Gender is required" }),
 })
 
 export const changePasswordSchema= z.object({
