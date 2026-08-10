@@ -1,0 +1,1 @@
+export const SUPPORT_POLLING_INTERVAL = 15000;

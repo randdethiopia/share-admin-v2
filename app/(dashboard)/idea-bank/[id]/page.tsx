@@ -89,12 +89,19 @@ export default function IdeaDetailPage() {
   const isWorking = isDeleting || isUpdating;
 
   const handleToggleVisibility = () => {
-    if (isUpdating) return;
+    if (isUpdating || !idea) return;
     const nextIsPublic = !isPublicLocal;
     optimisticPrevIsPublicRef.current = isPublicLocal;
     nextIsPublicRef.current = nextIsPublic;
     setIsPublicLocal(nextIsPublic);
-    updateIdea({ isPublic: nextIsPublic });
+    updateIdea({
+      title: idea.title,
+      description: idea.description,
+      tags: idea.tags,
+      source: idea.source,
+      image: idea.image,
+      isPublic: nextIsPublic,
+    });
   };
 
   if (isLoading) {

@@ -1,17 +1,77 @@
-import axios from "axios";
-import { toast } from "sonner";
-import useAuthStore from "@/store/useAuthStore";
-import { getApiErrorMessage } from "@/lib/api-error";
-import {
-  isAuthSessionEndpoint,
-  refreshAccessToken,
-  shouldAttemptTokenRefresh,
-  signOut,
-} from "@/lib/auth-session";
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import Cookies from 'js-cookie'
+import useAuthStore from '@/store/useAuthStore' // 1. Import your memory store
 
-export default function AxiosConfig() {
-  const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et";
-  axios.defaults.baseURL = url;
+export { AxiosError } from 'axios'
+export default axios
+
+export const SUPPRESS_AUTO_LOGOUT_HEADER = "X-Suppress-Auto-Logout";
+
+function getRequestHeader(
+	config: InternalAxiosRequestConfig,
+	name: string
+): unknown {
+	const headers = config.headers;
+	if (!headers) return undefined;
+
+	if (typeof headers.get === "function") {
+		return headers.get(name);
+	}
+
+	return (headers as Record<string, unknown>)[name];
+}
+
+function isTruthyHeader(value: unknown): boolean {
+	return value === true || value === "true" || value === "1";
+}
+
+function isPublicAuthRequest(url: string): boolean {
+	return /\/api\/auth-(admin|trannie)\/(login|register|forgotPassword|resetPassword|activate)/i.test(
+		url
+	);
+}
+
+function isCriticalAuthRequest(url: string, method: string): boolean {
+	const m = method.toLowerCase();
+	if (m !== "get" && m !== "head") return false;
+
+	return (
+		url.includes("/api/auth-admin/refresh") ||
+		url.includes("/api/auth-admin/get")
+	);
+}
+
+function isBackgroundPollingRequest(config: InternalAxiosRequestConfig): boolean {
+	if (isTruthyHeader(getRequestHeader(config, SUPPRESS_AUTO_LOGOUT_HEADER))) {
+		return true;
+	}
+
+	const url = String(config.url ?? "");
+	const method = (config.method ?? "get").toLowerCase();
+
+	return method === "get" && /\/api\/support\/tickets\/?(\?|$)/.test(url);
+}
+
+function shouldAutoLogoutOn401(error: AxiosError): boolean {
+	const config = error.config;
+	if (!config) return false;
+
+	if (isBackgroundPollingRequest(config)) return false;
+
+	const url = String(config.url ?? "");
+	const method = (config.method ?? "get").toLowerCase();
+
+	if (isPublicAuthRequest(url)) return false;
+	if (isCriticalAuthRequest(url, method)) return true;
+
+	if (method !== "get" && method !== "head") return true;
+
+	return true;
+}
+
+export function AxiosConfig(logOut: () => void) {
+  const url = process.env.NEXT_PUBLIC_BASE_URL || "https://api.share.com.et"
+  axios.defaults.baseURL = url
 
   const requestInterceptorId = axios.interceptors.request.use((config) => {
     const { accessToken, role, permissions } = useAuthStore.getState();
@@ -57,8 +117,7 @@ export default function AxiosConfig() {
       config.headers["Pragma"] = "no-cache";
     }
 
-    config.headers["ngrok-skip-browser-warning"] = "true";
-
+    // FormData must keep the browser-set multipart boundary; forcing JSON empties files as `{}`.
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     } else {
@@ -70,47 +129,11 @@ export default function AxiosConfig() {
 
   const responseInterceptorId = axios.interceptors.response.use(
     (response) => response,
-    async (error) => {
-      const original = error.config;
-      const status = error.response?.status as number | undefined;
-      const backendMessage = error.response?.data?.message as string | undefined;
-
-      if (
-        !original ||
-        original.skipAuthRefresh ||
-        isAuthSessionEndpoint(original.url)
-      ) {
-        return Promise.reject(error);
-      }
-
-      if (!original._retry && shouldAttemptTokenRefresh(status)) {
-        original._retry = true;
-        try {
-          await refreshAccessToken();
-          const token = useAuthStore.getState().accessToken;
-          if (token) {
-            original.headers = original.headers ?? {};
-            original.headers.Authorization = `Bearer ${token}`;
-          }
-          return axios(original);
-        } catch {
-          toast.error(getApiErrorMessage(401), {
-            id: "auth-unauthorized",
-          });
-          void signOut();
-          return Promise.reject(error);
-        }
-      }
-
-      if (status === 401) {
-        toast.error(getApiErrorMessage(401, backendMessage), {
-          id: "auth-unauthorized",
-        });
-        void signOut();
-      } else if (status === 403) {
-        toast.error(getApiErrorMessage(403, backendMessage), {
-          id: "auth-forbidden",
-        });
+    (error: AxiosError) => {
+      // 401: invalid/expired session — sign out when session-critical or user-initiated.
+      // Background polls and X-Suppress-Auto-Logout requests reject without redirecting.
+      if (error.response?.status === 401 && shouldAutoLogoutOn401(error)) {
+        logOut();
       }
 
       return Promise.reject(error);
@@ -118,7 +141,7 @@ export default function AxiosConfig() {
   );
 
   return () => {
-    axios.interceptors.request.eject(requestInterceptorId);
-    axios.interceptors.response.eject(responseInterceptorId);
-  };
+    axios.interceptors.request.eject(requestInterceptorId)
+    axios.interceptors.response.eject(responseInterceptorId)
+  }
 }

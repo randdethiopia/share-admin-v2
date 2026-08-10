@@ -30,6 +30,7 @@ const ADMIN_THEME_ROUTES = [
   "/mentor",
   "/jobs",
   "/invitations",
+  "/support",
   "/blogs",
   "/idea-bank",
   "/skills",
@@ -185,9 +186,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
-        className={`fixed hidden h-screen overflow-hidden border-r border-white/20 bg-[#69B34C] transition-[width] duration-200 md:block ${
-          isSidebarCollapsed ? "w-14" : "w-72"
-        }`}
+        className={cn(
+          "fixed hidden h-full overflow-hidden border-r border-slate-200/80 bg-white transition-[width] duration-200 md:block",
+          isSidebarCollapsed ? "w-16" : "w-72",
+        )}
         aria-label="Main navigation"
       >
         <Sidebar
@@ -197,9 +199,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
       </aside>
 
       <div
-        className={`flex flex-1 flex-col transition-[margin] duration-200 ${
-          isSidebarCollapsed ? "md:ml-14" : "md:ml-72"
-        }`}
+        className={cn(
+          "flex flex-1 flex-col transition-[margin] duration-200",
+          isSidebarCollapsed ? "md:ml-16" : "md:ml-72",
+        )}
       >
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
           <Sheet
@@ -216,7 +219,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-72 border-white/20 bg-[#69B34C] p-0 [&>button]:hidden">
+            <SheetContent side="left" className="w-72 border-slate-200/80 bg-white p-0 [&>button]:hidden">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
