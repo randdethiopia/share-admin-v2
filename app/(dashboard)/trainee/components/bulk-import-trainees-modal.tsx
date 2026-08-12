@@ -26,7 +26,7 @@ const TEMPLATE_HEADERS = ["firstname", "middlename", "lastname", "email", "phone
 const TEMPLATE_EXAMPLE_ROW = ["Dawit", "Girma", "Bekele", "dawit.bekele@example.com", "0911223344", "25", "male", "Amhara"];
 
 const MAX_TRAINEES_PER_IMPORT = 100;
-const REQUIRED_HEADERS = ["firstname", "middlename", "lastname", "email", "phoneNumber", "age", "gender", "region"];
+const REQUIRED_HEADERS = ["firstname", "middlename", "lastname", "phoneNumber", "age", "gender", "region"];
 const VALID_GENDERS = ["male", "female"];
 const REGION_BY_LOWERCASE = new Map(ETHIOPIA_REGIONS.map((region) => [region.toLowerCase(), region]));
 const MAX_DISPLAYED_ROW_ERRORS = 10;

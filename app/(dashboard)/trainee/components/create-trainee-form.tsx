@@ -75,7 +75,7 @@ export function CreateTraineeForm({
 			firstname: data.firstName,
 			middlename: data.middleName,
 			lastname: data.lastName,
-			email: data.email,
+			email: data.email || undefined,
 			phoneNumber: data.phoneNumber,
 			age: data.age,
 			region: data.region,
@@ -154,9 +154,7 @@ export function CreateTraineeForm({
 					control={form.control}
 					render={({ field }) => (
 						<FormItem className="md:col-span-2">
-							<FormLabel className="text-gray-700 font-semibold">
-								Email <span className="text-red-500">*</span>
-							</FormLabel>
+							<FormLabel className="text-gray-700 font-semibold">Email</FormLabel>
 							<FormControl>
 								<Input
 									placeholder="dawit.bekele@example.com"
