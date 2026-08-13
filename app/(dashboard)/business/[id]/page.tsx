@@ -10,7 +10,6 @@ import {
 	FileText,
 	Globe,
 	Loader2,
-	Mail,
 	MapPin,
 	Phone,
 	User,
@@ -19,6 +18,7 @@ import {
 
 import api from "@/lib/api";
 import type { BusinessProfileType } from "@/lib/api";
+import { BusinessProjectsTab } from "@/components/business/business-projects-tab";
 import { useListReturnHref } from "@/hooks/use-url-pagination";
 import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -277,6 +277,7 @@ function BusinessDetailPageInner() {
 		isLoading,
 		isError,
 		error,
+		refetch,
 	} = api.BusinessProfile.GetById.useQuery(id ?? "", {
 		queryKey: ["BusinessProfile", id ?? ""],
 		enabled: Boolean(id),
@@ -536,6 +537,12 @@ function BusinessDetailPageInner() {
 						Founder Story
 					</TabsTrigger>
 					<TabsTrigger
+						value="projects"
+						className="data-[state=active]:bg-background data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-xs"
+					>
+						Projects
+					</TabsTrigger>
+					<TabsTrigger
 						value="audit"
 						className="data-[state=active]:bg-background data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-xs"
 					>
@@ -718,6 +725,15 @@ function BusinessDetailPageInner() {
 							{business.description?.trim() || "No founder story provided."}
 						</p>
 					</div>
+				</TabsContent>
+
+				<TabsContent value="projects" className="mt-0">
+					<BusinessProjectsTab
+						projects={business.projects ?? []}
+						isLoading={isLoading}
+						isError={isError}
+						onRetry={() => refetch()}
+					/>
 				</TabsContent>
 
 				<TabsContent value="audit" className="mt-0">

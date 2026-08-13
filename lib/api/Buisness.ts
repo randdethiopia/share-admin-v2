@@ -10,7 +10,14 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
+import type { ProjectStatus, ProjectType } from "./project";
+
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+export type BusinessProfileProject = Omit<ProjectType, "company" | "status"> & {
+	company?: ProjectType["company"];
+	status: ProjectStatus;
+};
 
 export interface SocialType {
 	_id?: string;
@@ -62,6 +69,7 @@ export interface BusinessProfileType extends BusinessProfileFormType {
 		| "REJECTED"
 		| "";
 	approvedAt: string;
+	projects?: BusinessProfileProject[];
 }
 
 function getApprovedAt(res: unknown) {

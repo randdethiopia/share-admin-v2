@@ -21,7 +21,11 @@ import WaitListApi from "./waitlist";
 
 export type { BlogType } from "./blog";
 export type { ProfileType as AdvisorProfileType } from "./advisor-profile";
-export type { BusinessProfileType, RejectBusinessInput } from "./Buisness";
+export type {
+	BusinessProfileProject,
+	BusinessProfileType,
+	RejectBusinessInput,
+} from "./Buisness";
 export type { IdeaBankType } from "./idea-bank";
 export type { InvestmentType } from "./investment";
 export type { MentorProfileType } from "./mentor-profile";
