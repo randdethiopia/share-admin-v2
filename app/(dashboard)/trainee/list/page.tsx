@@ -51,11 +51,17 @@ import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
 import { BulkImportTraineesModal } from "../components/bulk-import-trainees-modal";
 import { CreateTraineeModal } from "../components/create-trainee-modal";
-import { ChevronDown, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
+import { traineeFullName, TraineeDetailSheet } from "../components/trainee-detail-sheet";
+import { ChevronDown, Eye, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 type TraineeTypeFilter = "all" | "NORMAL" | "EDGE";
 type TraineeStatusFilter = "all" | "active" | "inactive";
+
+// When searching, the backend's own text search isn't used (kept backend untouched) — instead
+// we pull a larger batch and match/paginate client-side, so a full name like "Hanna Degefaw"
+// matches even though firstname/lastname live in separate fields.
+const SEARCH_FETCH_LIMIT = 2000;
 
 function normalizeIsActive(value: unknown) {
 	if (typeof value === "boolean") return value;
@@ -65,6 +71,13 @@ function normalizeIsActive(value: unknown) {
 		return v === "true" || v === "1" || v === "active";
 	}
 	return false;
+}
+
+function traineeSearchHaystack(t: TraineeType) {
+	return [t.firstname, t.middlename, t.lastname, t.username, t.phoneNumber, t.email]
+		.filter(Boolean)
+		.join(" ")
+		.toLowerCase();
 }
 
 export default function TraineePage() {
@@ -83,6 +96,8 @@ export default function TraineePage() {
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
+	const [detailsOpen, setDetailsOpen] = useState(false);
+	const [viewingTrainee, setViewingTrainee] = useState<TraineeType | null>(null);
 	const [openPickDataBulk, setOpenPickDataBulk] = useState(false);
 	const [openPickDataBulkConfirm, setOpenPickDataBulkConfirm] = useState(false);
 	const [pickedData, setPickedData] = useState<number | null>(null);
@@ -105,16 +120,22 @@ export default function TraineePage() {
 		return undefined;
 	}, [status]);
 
+	const searchWords = useMemo(
+		() => search.trim().toLowerCase().split(/\s+/).filter(Boolean),
+		[search]
+	);
+	const isSearching = searchWords.length > 0;
+
 	const {
 		data,
 		isLoading,
 		isError,
 		error,
 	} = TraineeAuth.GetTrainee.useQuery(
-		page,
-		pageSize,
+		isSearching ? 1 : page,
+		isSearching ? SEARCH_FETCH_LIMIT : pageSize,
 		typeParam,
-		search.trim() || undefined,
+		undefined,
 		statusParam
 	);
 
@@ -125,17 +146,36 @@ export default function TraineePage() {
 	} = CohortApi.GetList.useQuery();
 
 	const trainees = useMemo(() => data?.data ?? [], [data]);
-	const totalItems = data?.meta?.totalItems ?? 0;
 
-	const visibleTrainees = useMemo(() => {
+	const filteredTrainees = useMemo(() => {
+		let list = trainees;
 		if (status === "active") {
-			return trainees.filter((t) => normalizeIsActive(t.isActive));
+			list = list.filter((t) => normalizeIsActive(t.isActive));
+		} else if (status === "inactive") {
+			list = list.filter((t) => !normalizeIsActive(t.isActive));
 		}
-		if (status === "inactive") {
-			return trainees.filter((t) => !normalizeIsActive(t.isActive));
+		if (searchWords.length > 0) {
+			list = list.filter((t) => {
+				const haystack = traineeSearchHaystack(t);
+				return searchWords.every((word) => haystack.includes(word));
+			});
 		}
-		return trainees;
-	}, [trainees, status]);
+		return [...list].sort((a, b) =>
+			traineeFullName(a).localeCompare(traineeFullName(b))
+		);
+	}, [trainees, status, searchWords]);
+
+	// Server already paginates the non-search fetch to `pageSize` rows; in search mode we
+	// pulled a larger batch above and paginate the filtered results ourselves here.
+	const visibleTrainees = useMemo(() => {
+		if (!isSearching) return filteredTrainees;
+		const start = (page - 1) * pageSize;
+		return filteredTrainees.slice(start, start + pageSize);
+	}, [filteredTrainees, isSearching, page, pageSize]);
+
+	const totalItems = isSearching
+		? filteredTrainees.length
+		: data?.meta?.totalItems ?? 0;
 
 	const cohortOptions = useMemo(() => {
 		const rows = Array.isArray(cohortData)
@@ -200,6 +240,16 @@ export default function TraineePage() {
 	const openDeleteConfirm = (id: string) => {
 		setConfirmId(id);
 		setConfirmOpen(true);
+	};
+
+	const openDetails = (t: TraineeType) => {
+		setViewingTrainee(t);
+		setDetailsOpen(true);
+	};
+
+	const handleDetailsOpenChange = (open: boolean) => {
+		setDetailsOpen(open);
+		if (!open) setViewingTrainee(null);
 	};
 
 	const confirmDelete = () => {
@@ -443,6 +493,16 @@ export default function TraineePage() {
 										<Button
 											variant="ghost"
 											size="icon"
+											title="View Details"
+											onClick={() => openDetails(t)}
+											className="h-9 w-9 rounded-xl bg-[#F3F8FF] text-blue-600 hover:bg-blue-100"
+										>
+											<Eye size={16} />
+										</Button>
+
+										<Button
+											variant="ghost"
+											size="icon"
 											title="Delete"
 											onClick={() => openDeleteConfirm(t._id)}
 											disabled={isDeleting}
@@ -594,6 +654,15 @@ export default function TraineePage() {
 										</TableCell>
 											<TableCell className="px-6 py-4">
 												<div className="flex items-center gap-2">
+													<Button
+														variant="ghost"
+														size="icon"
+														title="View Details"
+														onClick={() => openDetails(t)}
+														className="h-8 w-8 rounded-lg bg-[#F3F8FF] text-blue-600 hover:bg-blue-100"
+													>
+														<Eye size={14} />
+													</Button>
 													<Button
 														variant="ghost"
 														size="icon"
@@ -785,6 +854,12 @@ export default function TraineePage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<TraineeDetailSheet
+				trainee={viewingTrainee}
+				open={detailsOpen}
+				onOpenChange={handleDetailsOpenChange}
+			/>
 		</div>
 	);
 }
