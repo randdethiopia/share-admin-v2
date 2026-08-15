@@ -10,15 +10,16 @@ import {
 	FileText,
 	Globe,
 	Loader2,
-	Mail,
 	MapPin,
 	Phone,
 	User,
 	X,
 } from "lucide-react";
 
-import api from "@/lib/api";
+import api, { isReviewableUpdateRequest } from "@/lib/api";
 import type { BusinessProfileType } from "@/lib/api";
+import { ProfileUpdateDiffDialog } from "@/components/business/profile-update-diff-dialog";
+import { LegacyProfileUpdateDialog } from "@/components/business/legacy-profile-update-dialog";
 import { useListReturnHref } from "@/hooks/use-url-pagination";
 import { StatusBadge } from "@/components/shared/admin/StatusBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,8 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-
-type RejectAction = "reject" | "update-reject";
 
 function normalizeStatus(status?: string) {
 	return (status ?? "").trim().toUpperCase();
@@ -84,11 +83,6 @@ function getBusinessActionVisibility(status?: string) {
 		showApprove: normalized === "PENDING" || normalized === "REJECTED",
 		showReject: normalized === "PENDING" || normalized === "APPROVED",
 	};
-}
-
-function isUpdateRequestPending(updateStatus?: string) {
-	const normalized = normalizeStatus(updateStatus);
-	return normalized === "REQUEST_UPDATE" || normalized === "PENDING";
 }
 
 function getLocationSubtitle(business: BusinessProfileType) {
@@ -268,9 +262,9 @@ function BusinessDetailPageInner() {
 	}, [params]);
 
 	const [rejectOpen, setRejectOpen] = useState(false);
-	const [rejectAction, setRejectAction] = useState<RejectAction>("reject");
 	const [rejectionReason, setRejectionReason] = useState("");
 	const [rejectionError, setRejectionError] = useState("");
+	const [diffDialogOpen, setDiffDialogOpen] = useState(false);
 
 	const {
 		data: business,
@@ -282,6 +276,21 @@ function BusinessDetailPageInner() {
 		enabled: Boolean(id),
 	});
 
+	const {
+		data: pendingUpdateData,
+		refetch: refetchPendingUpdate,
+		isFetching: isFetchingPendingUpdate,
+		isError: isPendingUpdateError,
+	} = api.BusinessProfile.pendingUpdateRequest.useQuery(id ?? "", {
+		enabled: Boolean(id),
+	});
+
+	const reviewableRequest =
+		pendingUpdateData?.request &&
+		isReviewableUpdateRequest(pendingUpdateData.request)
+			? pendingUpdateData.request
+			: undefined;
+
 	const { mutate: approveBusiness, isPending: isApproving } =
 		api.BusinessProfile.Approve.useMutation();
 	const { mutate: rejectBusiness, isPending: isRejecting } =
@@ -292,22 +301,10 @@ function BusinessDetailPageInner() {
 				setRejectionError("");
 			},
 		});
-	const { mutate: approveUpdate, isPending: isApprovingUpdate } =
-		api.BusinessProfile.UpdateApprove.useMutation();
-	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
-		api.BusinessProfile.UpdateReject.useMutation({
-			onSuccess: () => {
-				setRejectOpen(false);
-				setRejectionReason("");
-				setRejectionError("");
-			},
-		});
 
-	const isMutating =
-		isApproving || isRejecting || isApprovingUpdate || isRejectingUpdate;
+	const isMutating = isApproving || isRejecting;
 
-	const openRejectDialog = (action: RejectAction) => {
-		setRejectAction(action);
+	const openRejectDialog = () => {
 		setRejectionReason("");
 		setRejectionError("");
 		setRejectOpen(true);
@@ -320,11 +317,12 @@ function BusinessDetailPageInner() {
 			setRejectionError("Rejection feedback is required.");
 			return;
 		}
-		if (rejectAction === "reject") {
-			rejectBusiness({ id, reason });
-		} else {
-			rejectUpdate({ id, reason });
-		}
+		rejectBusiness({ id, reason });
+	};
+
+	const handleReviewUpdateClick = async () => {
+		await refetchPendingUpdate();
+		setDiffDialogOpen(true);
 	};
 
 	if (!id) {
@@ -362,8 +360,14 @@ function BusinessDetailPageInner() {
 	}
 
 	const updateStatus = normalizeStatus(business.updateStatus);
+	const liveProfileForDiff = pendingUpdateData?.liveProfile ?? business;
+	const hasStagingDiff = Boolean(reviewableRequest && liveProfileForDiff);
+	// Two independent signals mean "something is awaiting review": a staged
+	// SmeUpdateRequest (the new system) and the legacy updateStatus flag. They are
+	// written by different code paths and neither reads the other, so the banner
+	// shows if either is set.
+	const showUpdateBanner = hasStagingDiff || updateStatus === "PENDING";
 	const { showApprove, showReject } = getBusinessActionVisibility(business.status);
-	const showUpdateActions = isUpdateRequestPending(business.updateStatus);
 	const categories = Array.isArray(business.categories) ? business.categories : [];
 	const socialNetwork = Array.isArray(business.socialNetwork)
 		? business.socialNetwork
@@ -378,6 +382,60 @@ function BusinessDetailPageInner() {
 
 	return (
 		<PageShell>
+			{isPendingUpdateError ? (
+				<div
+					role="alert"
+					className="mb-6 rounded-xl border-l-4 border-destructive bg-destructive/10 p-4 text-sm text-destructive shadow-xs"
+				>
+					Could not load the profile update request for this business. Any pending
+					changes may not be shown — refresh to try again.
+				</div>
+			) : null}
+
+			{showUpdateBanner ? (
+				<div
+					role="status"
+					aria-live="polite"
+					className="mb-6 flex flex-col gap-3 rounded-xl border-0 border-l-4 border-amber-500 bg-amber-50/90 p-4 text-amber-900 shadow-xs sm:flex-row sm:items-center sm:justify-between"
+				>
+					<p>This business has a pending profile update request.</p>
+					<Button
+						onClick={handleReviewUpdateClick}
+						disabled={isFetchingPendingUpdate}
+					>
+						{isFetchingPendingUpdate ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Loading…
+							</>
+						) : (
+							"Review Proposed Changes"
+						)}
+					</Button>
+				</div>
+			) : null}
+
+			{reviewableRequest && liveProfileForDiff ? (
+				<ProfileUpdateDiffDialog
+					open={diffDialogOpen}
+					onOpenChange={setDiffDialogOpen}
+					request={reviewableRequest}
+					liveProfile={liveProfileForDiff}
+					profileId={id}
+				/>
+			) : null}
+
+			<LegacyProfileUpdateDialog
+				open={
+					diffDialogOpen &&
+					showUpdateBanner &&
+					!reviewableRequest &&
+					updateStatus === "PENDING"
+				}
+				onOpenChange={setDiffDialogOpen}
+				smeAccountId={business.smeId?._id ?? ""}
+			/>
+
 			<Dialog
 				open={rejectOpen}
 				onOpenChange={(open) => {
@@ -388,12 +446,10 @@ function BusinessDetailPageInner() {
 					}
 				}}
 			>
-				<DialogContent showCloseButton={!isRejecting && !isRejectingUpdate}>
+				<DialogContent showCloseButton={!isRejecting}>
 					<DialogHeader>
 						<DialogTitle className="text-agar-navy">
-							{rejectAction === "reject"
-								? "Reject Business Application"
-								: "Reject Profile Update"}
+							Reject Business Application
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-2">
@@ -415,16 +471,16 @@ function BusinessDetailPageInner() {
 						<Button
 							variant="outline"
 							onClick={() => setRejectOpen(false)}
-							disabled={isRejecting || isRejectingUpdate}
+							disabled={isRejecting}
 						>
 							Cancel
 						</Button>
 						<Button
 							className="bg-destructive text-white hover:bg-destructive/90"
 							onClick={handleConfirmRejection}
-							disabled={isRejecting || isRejectingUpdate}
+							disabled={isRejecting}
 						>
-							{isRejecting || isRejectingUpdate ? "Rejecting…" : "Confirm Rejection"}
+							{isRejecting ? "Rejecting…" : "Confirm Rejection"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -483,34 +539,11 @@ function BusinessDetailPageInner() {
 						<Button
 							className="flex items-center gap-2 rounded-md bg-destructive px-5 py-2.5 font-semibold text-white hover:bg-destructive/90"
 							disabled={isMutating}
-							onClick={() => openRejectDialog("reject")}
+							onClick={openRejectDialog}
 						>
 							<X className="h-4 w-4" />
 							Reject Business
 						</Button>
-					) : null}
-					
-					{showUpdateActions ? (
-						<>
-							<Button
-								variant="outline"
-								className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-								disabled={isMutating}
-								onClick={() => approveUpdate(business._id)}
-							>
-								<Check className="mr-2 h-4 w-4" />
-								{isApprovingUpdate ? "Approving…" : "Approve Update"}
-							</Button>
-							<Button
-								variant="outline"
-								className="border-destructive/30 text-destructive hover:bg-destructive/5"
-								disabled={isMutating}
-								onClick={() => openRejectDialog("update-reject")}
-							>
-								<X className="mr-2 h-4 w-4" />
-								Reject Update
-							</Button>
-						</>
 					) : null}
 				</div>
 			</div>
