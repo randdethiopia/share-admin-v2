@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Check, Loader2, X } from "lucide-react";
 
-import api from "@/lib/api";
+import api, { invalidateProfileUpdateQueries } from "@/lib/api";
 import type { BusinessProfileType, SmeUpdateRequestType } from "@/lib/api";
 import {
 	getProposedChangeKeys,
@@ -60,6 +61,7 @@ export function ProfileUpdateDiffDialog({
 	liveProfile,
 	profileId,
 }: ProfileUpdateDiffDialogProps) {
+	const queryClient = useQueryClient();
 	const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
 	const [rejectOpen, setRejectOpen] = useState(false);
 	const [conflictAlert, setConflictAlert] = useState(false);
@@ -71,7 +73,8 @@ export function ProfileUpdateDiffDialog({
 
 	const { mutate: approveRequest, isPending: isApproving } =
 		api.BusinessProfile.approveStagingRequest.useMutation({
-			onSuccess: () => {
+			onSuccess: async () => {
+				await invalidateProfileUpdateQueries(queryClient, profileId);
 				setConflictAlert(false);
 				setApproveConfirmOpen(false);
 				onOpenChange(false);

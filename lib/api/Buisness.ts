@@ -180,16 +180,23 @@ export async function rejectStagingRequestFn({
 	).data;
 }
 
-function invalidateProfileUpdateQueries(
+async function invalidateProfileUpdateQueries(
 	queryClient: QueryClient,
 	profileId: string
 ) {
-	queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
-	queryClient.invalidateQueries({ queryKey: ["BusinessProfile", profileId] });
-	queryClient.invalidateQueries({
-		queryKey: profileUpdateRequestKeys.detail(profileId),
-	});
+	queryClient.setQueryData(profileUpdateRequestKeys.detail(profileId), null);
+	await Promise.all([
+		queryClient.invalidateQueries({
+			queryKey: profileUpdateRequestKeys.detail(profileId),
+		}),
+		queryClient.invalidateQueries({ queryKey: profileUpdateRequestKeys.all }),
+		queryClient.invalidateQueries({ queryKey: ["BusinessProfile", profileId] }),
+		queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] }),
+		queryClient.invalidateQueries({ queryKey: ["adminProfileUpdateQueue"] }),
+	]);
 }
+
+export { invalidateProfileUpdateQueries };
 
 const BusinessProfileApi = {
 	Create: {
@@ -402,33 +409,36 @@ const BusinessProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: ({ requestId }: ApproveStagingRequestInput) =>
 					approveStagingRequestFn(requestId),
-				onSuccess: (res, variables, context) => {
+				onSuccess: async (res, variables, context) => {
 					toast.success("Profile updates approved and published.");
-					// No optimistic updateStatus patch: the staging system never writes
-					// updateStatus (it is on the backend's protected-field list), so
-					// guessing a value here would show the admin a state the server
-					// never had. Invalidation alone is correct — the refetched request
-					// comes back null and the banner clears.
-					invalidateProfileUpdateQueries(queryClient, variables.profileId);
-					options?.onSuccess?.(res, variables, context, undefined as never);
+					await invalidateProfileUpdateQueries(
+						queryClient,
+						variables.profileId
+					);
+					await options?.onSuccess?.(res, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					if (err.response?.status === 409) {
 						toast.error("Version conflict detected. Profile data refreshed.");
-						queryClient.invalidateQueries({
-							queryKey: profileUpdateRequestKeys.detail(variables.profileId),
-						});
-						queryClient.invalidateQueries({
-							queryKey: ["BusinessProfile", variables.profileId],
-						});
+						void Promise.all([
+							queryClient.invalidateQueries({
+								queryKey: profileUpdateRequestKeys.detail(variables.profileId),
+							}),
+							queryClient.invalidateQueries({
+								queryKey: profileUpdateRequestKeys.all,
+							}),
+							queryClient.invalidateQueries({
+								queryKey: ["BusinessProfile", variables.profileId],
+							}),
+						]);
 					} else {
 						toast.error(err.response?.data?.message || "Error");
 					}
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -444,18 +454,20 @@ const BusinessProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: rejectStagingRequestFn,
-				onSuccess: (res, variables, context) => {
+				onSuccess: async (res, variables, context) => {
 					toast.success("Update request rejected.");
-					// See approveStagingRequest: updateStatus is not ours to patch.
-					invalidateProfileUpdateQueries(queryClient, variables.profileId);
-					options?.onSuccess?.(res, variables, context, undefined as never);
+					await invalidateProfileUpdateQueries(
+						queryClient,
+						variables.profileId
+					);
+					await options?.onSuccess?.(res, variables, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import api from "@/lib/api";
+import api, { invalidateProfileUpdateQueries } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -32,12 +33,14 @@ export function RejectUpdateRequestModal({
 	profileId,
 	onRejected,
 }: RejectUpdateRequestModalProps) {
+	const queryClient = useQueryClient();
 	const [rejectionReason, setRejectionReason] = useState("");
 	const [error, setError] = useState("");
 
 	const { mutate: rejectRequest, isPending } =
 		api.BusinessProfile.rejectStagingRequest.useMutation({
-			onSuccess: () => {
+			onSuccess: async () => {
+				await invalidateProfileUpdateQueries(queryClient, profileId);
 				setRejectionReason("");
 				setError("");
 				onOpenChange(false);

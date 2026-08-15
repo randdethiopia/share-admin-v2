@@ -48,6 +48,9 @@ export {
 	profileUpdateRequestKeys,
 	SME_PROFILE_FIELD_LABELS,
 } from "./profile-update-request.types";
+export {
+	invalidateProfileUpdateQueries,
+} from "./Buisness";
 export type { IdeaBankType } from "./idea-bank";
 export type { InvestmentType } from "./investment";
 export type { MentorProfileType } from "./mentor-profile";
