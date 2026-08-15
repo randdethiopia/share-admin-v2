@@ -135,8 +135,9 @@ function getBusinessActionVisibility(status?: string) {
 }
 
 function isUpdateRequestPending(updateStatus?: string) {
-	const normalized = normalizeStatus(updateStatus);
-	return normalized === "REQUEST_UPDATE" || normalized === "PENDING";
+	// "REQUEST_UPDATE" is not a value the backend ever writes — the legacy flow
+	// only ever sets PENDING, APPROVED or NOT_ALLOWED.
+	return normalizeStatus(updateStatus) === "PENDING";
 }
 
 const BUSINESS_LIST_PATH = "/business";

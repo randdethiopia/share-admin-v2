@@ -21,7 +21,33 @@ import WaitListApi from "./waitlist";
 
 export type { BlogType } from "./blog";
 export type { ProfileType as AdvisorProfileType } from "./advisor-profile";
-export type { BusinessProfileType, RejectBusinessInput } from "./Buisness";
+export type {
+	BusinessProfileFormType,
+	BusinessProfileType,
+	BusinessUpdateStatus,
+	FounderStoryType,
+	RejectBusinessInput,
+	SocialType,
+	TeamMemberType,
+} from "./Buisness.types";
+export type {
+	ApproveStagingRequestInput,
+	RejectStagingRequestInput,
+	SmeProfileUpdateFieldKey,
+	SmeProfileUpdateRequestPayload,
+	SmeUpdateRequestDetailApiResponse,
+	SmeUpdateRequestDetailResponse,
+	SmeUpdateRequestStatus,
+	SmeUpdateRequestType,
+} from "./profile-update-request.types";
+export {
+	getProposedChangeKeys,
+	isConflictedUpdateRequest,
+	isReviewableUpdateRequest,
+	isSmeProfileUpdateFieldKey,
+	profileUpdateRequestKeys,
+	SME_PROFILE_FIELD_LABELS,
+} from "./profile-update-request.types";
 export type { IdeaBankType } from "./idea-bank";
 export type { InvestmentType } from "./investment";
 export type { MentorProfileType } from "./mentor-profile";
