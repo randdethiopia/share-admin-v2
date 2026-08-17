@@ -86,3 +86,18 @@ export interface BusinessProfileType extends BusinessProfileFormType {
 	profileVersion?: number;
 	approvedAt: string;
 }
+
+export interface BusinessProfileListParams {
+	page?: number;
+	limit?: number;
+	status?: string;
+	filter?: string;
+	search?: string;
+}
+
+export interface BusinessProfileListData {
+	profiles: BusinessProfileType[];
+	total: number;
+	page: number;
+	limit: number;
+}

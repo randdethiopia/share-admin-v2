@@ -6,7 +6,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Eye, Loader2, MoreHorizontal, Search, X } from "lucide-react";
 
 import api from "@/lib/api";
-import type { BusinessProfileType } from "@/lib/api";
+import type { BusinessProfileListParams, BusinessProfileType } from "@/lib/api";
+import {
+	formatPendingUpdatesCount,
+	useAdminPendingUpdatesCount,
+} from "@/lib/api";
 import { AdminCard } from "@/components/shared/admin/AdminCard";
 import { FilterField } from "@/components/shared/admin/FilterField";
 import { PageHeader } from "@/components/shared/admin/PageHeader";
@@ -48,9 +52,12 @@ import {
 } from "@/components/ui/table";
 import {
 	buildDetailHref,
-	buildUrlWithStatus,
+	buildUrlWithFilter,
+	parseFilterParam,
 	parseStatusParam,
+	PENDING_UPDATES_FILTER,
 	STATUS_URL_PARAM,
+	FILTER_URL_PARAM,
 	useCorrectPaginationPage,
 	useUrlPagination,
 } from "@/hooks/use-url-pagination";
@@ -243,6 +250,12 @@ function BusinessPageInner() {
 		[searchParams]
 	);
 
+	const filterFromUrl = React.useMemo(
+		() => parseFilterParam(searchParams.get(FILTER_URL_PARAM)),
+		[searchParams]
+	);
+	const isPendingUpdatesFilter = filterFromUrl === PENDING_UPDATES_FILTER;
+
 	const [search, setSearch] = React.useState("");
 	const [status, setStatus] = React.useState<StatusFilter>(statusFromUrl);
 	const { page, pageSize, setPage, setPageSize, resetPagination } =
@@ -252,12 +265,27 @@ function BusinessPageInner() {
 		React.useState<ConfirmAction>("approve");
 	const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
+	const listParams = React.useMemo(
+		(): BusinessProfileListParams => ({
+			...(status !== "all" && !isPendingUpdatesFilter ? { status } : {}),
+			...(filterFromUrl ? { filter: filterFromUrl } : {}),
+			...(search.trim() ? { search: search.trim() } : {}),
+		}),
+		[status, isPendingUpdatesFilter, filterFromUrl, search]
+	);
+
 	const {
-		data: businesses = [],
+		data: listData,
 		isLoading,
 		isError,
 		error,
-	} = api.BusinessProfile.GetList.useQuery();
+	} = api.BusinessProfile.GetList.useQuery(listParams);
+
+	const businesses = React.useMemo(
+		() => listData?.profiles ?? [],
+		[listData?.profiles]
+	);
+	const totalItems = businesses.length;
 
 	const { mutate: approveBusiness, isPending: isApproving } =
 		api.BusinessProfile.Approve.useMutation();
@@ -268,6 +296,9 @@ function BusinessPageInner() {
 	const { mutate: rejectUpdate, isPending: isRejectingUpdate } =
 		api.BusinessProfile.UpdateReject.useMutation();
 
+	const { data: pendingUpdatesCountData } = useAdminPendingUpdatesCount();
+	const pendingUpdatesCount = pendingUpdatesCountData?.count ?? 0;
+
 	React.useEffect(() => {
 		setStatus(statusFromUrl);
 	}, [statusFromUrl]);
@@ -275,47 +306,55 @@ function BusinessPageInner() {
 	const setStatusFilter = React.useCallback(
 		(value: StatusFilter) => {
 			setStatus(value);
+			const params = new URLSearchParams(searchParams.toString());
+			if (value !== "all") {
+				params.set(STATUS_URL_PARAM, value);
+			} else {
+				params.delete(STATUS_URL_PARAM);
+			}
+			params.delete(FILTER_URL_PARAM);
+			params.delete("page");
+			const qs = params.toString();
+			router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+		},
+		[pathname, router, searchParams]
+	);
+
+	const setPendingUpdatesFilter = React.useCallback(
+		(active: boolean) => {
+			if (active) {
+				setStatus("all");
+			}
 			router.replace(
-				buildUrlWithStatus(pathname, searchParams, value),
+				buildUrlWithFilter(
+					pathname,
+					searchParams,
+					active ? PENDING_UPDATES_FILTER : null
+				),
 				{ scroll: false }
 			);
 		},
 		[pathname, router, searchParams]
 	);
 
-	const filteredData = React.useMemo(() => {
-		const query = search.trim().toLowerCase();
-		return (businesses as BusinessProfileType[]).filter((business) => {
-			const matchesSearch = query
-				? (business.businessName ?? "").toLowerCase().includes(query) ||
-					(business.email ?? "").toLowerCase().includes(query) ||
-					(business.bphoneNumber ?? "").toLowerCase().includes(query)
-				: true;
-			const normalized = normalizeStatus(business.status);
-			const matchesStatus = status === "all" || normalized === status;
-			return matchesSearch && matchesStatus;
-		});
-	}, [businesses, search, status]);
-
 	const pagination = React.useMemo(
-		() => getPaginationMeta(filteredData.length, page, pageSize),
-		[filteredData.length, page, pageSize]
+		() => getPaginationMeta(totalItems, page, pageSize),
+		[totalItems, page, pageSize]
 	);
 
 	useCorrectPaginationPage({
 		isLoading,
-		totalItems: filteredData.length,
+		totalItems,
 		page,
 		safePage: pagination.safePage,
 		setPage,
 	});
 
-	const pageData = React.useMemo(() => {
-		return filteredData.slice(
-			pagination.startIndex,
-			pagination.endIndexExclusive
-		);
-	}, [filteredData, pagination.startIndex, pagination.endIndexExclusive]);
+	const paginatedRows = React.useMemo(
+		() =>
+			businesses.slice(pagination.startIndex, pagination.endIndexExclusive),
+		[businesses, pagination.startIndex, pagination.endIndexExclusive]
+	);
 
 	const openConfirm = (action: ConfirmAction, id: string) => {
 		setConfirmAction(action);
@@ -424,6 +463,7 @@ function BusinessPageInner() {
 					<FilterField label="Filter Status">
 						<Select
 							value={status}
+							disabled={isPendingUpdatesFilter}
 							onValueChange={(value) => {
 								if (
 									value === "all" ||
@@ -455,6 +495,43 @@ function BusinessPageInner() {
 					</FilterField>
 				</div>
 
+				<div className="mb-6 flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setPendingUpdatesFilter(false)}
+						className={cn(
+							"rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
+							!isPendingUpdatesFilter
+								? "border-slate-200 bg-white text-slate-700 shadow-xs"
+								: "border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+						)}
+					>
+						All
+					</button>
+					<button
+						type="button"
+						onClick={() => setPendingUpdatesFilter(true)}
+						className={cn(
+							"inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
+							isPendingUpdatesFilter
+								? "border-[#69B34C]/30 bg-[#69B34C]/10 text-[#3B6A22] shadow-xs"
+								: "border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+						)}
+					>
+						Pending Updates
+						<span
+							className={cn(
+								"flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
+								isPendingUpdatesFilter
+									? "bg-[#FF4E11]/10 text-[#FF4E11]"
+									: "bg-slate-200 text-slate-700"
+							)}
+						>
+							{formatPendingUpdatesCount(pendingUpdatesCount)}
+						</span>
+					</button>
+				</div>
+
 				<div className="border-t border-slate-200/80 md:hidden">
 					{isLoading ? (
 						<div className="flex h-40 items-center justify-center text-sm text-slate-600">
@@ -465,12 +542,12 @@ function BusinessPageInner() {
 							{(error as { response?: { data?: { message?: string } } })
 								?.response?.data?.message || "Failed to load businesses"}
 						</div>
-					) : filteredData.length === 0 ? (
+					) : totalItems === 0 ? (
 						<div className="flex h-40 items-center justify-center text-sm text-slate-500">
 							No businesses found.
 						</div>
 					) : (
-						pageData.map((business) => (
+						paginatedRows.map((business) => (
 							<div
 								key={business._id}
 								className="border-b border-slate-100 p-4 last:border-b-0"
@@ -538,7 +615,7 @@ function BusinessPageInner() {
 												"Failed to load businesses"}
 										</TableCell>
 									</TableRow>
-								) : filteredData.length === 0 ? (
+								) : totalItems === 0 ? (
 									<TableRow>
 										<TableCell
 											colSpan={4}
@@ -548,7 +625,7 @@ function BusinessPageInner() {
 										</TableCell>
 									</TableRow>
 								) : (
-									pageData.map((business) => (
+									paginatedRows.map((business) => (
 										<TableRow
 											key={business._id}
 											className="border-slate-50 hover:bg-slate-50/50"
@@ -614,7 +691,7 @@ function BusinessPageInner() {
 					<PaginationControls
 						page={pagination.safePage}
 						onPageChange={setPage}
-						totalItems={filteredData.length}
+						totalItems={totalItems}
 						pageSize={pageSize}
 						disabled={isLoading || isError}
 					/>
