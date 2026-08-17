@@ -16,6 +16,10 @@ import {
   canAccessMenuItem,
   dashboardMenuItems,
 } from "@/lib/access";
+import {
+  formatPendingUpdatesCount,
+  useAdminPendingUpdatesCount,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import {
@@ -64,6 +68,8 @@ export function Sidebar({
 
   const { user, permissions, hasHydrated } = useAuthStore();
   const [signingOut, setSigningOut] = useState(false);
+  const { data: pendingUpdatesCountData } = useAdminPendingUpdatesCount();
+  const pendingCount = pendingUpdatesCountData?.count ?? 0;
 
   const canViewItem = (item: MenuItem) => canAccessMenuItem(item, permissions);
 
@@ -231,10 +237,18 @@ export function Sidebar({
                 key={item.id}
                 href={resolvedHref}
                 onClick={onNavigate}
-                className={getNavLinkClasses(isActive, "gap-3 py-2")}
+                className={getNavLinkClasses(isActive, "w-full gap-3 py-2")}
               >
-                <Icon className="h-5 w-5" />
-                <span>{item.label}</span>
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {item.id === "business" && pendingCount > 0 ? (
+                  <span
+                    aria-label={`${pendingCount} pending profile updates`}
+                    className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#FF4E11]/10 px-1.5 text-[11px] font-bold text-[#FF4E11] transition-all"
+                  >
+                    {formatPendingUpdatesCount(pendingCount)}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

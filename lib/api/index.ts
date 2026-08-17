@@ -21,7 +21,54 @@ import WaitListApi from "./waitlist";
 
 export type { BlogType } from "./blog";
 export type { ProfileType as AdvisorProfileType } from "./advisor-profile";
-export type { BusinessProfileType, RejectBusinessInput } from "./Buisness";
+export type {
+	BusinessProfileFormType,
+	BusinessProfileListData,
+	BusinessProfileListParams,
+	BusinessProfileType,
+	BusinessUpdateStatus,
+	FounderStoryType,
+	RejectBusinessInput,
+	SocialType,
+	TeamMemberType,
+} from "./Buisness.types";
+export type {
+	ApproveStagingRequestInput,
+	ProfileUpdateQueueApiResponse,
+	ProfileUpdateQueuePagination,
+	RejectStagingRequestInput,
+	SmeProfileUpdateFieldKey,
+	SmeProfileUpdateRequestPayload,
+	SmeUpdateRequestDetailApiResponse,
+	SmeUpdateRequestDetailResponse,
+	SmeUpdateRequestStatus,
+	SmeUpdateRequestType,
+} from "./profile-update-request.types";
+export {
+	getPendingProfileIdsFromQueue,
+	getProposedChangeKeys,
+	isConflictedUpdateRequest,
+	isReviewableUpdateRequest,
+	isSmeProfileUpdateFieldKey,
+	normalizeProfileUpdateQueueResponse,
+	profileUpdateRequestKeys,
+	SME_PROFILE_FIELD_LABELS,
+} from "./profile-update-request.types";
+export {
+	invalidateProfileUpdateQueries,
+	fetchProfileUpdateQueueFn,
+	getProfileListFn,
+	normalizeBusinessProfileList,
+	profileUpdateQueueKey,
+	useProfileUpdateQueue,
+} from "./Buisness";
+export {
+	fetchPendingUpdatesCountFn,
+	formatPendingUpdatesCount,
+	pendingUpdatesCountKey,
+	useAdminPendingUpdatesCount,
+} from "./admin-pending-updates";
+export type { PendingUpdatesCountResponse } from "./admin-pending-updates";
 export type { IdeaBankType } from "./idea-bank";
 export type { InvestmentType } from "./investment";
 export type { MentorProfileType } from "./mentor-profile";
