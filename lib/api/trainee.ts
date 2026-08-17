@@ -120,7 +120,7 @@ export interface TraineeRegistrationType {
 	firstname: string;
 	middlename?: string;
 	lastname: string;
-	email: string;
+	email?: string;
 	phoneNumber: string;
 	age?: number;
 	region?: string;
