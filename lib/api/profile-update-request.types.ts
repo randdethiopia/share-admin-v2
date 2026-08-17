@@ -79,6 +79,48 @@ export interface SmeUpdateRequestDetailApiResponse {
 	};
 }
 
+export interface ProfileUpdateQueuePagination {
+	page?: number;
+	limit?: number;
+	total?: number;
+	totalPages?: number;
+}
+
+/** Wire shape of GET /api/admin/profile-update-requests (list queue). */
+export type ProfileUpdateQueueApiResponse =
+	| SmeUpdateRequestType[]
+	| {
+			data: SmeUpdateRequestType[];
+			pagination?: ProfileUpdateQueuePagination;
+	  }
+	| {
+			success?: boolean;
+			data: SmeUpdateRequestType[];
+			pagination?: ProfileUpdateQueuePagination;
+	  };
+
+export function normalizeProfileUpdateQueueResponse(
+	raw: ProfileUpdateQueueApiResponse
+): SmeUpdateRequestType[] {
+	if (Array.isArray(raw)) {
+		return raw;
+	}
+	if (raw && typeof raw === "object" && Array.isArray(raw.data)) {
+		return raw.data;
+	}
+	return [];
+}
+
+export function getPendingProfileIdsFromQueue(
+	requests: SmeUpdateRequestType[]
+): Set<string> {
+	return new Set(
+		requests
+			.filter((req) => req.status === "PENDING_REVIEW")
+			.map((req) => String(req.profileId))
+	);
+}
+
 /** Client-facing shape, mapped from SmeUpdateRequestDetailApiResponse. */
 export interface SmeUpdateRequestDetailResponse {
 	success: boolean;

@@ -8,6 +8,36 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 export const PAGE_URL_PARAM = "page";
 export const PAGE_SIZE_URL_PARAM = "pageSize";
 export const STATUS_URL_PARAM = "status";
+export const FILTER_URL_PARAM = "filter";
+export const PENDING_UPDATES_FILTER = "pending-updates";
+
+export function parseFilterParam(value: string | null): string | null {
+	const trimmed = (value ?? "").trim();
+	return trimmed.length ? trimmed : null;
+}
+
+function applyFilterParam(params: URLSearchParams, filter: string | null) {
+	if (!filter) {
+		params.delete(FILTER_URL_PARAM);
+	} else {
+		params.set(FILTER_URL_PARAM, filter);
+	}
+}
+
+export function buildUrlWithFilter(
+	pathname: string,
+	searchParams: URLSearchParams,
+	filter: string | null,
+	resetPage = true
+): string {
+	const params = new URLSearchParams(searchParams.toString());
+	applyFilterParam(params, filter);
+	if (resetPage) {
+		params.delete(PAGE_URL_PARAM);
+	}
+	const qs = params.toString();
+	return qs ? `${pathname}?${qs}` : pathname;
+}
 
 export function parseStatusParam<T extends string>(
 	value: string | null,

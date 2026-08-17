@@ -12,16 +12,32 @@ import { toast } from "sonner";
 
 import type {
 	ApproveStagingRequestInput,
+	ProfileUpdateQueueApiResponse,
 	RejectStagingRequestInput,
 	SmeUpdateRequestDetailApiResponse,
 	SmeUpdateRequestDetailResponse,
+	SmeUpdateRequestType,
 } from "./profile-update-request.types";
-import { profileUpdateRequestKeys } from "./profile-update-request.types";
+import {
+	normalizeProfileUpdateQueueResponse,
+	profileUpdateRequestKeys,
+} from "./profile-update-request.types";
+import { pendingUpdatesCountKey } from "./admin-pending-updates";
 import type {
 	BusinessProfileFormType,
+	BusinessProfileListData,
+	BusinessProfileListParams,
 	BusinessProfileType,
 	RejectBusinessInput,
 } from "./Buisness.types";
+
+export {
+	fetchPendingUpdatesCountFn,
+	formatPendingUpdatesCount,
+	pendingUpdatesCountKey,
+	useAdminPendingUpdatesCount,
+} from "./admin-pending-updates";
+export type { PendingUpdatesCountResponse } from "./admin-pending-updates";
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -35,15 +51,19 @@ export type {
 	SmeUpdateRequestType,
 } from "./profile-update-request.types";
 export {
+	getPendingProfileIdsFromQueue,
 	getProposedChangeKeys,
 	isReviewableUpdateRequest,
 	isSmeProfileUpdateFieldKey,
+	normalizeProfileUpdateQueueResponse,
 	profileUpdateRequestKeys,
 	SME_PROFILE_FIELD_LABELS,
 } from "./profile-update-request.types";
 
 export type {
 	BusinessProfileFormType,
+	BusinessProfileListData,
+	BusinessProfileListParams,
 	BusinessProfileType,
 	BusinessUpdateStatus,
 	RejectBusinessInput,
@@ -62,16 +82,6 @@ function updateBusinessProfileCache(
 	updates: Partial<BusinessProfileType>
 ) {
 	queryClient.setQueryData(
-		["BusinessProfile"],
-		(current?: BusinessProfileType[]) =>
-			Array.isArray(current)
-				? current.map((item) =>
-						item._id === id ? { ...item, ...updates } : item
-					)
-				: current
-	);
-
-	queryClient.setQueryData(
 		["BusinessProfile", id],
 		(current?: BusinessProfileType) =>
 			current ? { ...current, ...updates } : current
@@ -87,8 +97,24 @@ export async function getMyBusinessProfileFn() {
 	return (await axios.get(`${API_URL}/api/sme-profile/my-profile`)).data;
 }
 
-export async function getBusinessProfilesFn() {
-	return (await axios.get(`${API_URL}/api/sme-profile/get`)).data;
+export async function getProfileListFn(params?: BusinessProfileListParams) {
+	const { data } = await axios.get(`${API_URL}/api/sme-profile/get`, {
+		params,
+	});
+	return data;
+}
+
+export function normalizeBusinessProfileList(
+	raw: unknown,
+	params?: BusinessProfileListParams
+): BusinessProfileListData {
+	const list = Array.isArray(raw) ? (raw as BusinessProfileType[]) : [];
+	return {
+		profiles: list,
+		total: list.length,
+		page: params?.page ?? 1,
+		limit: params?.limit ?? 10,
+	};
 }
 
 export async function getBusinessProfileByIdFn(id: string) {
@@ -180,6 +206,32 @@ export async function rejectStagingRequestFn({
 	).data;
 }
 
+export const profileUpdateQueueKey = ["adminProfileUpdateQueue"] as const;
+
+export async function fetchProfileUpdateQueueFn(): Promise<SmeUpdateRequestType[]> {
+	const { data } = await axios.get<ProfileUpdateQueueApiResponse>(
+		`${API_URL}/api/admin/profile-update-requests`
+	);
+	return normalizeProfileUpdateQueueResponse(data);
+}
+
+export function useProfileUpdateQueue(
+	options?: Omit<
+		UseQueryOptions<SmeUpdateRequestType[], AxiosError<ErrorRes>>,
+		"queryKey" | "queryFn"
+	>
+) {
+	return useQuery({
+		queryKey: profileUpdateQueueKey,
+		queryFn: fetchProfileUpdateQueueFn,
+		staleTime: 10_000,
+		refetchInterval: 20_000,
+		refetchIntervalInBackground: false,
+		refetchOnWindowFocus: true,
+		...options,
+	});
+}
+
 async function invalidateProfileUpdateQueries(
 	queryClient: QueryClient,
 	profileId: string
@@ -192,7 +244,8 @@ async function invalidateProfileUpdateQueries(
 		queryClient.invalidateQueries({ queryKey: profileUpdateRequestKeys.all }),
 		queryClient.invalidateQueries({ queryKey: ["BusinessProfile", profileId] }),
 		queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] }),
-		queryClient.invalidateQueries({ queryKey: ["adminProfileUpdateQueue"] }),
+		queryClient.invalidateQueries({ queryKey: pendingUpdatesCountKey }),
+		queryClient.invalidateQueries({ queryKey: profileUpdateQueueKey }),
 	]);
 }
 
@@ -237,11 +290,16 @@ const BusinessProfileApi = {
 
 	GetList: {
 		useQuery: (
-			options?: UseQueryOptions<BusinessProfileType[], AxiosError<ErrorRes>>
+			params?: BusinessProfileListParams,
+			options?: Omit<
+				UseQueryOptions<unknown, AxiosError<ErrorRes>, BusinessProfileListData>,
+				"queryKey" | "queryFn" | "select"
+			>
 		) =>
 			useQuery({
-				queryKey: ["BusinessProfile"],
-				queryFn: getBusinessProfilesFn,
+				queryKey: ["BusinessProfile", "list", params],
+				queryFn: () => getProfileListFn(params),
+				select: (res) => normalizeBusinessProfileList(res, params),
 				...options,
 			}),
 	},
@@ -326,6 +384,7 @@ const BusinessProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: updateApproveBusinessProfileFn,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Approved");
@@ -334,13 +393,14 @@ const BusinessProfileApi = {
 					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					queryClient.invalidateQueries({ queryKey: pendingUpdatesCountKey });
+					queryClient.invalidateQueries({ queryKey: profileUpdateQueueKey });
 					options?.onSuccess?.(res, id, context, undefined as never);
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, id, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -356,6 +416,7 @@ const BusinessProfileApi = {
 			const queryClient = useQueryClient();
 
 			return useMutation({
+				...options,
 				mutationFn: updateRejectBusinessProfileFn,
 				onSuccess: (res, { id }, context) => {
 					toast.success(res.message || "Rejected");
@@ -366,16 +427,19 @@ const BusinessProfileApi = {
 					});
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile"] });
 					queryClient.invalidateQueries({ queryKey: ["BusinessProfile", id] });
+					queryClient.invalidateQueries({ queryKey: pendingUpdatesCountKey });
+					queryClient.invalidateQueries({ queryKey: profileUpdateQueueKey });
 					options?.onSuccess?.(res, { id }, context, undefined as never);
 				},
 				onError: (err, variables, context) => {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as never);
 				},
-				...options,
 			});
 		},
 	},
+
+	useProfileUpdateQueue,
 
 	pendingUpdateRequest: {
 		useQuery: (

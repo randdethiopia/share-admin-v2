@@ -5,6 +5,7 @@ import { Menu } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Sidebar, dashboardMenuItems } from "@/components/sidebar";
+import { AdminDocumentTitle } from "@/components/shared/admin-document-title";
 import {
   getFirstAccessibleHref,
   isPathAccessible,
@@ -185,6 +186,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <AdminDocumentTitle />
       <aside
         className={cn(
           "fixed hidden h-full overflow-hidden border-r border-slate-200/80 bg-white transition-[width] duration-200 md:block",
