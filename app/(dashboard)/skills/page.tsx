@@ -11,7 +11,7 @@ export default function SkillsPage() {
 	const { data: skills, isLoading } = api.Skills.GetList.useQuery();
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+		<div className="min-h-screen bg-background p-4 md:p-8">
 			<div className="flex justify-between items-center mb-6 px-4">
 				<h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
 					Skill

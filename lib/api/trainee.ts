@@ -22,6 +22,7 @@ export interface TraineeType {
 	idnumber: string;
 	auth: string;
 	firstname: string;
+	middlename: string;
 	lastname: string;
 	lang: string;
 	calendartype: string;
@@ -119,8 +120,9 @@ export interface TraineeRegistrationType {
 	firstname: string;
 	middlename?: string;
 	lastname: string;
-	email: string;
+	email?: string;
 	phoneNumber: string;
+	age?: number;
 	region?: string;
 	gender?: string;
 }
@@ -370,6 +372,7 @@ const TraineeAuth = {
 
 			return useMutation({
 				mutationFn: bulkRegisterTraineeFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(
 						`${res.summary?.length ?? 0} Trainee(s) imported successfully`
@@ -381,7 +384,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -396,6 +398,7 @@ const TraineeAuth = {
 		) =>
 			useMutation({
 				mutationFn: registerTraineeFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Registered successfully");
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -404,7 +407,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -452,6 +454,7 @@ const TraineeAuth = {
 			useMutation({
 				mutationFn: ({ email, verificationCode }) =>
 					activateTraineeFn(email, verificationCode),
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Activated");
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -460,7 +463,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -474,6 +476,7 @@ const TraineeAuth = {
 		) =>
 			useMutation({
 				mutationFn: loginTraineeFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					useAuthStore
 						.getState()
@@ -495,7 +498,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -505,6 +507,7 @@ const TraineeAuth = {
 		) =>
 			useMutation({
 				mutationFn: changeTraineePasswordFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Password changed");
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -513,7 +516,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -523,6 +525,7 @@ const TraineeAuth = {
 		) =>
 			useMutation({
 				mutationFn: forgotTraineePasswordFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Check your email");
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -531,7 +534,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -541,6 +543,7 @@ const TraineeAuth = {
 		) =>
 			useMutation({
 				mutationFn: resetTraineePasswordFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Password reset");
 					options?.onSuccess?.(res, variables, context, undefined as unknown as never);
@@ -549,7 +552,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			}),
 	},
 
@@ -676,6 +678,7 @@ const TraineeAuth = {
 
 			return useMutation({
 				mutationFn: deleteTraineeFn,
+				...options,
 				onSuccess: (res, id, context) => {
 					toast.success(res.message || "Deleted");
 					queryClient.invalidateQueries({ queryKey: ["Trainee"] });
@@ -686,7 +689,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, id, context, undefined as unknown as never);
 				},
-				...options,
 			});
 		},
 	},
@@ -703,6 +705,7 @@ const TraineeAuth = {
 
 			return useMutation({
 				mutationFn: assignCoordinatorFn,
+				...options,
 				onSuccess: (res, variables, context) => {
 					toast.success(res.message || "Coordinator assigned");
 					queryClient.invalidateQueries({ queryKey: ["Trainee"] });
@@ -719,7 +722,6 @@ const TraineeAuth = {
 					toast.error(err.response?.data?.message || "Error");
 					options?.onError?.(err, variables, context, undefined as unknown as never);
 				},
-				...options,
 			});
 		},
 	},

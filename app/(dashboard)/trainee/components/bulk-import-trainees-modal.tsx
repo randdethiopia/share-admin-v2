@@ -17,6 +17,7 @@ import {
 import { hasAllAccessPermission, normalizePermissions } from "@/lib/access";
 import TraineeAuth, { type BulkTraineeImportEntry } from "@/lib/api/trainee";
 import { downloadTextFile } from "@/lib/downloadTextFile";
+import { ETHIOPIA_REGIONS } from "@/lib/ethiopia-regions";
 import { saveLastImportResult } from "@/lib/importResultStorage";
 import useAuthStore from "@/store/useAuthStore";
 
@@ -25,7 +26,25 @@ const TEMPLATE_HEADERS = ["firstname", "middlename", "lastname", "email", "phone
 const TEMPLATE_EXAMPLE_ROW = ["Dawit", "Girma", "Bekele", "dawit.bekele@example.com", "0911223344", "25", "male", "Amhara"];
 
 const MAX_TRAINEES_PER_IMPORT = 100;
-const REQUIRED_HEADERS = ["firstname", "lastname", "phoneNumber"];
+const REQUIRED_HEADERS = ["firstname", "middlename", "lastname", "phoneNumber", "age", "gender", "region"];
+const VALID_GENDERS = ["male", "female"];
+const REGION_BY_LOWERCASE = new Map(ETHIOPIA_REGIONS.map((region) => [region.toLowerCase(), region]));
+const MAX_DISPLAYED_ROW_ERRORS = 10;
+
+const HEADER_ALIASES: Record<string, string> = {
+	firstname: "firstname",
+	middlename: "middlename",
+	lastname: "lastname",
+	email: "email",
+	phonenumber: "phoneNumber",
+	age: "age",
+	gender: "gender",
+	region: "region",
+};
+
+function normalizeHeader(header: string): string {
+	return header.trim().toLowerCase().replace(/[\s_-]+/g, "");
+}
 
 function downloadCsvTemplate() {
 	const csv = [TEMPLATE_HEADERS.join(","), TEMPLATE_EXAMPLE_ROW.join(",")].join("\n");
@@ -70,7 +89,8 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 		return { trainees: [], error: "CSV must include a header row and at least one trainee." };
 	}
 
-	const headers = parseCsvLine(lines[0]);
+	const rawHeaders = parseCsvLine(lines[0]);
+	const headers = rawHeaders.map((header) => HEADER_ALIASES[normalizeHeader(header)]);
 	const missingRequired = REQUIRED_HEADERS.filter((field) => !headers.includes(field));
 	if (missingRequired.length > 0) {
 		return {
@@ -87,26 +107,59 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 		};
 	}
 
-	const trainees = rows.map((line) => {
+	const rowErrors: string[] = [];
+
+	const trainees = rows.map((line, rowIndex) => {
 		const cells = parseCsvLine(line);
 		const row: Record<string, string> = {};
 		headers.forEach((header, index) => {
+			if (!header) return; // unrecognized column, ignore
 			row[header] = cells[index] ?? "";
 		});
 
+		const rowNumber = rowIndex + 2; // +1 for header row, +1 for 1-based index
+		const missing = REQUIRED_HEADERS.filter((field) => !row[field]?.trim());
+		if (missing.length > 0) {
+			rowErrors.push(`Row ${rowNumber}: missing ${missing.join(", ")}`);
+		}
+
+		const age = Number(row.age);
+		if (row.age && (!Number.isInteger(age) || age <= 0)) {
+			rowErrors.push(`Row ${rowNumber}: age must be a positive whole number`);
+		}
+
+		const gender = row.gender?.trim().toLowerCase();
+		if (row.gender && !VALID_GENDERS.includes(gender)) {
+			rowErrors.push(`Row ${rowNumber}: gender must be "male" or "female"`);
+		}
+
+		const region = REGION_BY_LOWERCASE.get(row.region?.trim().toLowerCase());
+		if (row.region && !region) {
+			rowErrors.push(`Row ${rowNumber}: "${row.region}" is not a valid region`);
+		}
+
 		const entry: BulkTraineeImportEntry = {
 			firstname: row.firstname,
+			middlename: row.middlename,
 			lastname: row.lastname,
+			email: row.email,
 			phoneNumber: row.phoneNumber,
+			age,
+			gender,
+			region: region ?? row.region,
 		};
-		if (row.middlename) entry.middlename = row.middlename;
-		if (row.email) entry.email = row.email;
-		if (row.age) entry.age = Number(row.age);
-		if (row.region) entry.region = row.region;
-		if (row.gender) entry.gender = row.gender;
 
 		return entry;
 	});
+
+	if (rowErrors.length > 0) {
+		const shown = rowErrors.slice(0, MAX_DISPLAYED_ROW_ERRORS);
+		const suffix =
+			rowErrors.length > MAX_DISPLAYED_ROW_ERRORS
+				? ` (+${rowErrors.length - MAX_DISPLAYED_ROW_ERRORS} more)`
+				: "";
+		return { trainees: [], error: shown.join(" | ") + suffix };
+	}
 
 	return { trainees };
 }

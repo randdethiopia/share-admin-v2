@@ -204,13 +204,17 @@ export default function AdminManagementPage() {
 
   const filteredAdmins = React.useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return admins;
-    return admins.filter((admin: ProfileType) => {
-      const fullName = `${admin.firstName} ${admin.lastName}`.toLowerCase();
-      return (
-        fullName.includes(term) || admin.email.toLowerCase().includes(term)
-      );
-    });
+    const base = term
+      ? admins.filter((admin: ProfileType) => {
+          const fullName = `${admin.firstName} ${admin.lastName}`.toLowerCase();
+          return (
+            fullName.includes(term) || admin.email.toLowerCase().includes(term)
+          );
+        })
+      : admins;
+    return [...base].sort((a, b) =>
+      getAdminDisplayName(a).localeCompare(getAdminDisplayName(b))
+    );
   }, [admins, search]);
 
   const paginationMeta = React.useMemo(
