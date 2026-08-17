@@ -237,7 +237,7 @@ export default function JobsPage() {
     }, [jobs]);
 
     return (
-        <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+        <div className="min-h-screen bg-background p-4 md:p-8">
             <div className="mx-auto max-w-5xl space-y-6">
                 <div className="rounded-3xl border border-blue-50 bg-white p-6 shadow-sm md:p-10">
                     <PageHeader

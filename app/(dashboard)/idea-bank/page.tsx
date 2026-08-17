@@ -12,7 +12,7 @@ export default function IdeaBankPage() {
   const { data: ideas, isLoading } = api.IdeaBank.GetList.useQuery();
 
   return (
-    <div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <PageHeader
         category="Idea Bank"
         title="All idea-bank posts"
