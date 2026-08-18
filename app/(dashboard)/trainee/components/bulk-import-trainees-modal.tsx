@@ -46,6 +46,15 @@ function normalizeHeader(header: string): string {
 	return header.trim().toLowerCase().replace(/[\s_-]+/g, "");
 }
 
+function normalizeName(name: string | undefined): string {
+	return (name ?? "")
+		.trim()
+		.toLowerCase()
+		.split(/\s+/)
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(" ");
+}
+
 function downloadCsvTemplate() {
 	const csv = [TEMPLATE_HEADERS.join(","), TEMPLATE_EXAMPLE_ROW.join(",")].join("\n");
 	downloadTextFile("trainee-bulk-import-template.csv", csv, "text/csv");
@@ -128,8 +137,12 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 			rowErrors.push(`Row ${rowNumber}: age must be a positive whole number`);
 		}
 
-		const gender = row.gender?.trim().toLowerCase();
-		if (row.gender && !VALID_GENDERS.includes(gender)) {
+		row.firstname = normalizeName(row.firstname);
+		row.middlename = normalizeName(row.middlename);
+		row.lastname = normalizeName(row.lastname);
+		
+		row.gender = row.gender?.trim().toLowerCase() ?? "";
+		if (row.gender && !VALID_GENDERS.includes(row.gender)) {
 			rowErrors.push(`Row ${rowNumber}: gender must be "male" or "female"`);
 		}
 
@@ -142,10 +155,10 @@ function parseTraineesCsv(text: string): { trainees: BulkTraineeImportEntry[]; e
 			firstname: row.firstname,
 			middlename: row.middlename,
 			lastname: row.lastname,
-			email: row.email,
+			...(row.email?.trim() ? { email: row.email.trim() } : {}),
 			phoneNumber: row.phoneNumber,
 			age,
-			gender,
+			gender: row.gender,
 			region: region ?? row.region,
 		};
 
