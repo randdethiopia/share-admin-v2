@@ -294,7 +294,7 @@ export default function TraineePage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#E2EDF8] p-4 md:p-8 space-y-6">
+		<div className="min-h-screen bg-background p-4 md:p-8 space-y-6">
 			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4">
 				<div className="space-y-1">
 					<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
