@@ -58,6 +58,7 @@ export interface TraineeResType {
 		currentPage: number;
 		pageSize: number;
 	};
+	summary?: unknown;
 }
 
 /** GET /api/trannie/coordinator-trainees/:coordinatorId */
@@ -214,12 +215,20 @@ export async function bulkImportTraineesFn(payload: { trainees: BulkTraineeImpor
 	).data as BulkTraineeImportResType;
 }
 
+export interface GetTraineeParams {
+	page: number;
+	limit: number;
+	type?: string;
+	search?: string;
+	status?: string;
+	region?: string;
+	gender?: string;
+	age?: string;
+}
+
 export async function getAllTraineeFn(
-	page: number,
-	limit: number,
-	type?: string,
-	search?: string,
-	status?: string
+	{ page, limit, type, search, status, region, gender, age }: GetTraineeParams,
+	signal?: AbortSignal
 ) {
 	const params = new URLSearchParams({
 		page: String(page),
@@ -229,9 +238,12 @@ export async function getAllTraineeFn(
 	if (type) params.set("type", type);
 	if (search) params.set("search", search);
 	if (status) params.set("status", status);
+	if (region) params.set("region", region);
+	if (gender) params.set("gender", gender);
+	if (age) params.set("age", age);
 
 	return (
-		await axios.get(`${API_URL}/api/trannie/get?${params.toString()}`)
+		await axios.get(`${API_URL}/api/trannie/get?${params.toString()}`, { signal })
 	).data as TraineeResType;
 }
 
@@ -566,16 +578,12 @@ const TraineeAuth = {
 
 	GetTrainee: {
 		useQuery: (
-			page: number,
-			limit: number,
-			type?: string,
-			search?: string,
-			status?: string,
+			params: GetTraineeParams,
 			options?: UseQueryOptions<TraineeResType, AxiosError<ErrorRes>>
 		) =>
 			useQuery({
-				queryKey: ["Trainee", page, limit, type ?? "", search ?? "", status ?? ""],
-				queryFn: () => getAllTraineeFn(page, limit, type, search, status),
+				queryKey: ["Trainee", params],
+				queryFn: ({ signal }) => getAllTraineeFn(params, signal),
 				...options,
 			}),
 	},

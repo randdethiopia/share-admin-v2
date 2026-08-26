@@ -51,17 +51,12 @@ import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
 import { BulkImportTraineesModal } from "../components/bulk-import-trainees-modal";
 import { CreateTraineeModal } from "../components/create-trainee-modal";
-import { traineeFullName, TraineeDetailSheet } from "../components/trainee-detail-sheet";
+import { TraineeDetailSheet } from "../components/trainee-detail-sheet";
 import { ChevronDown, Eye, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 type TraineeTypeFilter = "all" | "NORMAL" | "EDGE";
 type TraineeStatusFilter = "all" | "active" | "inactive";
-
-// When searching, the backend's own text search isn't used (kept backend untouched) — instead
-// we pull a larger batch and match/paginate client-side, so a full name like "Hanna Degefaw"
-// matches even though firstname/lastname live in separate fields.
-const SEARCH_FETCH_LIMIT = 2000;
 
 function normalizeIsActive(value: unknown) {
 	if (typeof value === "boolean") return value;
@@ -71,13 +66,6 @@ function normalizeIsActive(value: unknown) {
 		return v === "true" || v === "1" || v === "active";
 	}
 	return false;
-}
-
-function traineeSearchHaystack(t: TraineeType) {
-	return [t.firstname, t.middlename, t.lastname, t.username, t.phoneNumber, t.email]
-		.filter(Boolean)
-		.join(" ")
-		.toLowerCase();
 }
 
 export default function TraineePage() {
@@ -107,7 +95,7 @@ export default function TraineePage() {
 		const t = setTimeout(() => {
 			setSearch(searchInput);
 			setPage(1);
-		}, 350);
+		}, 300);
 		return () => clearTimeout(t);
 	}, [searchInput]);
 
@@ -120,24 +108,18 @@ export default function TraineePage() {
 		return undefined;
 	}, [status]);
 
-	const searchWords = useMemo(
-		() => search.trim().toLowerCase().split(/\s+/).filter(Boolean),
-		[search]
-	);
-	const isSearching = searchWords.length > 0;
-
 	const {
 		data,
 		isLoading,
 		isError,
 		error,
-	} = TraineeAuth.GetTrainee.useQuery(
-		isSearching ? 1 : page,
-		isSearching ? SEARCH_FETCH_LIMIT : pageSize,
-		typeParam,
-		undefined,
-		statusParam
-	);
+	} = TraineeAuth.GetTrainee.useQuery({
+		page,
+		limit: pageSize,
+		type: typeParam,
+		search: search.trim() || undefined,
+		status: statusParam,
+	});
 
 	const {
 		data: cohortData = [],
@@ -147,35 +129,14 @@ export default function TraineePage() {
 
 	const trainees = useMemo(() => data?.data ?? [], [data]);
 
-	const filteredTrainees = useMemo(() => {
-		let list = trainees;
-		if (status === "active") {
-			list = list.filter((t) => normalizeIsActive(t.isActive));
-		} else if (status === "inactive") {
-			list = list.filter((t) => !normalizeIsActive(t.isActive));
-		}
-		if (searchWords.length > 0) {
-			list = list.filter((t) => {
-				const haystack = traineeSearchHaystack(t);
-				return searchWords.every((word) => haystack.includes(word));
-			});
-		}
-		return [...list].sort((a, b) =>
-			traineeFullName(a).localeCompare(traineeFullName(b))
-		);
-	}, [trainees, status, searchWords]);
-
-	// Server already paginates the non-search fetch to `pageSize` rows; in search mode we
-	// pulled a larger batch above and paginate the filtered results ourselves here.
+	// `status` filtering here only covers the "active" case (the backend's `status`
+	// param only supports filtering out inactive trainees via statusParam === "0").
 	const visibleTrainees = useMemo(() => {
-		if (!isSearching) return filteredTrainees;
-		const start = (page - 1) * pageSize;
-		return filteredTrainees.slice(start, start + pageSize);
-	}, [filteredTrainees, isSearching, page, pageSize]);
+		if (status === "active") return trainees.filter((t) => normalizeIsActive(t.isActive));
+		return trainees;
+	}, [trainees, status]);
 
-	const totalItems = isSearching
-		? filteredTrainees.length
-		: data?.meta?.totalItems ?? 0;
+	const totalItems = data?.meta?.totalItems ?? 0;
 
 	const cohortOptions = useMemo(() => {
 		const rows = Array.isArray(cohortData)
