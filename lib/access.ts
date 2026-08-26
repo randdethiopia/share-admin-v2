@@ -69,7 +69,7 @@ export const dashboardMenuItems: MenuItem[] = [
     id: "trainee", icon: GraduationCap, label: "Trainee", href: "/trainee", permissions: ["trainee.read", "trainee.write", "trainee.delete"], isCollapsable: true, items: [
       { id: "trainee-dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/trainee/dashboard", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
       { id: "trainee-wait-list", icon: ListPlus, label: "Wait-list", href: "/trainee/wait-list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
-      { id: "trainee-list", icon: List, label: "List", href: "/trainee/list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
+      { id: "trainee-list", icon: List, label: "Trainee", href: "/trainee/list", permissions: ["trainee.read", "trainee.write", "trainee.delete"] },
       { id: "trainee-stat", icon: BarChart, label: "Stats", href: "/trainee/stat", permissions: ["trainee.read", "trainee.write", "trainee.delete"] }
     ]
   },
