@@ -13,6 +13,8 @@ import { type TraineeType } from "@/lib/api/trainee";
 import { formatDisplayDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 
+import { ResetCredentialsAction } from "./reset-credentials-action";
+
 export function traineeFullName(t: TraineeType) {
 	return [t.firstname, t.middlename, t.lastname].filter(Boolean).join(" ");
 }
@@ -113,6 +115,14 @@ export function TraineeDetailSheet({
 								<SheetDetailRow label="Joined">
 									{formatDisplayDate(trainee.createdAt) || "-"}
 								</SheetDetailRow>
+							</div>
+
+							<div className="mt-4 flex justify-end">
+								<ResetCredentialsAction
+									trainee={trainee}
+									variant="button"
+									className="h-9 w-auto gap-1.5 px-4 text-xs"
+								/>
 							</div>
 						</div>
 					</div>

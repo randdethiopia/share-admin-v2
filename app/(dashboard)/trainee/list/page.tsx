@@ -51,6 +51,7 @@ import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
 import { BulkImportTraineesModal } from "../components/bulk-import-trainees-modal";
 import { CreateTraineeModal } from "../components/create-trainee-modal";
+import { ResetCredentialsAction } from "../components/reset-credentials-action";
 import { TraineeDetailSheet } from "../components/trainee-detail-sheet";
 import { ChevronDown, Eye, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -491,13 +492,17 @@ export default function TraineePage() {
 									</span>
 								</div>
 
-								<Button
-									variant="link"
-									className="mt-2 h-auto p-0 text-[11px] font-bold text-blue-600"
-											onClick={() => openSinglePicker(t._id)}
-							>
-								Add to Cohort
-							</Button>
+								<div className="mt-2 flex items-center gap-4">
+									<Button
+										variant="link"
+										className="h-auto p-0 text-[11px] font-bold text-blue-600"
+										onClick={() => openSinglePicker(t._id)}
+									>
+										Add to Cohort
+									</Button>
+
+									<ResetCredentialsAction trainee={t} className="text-[11px]" />
+								</div>
 						</div>
 						))
 					)}
@@ -634,13 +639,7 @@ export default function TraineePage() {
 													>
 														<Trash2 size={14} />
 													</Button>
-													<Button
-														variant="link"
-														className="h-auto p-0 text-[10px] font-bold text-blue-600"
-														onClick={() => setIsSelectable(true)}
-													>
-														Add to Cohort
-													</Button>
+													<ResetCredentialsAction trainee={t} />
 												</div>
 											</TableCell>
 										</TableRow>

@@ -165,6 +165,11 @@ export interface TraineeRegistrationResType extends SuccessRes {
 	email: string;
 }
 
+export interface ResetCredentialsResType extends SuccessRes {
+	trannieId: string;
+	username: string;
+}
+
 export interface TraineeLogin {
 	email: string;
 	password: string;
@@ -359,6 +364,12 @@ export async function refreshTraineeTokenFn() {
 
 export async function deleteTraineeFn(id: string) {
 	return (await axios.delete(`${API_URL}/api/trannie/delete/${id}`)).data as SuccessRes;
+}
+
+export async function resetTraineeCredentialsFn(id: string) {
+	return (
+		await axios.post(`${API_URL}/api/trannie/reset-credentials/${id}`)
+	).data as ResetCredentialsResType;
 }
 
 export async function assignCoordinatorFn(payload: AssignCoordinatorPayload) {
@@ -695,6 +706,35 @@ const TraineeAuth = {
 				},
 				onError: (err, id, context) => {
 					toast.error(err.response?.data?.message || "Error");
+					options?.onError?.(err, id, context, undefined as unknown as never);
+				},
+			});
+		},
+	},
+
+	ResetCredentials: {
+		useMutation: (
+			options?: UseMutationOptions<ResetCredentialsResType, AxiosError<ErrorRes>, string>
+		) => {
+			const queryClient = useQueryClient();
+
+			return useMutation({
+				mutationFn: resetTraineeCredentialsFn,
+				...options,
+				onSuccess: (res, id, context) => {
+					toast.success(`New credentials sent to ${res.username} via SMS.`);
+					queryClient.invalidateQueries({ queryKey: ["Trainee", id] });
+					options?.onSuccess?.(res, id, context, undefined as unknown as never);
+				},
+				onError: (err, id, context) => {
+					const status = err.response?.status;
+					const fallback =
+						status === 403
+							? "You don't have permission to reset this trainee's credentials"
+							: status === 404
+								? "Trainee not found"
+								: "Error";
+					toast.error(err.response?.data?.message || fallback);
 					options?.onError?.(err, id, context, undefined as unknown as never);
 				},
 			});
