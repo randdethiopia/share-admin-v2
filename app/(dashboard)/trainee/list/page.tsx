@@ -69,6 +69,14 @@ function normalizeIsActive(value: unknown) {
 	return false;
 }
 
+
+function traineeSearchHaystack(t: TraineeType) {
+	return [t.firstname, t.middlename, t.lastname, t.phoneNumber]
+		.filter(Boolean)
+		.join(" ")
+		.toLowerCase();
+}
+
 export default function TraineePage() {
 	const router = useRouter();
 	const [page, setPage] = useState(1);
@@ -109,6 +117,11 @@ export default function TraineePage() {
 		return undefined;
 	}, [status]);
 
+	const searchTokens = useMemo(
+		() => search.trim().split(/\s+/).filter(Boolean),
+		[search]
+	);
+
 	const {
 		data,
 		isLoading,
@@ -118,7 +131,7 @@ export default function TraineePage() {
 		page,
 		limit: pageSize,
 		type: typeParam,
-		search: search.trim() || undefined,
+		search: searchTokens[0],
 		status: statusParam,
 	});
 
@@ -132,10 +145,18 @@ export default function TraineePage() {
 
 	// `status` filtering here only covers the "active" case (the backend's `status`
 	// param only supports filtering out inactive trainees via statusParam === "0").
+	// Remaining search words (beyond the one sent to the server) are matched here.
 	const visibleTrainees = useMemo(() => {
-		if (status === "active") return trainees.filter((t) => normalizeIsActive(t.isActive));
-		return trainees;
-	}, [trainees, status]);
+		let list = trainees;
+		if (status === "active") list = list.filter((t) => normalizeIsActive(t.isActive));
+		if (searchTokens.length > 1) {
+			list = list.filter((t) => {
+				const haystack = traineeSearchHaystack(t);
+				return searchTokens.every((token) => haystack.includes(token.toLowerCase()));
+			});
+		}
+		return list;
+	}, [trainees, status, searchTokens]);
 
 	const totalItems = data?.meta?.totalItems ?? 0;
 
