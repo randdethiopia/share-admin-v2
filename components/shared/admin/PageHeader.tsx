@@ -8,6 +8,7 @@ type PageHeaderProps = {
   description?: string;
   className?: string;
   actions?: ReactNode;
+  accentClassName?: string;
 };
 
 export function PageHeader({
@@ -16,11 +17,23 @@ export function PageHeader({
   description,
   className,
   actions,
+  accentClassName,
 }: PageHeaderProps) {
   return (
-    <div className={cn("mb-6 border-l-4 border-primary py-0.5 pl-4", className)}>
+    <div
+      className={cn(
+        "mb-6 border-l-4 py-0.5 pl-4",
+        accentClassName ?? "border-primary",
+        className
+      )}
+    >
       {category ? (
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
+        <p
+          className={cn(
+            "mb-1 text-xs font-semibold uppercase tracking-widest",
+            accentClassName ?? "text-primary"
+          )}
+        >
           {category}
         </p>
       ) : null}
