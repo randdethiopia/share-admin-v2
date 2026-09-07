@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import PaginationControls from "@/components/shared/PaginationControls";
 import {
 	AlertDialog,
@@ -385,10 +386,13 @@ export default function ProjectsPage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-			<div className="px-4">
-				<h1 className="text-[28px] font-bold text-black">Projects</h1>
-				<p className="text-zinc-600 text-lg">See all projects</p>
-			</div>
+			<PageHeader
+				category="Projects"
+				title="Manage Projects"
+				description="See all projects."
+				className="px-4"
+				accentClassName="border-[#1E8E3E] text-[#1E8E3E]"
+			/>
 
 			<div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 lg:p-8 shadow-sm border border-blue-50 max-w-full">
 				<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 sm:mb-8">
