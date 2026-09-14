@@ -32,6 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import {
 	Select,
 	SelectContent,
@@ -51,6 +52,7 @@ import { cn } from "@/lib/utils";
 import { AssignTraineesToCoordinator } from "../components/assign-to-coordinator";
 import { BulkImportTraineesModal } from "../components/bulk-import-trainees-modal";
 import { CreateTraineeModal } from "../components/create-trainee-modal";
+import { ResetCredentialsAction } from "../components/reset-credentials-action";
 import { TraineeDetailSheet } from "../components/trainee-detail-sheet";
 import { ChevronDown, Eye, History, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +68,14 @@ function normalizeIsActive(value: unknown) {
 		return v === "true" || v === "1" || v === "active";
 	}
 	return false;
+}
+
+
+function traineeSearchHaystack(t: TraineeType) {
+	return [t.firstname, t.middlename, t.lastname, t.phoneNumber]
+		.filter(Boolean)
+		.join(" ")
+		.toLowerCase();
 }
 
 export default function TraineePage() {
@@ -108,6 +118,11 @@ export default function TraineePage() {
 		return undefined;
 	}, [status]);
 
+	const searchTokens = useMemo(
+		() => search.trim().split(/\s+/).filter(Boolean),
+		[search]
+	);
+
 	const {
 		data,
 		isLoading,
@@ -117,7 +132,7 @@ export default function TraineePage() {
 		page,
 		limit: pageSize,
 		type: typeParam,
-		search: search.trim() || undefined,
+		search: searchTokens[0],
 		status: statusParam,
 	});
 
@@ -131,10 +146,18 @@ export default function TraineePage() {
 
 	// `status` filtering here only covers the "active" case (the backend's `status`
 	// param only supports filtering out inactive trainees via statusParam === "0").
+	// Remaining search words (beyond the one sent to the server) are matched here.
 	const visibleTrainees = useMemo(() => {
-		if (status === "active") return trainees.filter((t) => normalizeIsActive(t.isActive));
-		return trainees;
-	}, [trainees, status]);
+		let list = trainees;
+		if (status === "active") list = list.filter((t) => normalizeIsActive(t.isActive));
+		if (searchTokens.length > 1) {
+			list = list.filter((t) => {
+				const haystack = traineeSearchHaystack(t);
+				return searchTokens.every((token) => haystack.includes(token.toLowerCase()));
+			});
+		}
+		return list;
+	}, [trainees, status, searchTokens]);
 
 	const totalItems = data?.meta?.totalItems ?? 0;
 
@@ -256,13 +279,13 @@ export default function TraineePage() {
 
 	return (
 		<div className="min-h-screen bg-background p-4 md:p-8 space-y-6">
-			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4">
-				<div className="space-y-1">
-					<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-						Trainee
-					</h1>
-					<p className="text-zinc-600 text-sm font-medium">See all your trainees</p>
-				</div>
+			<PageHeader
+				category="Trainees"
+				title="Manage Trainees"
+				description="See all your trainees."
+				className="px-4"
+				accentClassName="border-[#1E8E3E] text-[#1E8E3E]"
+				actions={
 				<div className="flex flex-wrap gap-3">
 					{/* <Button
 						variant="outline"
@@ -321,7 +344,8 @@ export default function TraineePage() {
 					<CreateTraineeModal open={createOpen} onOpenChange={setCreateOpen} />
 					<BulkImportTraineesModal open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
 				</div>
-			</div>
+				}
+			/>
 
 			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
 				<div className="flex flex-col md:flex-row justify-between gap-3 mb-6">
@@ -491,13 +515,17 @@ export default function TraineePage() {
 									</span>
 								</div>
 
-								<Button
-									variant="link"
-									className="mt-2 h-auto p-0 text-[11px] font-bold text-blue-600"
-											onClick={() => openSinglePicker(t._id)}
-							>
-								Add to Cohort
-							</Button>
+								<div className="mt-2 flex items-center gap-4">
+									<Button
+										variant="link"
+										className="h-auto p-0 text-[11px] font-bold text-blue-600"
+										onClick={() => openSinglePicker(t._id)}
+									>
+										Add to Cohort
+									</Button>
+
+									<ResetCredentialsAction trainee={t} className="text-[11px]" />
+								</div>
 						</div>
 						))
 					)}
@@ -634,13 +662,7 @@ export default function TraineePage() {
 													>
 														<Trash2 size={14} />
 													</Button>
-													<Button
-														variant="link"
-														className="h-auto p-0 text-[10px] font-bold text-blue-600"
-														onClick={() => setIsSelectable(true)}
-													>
-														Add to Cohort
-													</Button>
+													<ResetCredentialsAction trainee={t} />
 												</div>
 											</TableCell>
 										</TableRow>
