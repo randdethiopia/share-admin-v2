@@ -32,6 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import {
 	Select,
 	SelectContent,
@@ -278,13 +279,13 @@ export default function TraineePage() {
 
 	return (
 		<div className="min-h-screen bg-background p-4 md:p-8 space-y-6">
-			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4">
-				<div className="space-y-1">
-					<h1 className="text-2xl md:text-[28px] font-bold text-black tracking-tight">
-						Trainee
-					</h1>
-					<p className="text-zinc-600 text-sm font-medium">See all your trainees</p>
-				</div>
+			<PageHeader
+				category="Trainees"
+				title="Manage Trainees"
+				description="See all your trainees."
+				className="px-4"
+				accentClassName="border-[#1E8E3E] text-[#1E8E3E]"
+				actions={
 				<div className="flex flex-wrap gap-3">
 					{/* <Button
 						variant="outline"
@@ -343,7 +344,8 @@ export default function TraineePage() {
 					<CreateTraineeModal open={createOpen} onOpenChange={setCreateOpen} />
 					<BulkImportTraineesModal open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
 				</div>
-			</div>
+				}
+			/>
 
 			<div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-sm border border-blue-50 min-h-[70vh]">
 				<div className="flex flex-col md:flex-row justify-between gap-3 mb-6">

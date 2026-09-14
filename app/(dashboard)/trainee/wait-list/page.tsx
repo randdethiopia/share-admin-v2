@@ -28,6 +28,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/shared/admin/PageHeader";
 import { cn } from "@/lib/utils";
 import { getPaginationMeta } from "@/lib/pagination";
 import { useWaitList } from "@/hooks/useWaitlist";
@@ -395,6 +396,14 @@ export default function WaitListPage() {
 
 	return (
 		<div className="flex flex-col h-full min-h-screen">
+			<PageHeader
+				category="Trainees"
+				title="Applicant Wait List"
+				description="See all waitlisted applicants."
+				className="px-4"
+				accentClassName="border-[#1E8E3E] text-[#1E8E3E]"
+			/>
+
 			{/* Top: Analytics */}
 			<div className="px-4 py-6">
 				<AnalyticsSection
