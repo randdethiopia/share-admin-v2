@@ -19,6 +19,8 @@ import {
   Sparkles,
   BarChart,
   LifeBuoy,
+  Settings,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { TRAINING_MENU_PERMISSIONS } from "@/lib/permissions";
@@ -100,6 +102,11 @@ export const dashboardMenuItems: MenuItem[] = [
     ],
   },
 
+  {
+    id: "system", icon: Settings, label: "System", href: "/system", permissions: ["read.login-log"], isCollapsable: true, items: [
+      { id: "system-login-logs", icon: ScrollText, label: "Login Logs", href: "/system/login-logs", permissions: ["read.login-log"] },
+    ]
+  },
   { id: "change-password", icon: Key, label: "Change My Password", href: "/change-password" },
 ];
 

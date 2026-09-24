@@ -8,6 +8,7 @@ import BusinessProfileApi from "./Buisness";
 import IdeaBankApi from "./idea-bank";
 import InvestmentApi from "./investment";
 import InvitationApi from "./invitation";
+import LoginLogApi from "./login-log";
 import MentorProfileApi from "./mentor-profile";
 import InvestorProfileApi from "./mentor"
 import OpportunityApi from "./opportunity";
@@ -98,6 +99,15 @@ export {
 export { supportKeys } from "./support.keys";
 export type { FAQType, CreateFAQInput, UpdateFAQInput } from "./faq.types";
 export { faqKeys } from "./faq.keys";
+export type {
+	LoginFailureReason,
+	LoginLogListResponse,
+	LoginLogQueryParams,
+	LoginLogSummary,
+	LoginLogType,
+	LoginLogUserType,
+} from "./login-log";
+export { getLoginLogDisplayName, loginLogKeys } from "./login-log";
 export { getProjectByIdFn } from "./project";
 export { getWaitListServerSideFn } from "./waitlist";
 export { uploadFileFn } from "./upload";
@@ -114,6 +124,7 @@ const api = {
     IdeaBank: IdeaBankApi,
     Investment: InvestmentApi,
     Invitation: InvitationApi,
+    LoginLog: LoginLogApi,
     MentorProfile: MentorProfileApi,
     InvestorProfile: InvestorProfileApi,
     Opportunity: OpportunityApi,
