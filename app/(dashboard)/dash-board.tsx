@@ -37,6 +37,7 @@ const ADMIN_THEME_ROUTES = [
   "/skills",
   "/opportunity",
   "/admin-management",
+  "/system/login-logs",
   "/change-password",
 ] as const;
 
